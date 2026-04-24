@@ -1,0 +1,208 @@
+package de.schwalmtalzupfer.member;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
+import java.util.*;
+
+@RestController
+@RequestMapping("/api/member")
+@RequiredArgsConstructor
+public class MemberController {
+
+    private final MemberRepository memberRepository;
+    private final GitarrengruppeRepository gitarrengruppeRepository;
+    private final UserHistoryRepository userHistoryRepository;
+
+    /** Eigenes Profil lesen */
+    @GetMapping("/me")
+    public ResponseEntity<?> myProfile(Principal principal) {
+        return memberRepository.findByEmail(principal.getName())
+                .or(() -> memberRepository.findByUsername(principal.getName()))
+                .map(m -> ResponseEntity.ok(toDto(m)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Eigenes Profil aktualisieren (nur Vor-/Nachname) */
+    @PatchMapping("/me")
+    public ResponseEntity<?> updateProfile(Principal principal, @RequestBody Map<String, String> body) {
+        return memberRepository.findByEmail(principal.getName())
+                .or(() -> memberRepository.findByUsername(principal.getName()))
+                .map(m -> {
+                    if (body.containsKey("vorname")) m.setVorname(body.get("vorname"));
+                    if (body.containsKey("nachname")) m.setNachname(body.get("nachname"));
+                    return ResponseEntity.ok(toDto(memberRepository.save(m)));
+                }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Alle Mitglieder suchen (nur BOARD/ADMIN) */
+    @GetMapping
+    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    public List<Map<String, Object>> allMembers(@RequestParam(required = false) String search) {
+        List<Member> members = (search != null && !search.isBlank())
+                ? memberRepository.searchMembers(search)
+                : memberRepository.findAll();
+        return members.stream().map(this::toDto).toList();
+    }
+
+    /** Mitglied deaktivieren (nur BOARD/ADMIN) */
+    @PatchMapping("/{id}/deaktivieren")
+    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    public ResponseEntity<?> deactivate(@PathVariable UUID id) {
+        return memberRepository.findById(id).map(m -> {
+            m.setIstAktiv(false);
+            memberRepository.save(m);
+            userHistoryRepository.save(UserHistory.builder()
+                    .userId(id)
+                    .aenderungsTyp("DEAKTIVIERUNG")
+                    .alterWert("aktiv")
+                    .neuerWert("inaktiv")
+                    .build());
+            return ResponseEntity.ok(toDto(m));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Mitglied reaktivieren (nur BOARD/ADMIN) */
+    @PatchMapping("/{id}/reaktivieren")
+    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    public ResponseEntity<?> reactivate(@PathVariable UUID id) {
+        return memberRepository.findById(id).map(m -> {
+            m.setIstAktiv(true);
+            memberRepository.save(m);
+            userHistoryRepository.save(UserHistory.builder()
+                    .userId(id)
+                    .aenderungsTyp("REAKTIVIERUNG")
+                    .alterWert("inaktiv")
+                    .neuerWert("aktiv")
+                    .build());
+            return ResponseEntity.ok(toDto(m));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Gruppe eines Mitglieds ändern (nur BOARD/ADMIN) */
+    @PatchMapping("/{id}/gruppe")
+    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    public ResponseEntity<?> updateGruppe(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+        return memberRepository.findById(id).map(m -> {
+            String gruppeIdStr = body.get("gruppeId");
+            String alterWert = m.getGitarrengruppe() != null ? m.getGitarrengruppe().getId().toString() : "keine";
+            if (gruppeIdStr == null || gruppeIdStr.isBlank()) {
+                m.setGitarrengruppe(null);
+            } else {
+                UUID gruppeId = UUID.fromString(gruppeIdStr);
+                Gitarrengruppe gruppe = gitarrengruppeRepository.findById(gruppeId)
+                        .orElseThrow(() -> new IllegalArgumentException("Gruppe nicht gefunden"));
+                m.setGitarrengruppe(gruppe);
+            }
+            memberRepository.save(m);
+            String neuerWert = m.getGitarrengruppe() != null ? m.getGitarrengruppe().getId().toString() : "keine";
+            userHistoryRepository.save(UserHistory.builder()
+                    .userId(id)
+                    .aenderungsTyp("GRUPPENWECHSEL")
+                    .alterWert(alterWert)
+                    .neuerWert(neuerWert)
+                    .build());
+            return ResponseEntity.ok(toDto(m));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Mitglied-Details (nur BOARD/ADMIN) */
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    public ResponseEntity<?> getMember(@PathVariable UUID id) {
+        return memberRepository.findById(id)
+                .map(m -> ResponseEntity.ok(toDto(m)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** UserHistory eines Mitglieds (nur BOARD/ADMIN) */
+    @GetMapping("/{id}/history")
+    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    public ResponseEntity<?> getHistory(@PathVariable UUID id) {
+        List<Map<String, Object>> history = userHistoryRepository.findByUserIdOrderByTimestampDesc(id)
+                .stream().map(h -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("id", h.getId().toString());
+                    map.put("aenderungsTyp", h.getAenderungsTyp());
+                    map.put("alterWert", h.getAlterWert());
+                    map.put("neuerWert", h.getNeuerWert());
+                    map.put("timestamp", h.getTimestamp().toString());
+                    return map;
+                }).toList();
+        return ResponseEntity.ok(history);
+    }
+
+    /** Rolle eines Mitglieds ändern (nur ADMIN) */
+    @PatchMapping("/{id}/rolle")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateRolle(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+        return memberRepository.findById(id).map(m -> {
+            String rolleStr = body.get("rolle");
+            MemberRole neueRolle = MemberRole.valueOf(rolleStr);
+            String alterWert = m.getRole().name();
+            m.setRole(neueRolle);
+            memberRepository.save(m);
+            userHistoryRepository.save(UserHistory.builder()
+                    .userId(id)
+                    .aenderungsTyp("ROLLENWECHSEL")
+                    .alterWert(alterWert)
+                    .neuerWert(neueRolle.name())
+                    .build());
+            return ResponseEntity.ok(toDto(m));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Mitglied anlegen (nur BOARD/ADMIN) */
+    @PostMapping
+    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    public ResponseEntity<?> createMember(@RequestBody CreateMemberRequest req) {
+        if (memberRepository.existsByEmail(req.email())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "E-Mail bereits registriert"));
+        }
+        Member m = Member.builder()
+                .email(req.email())
+                .vorname(req.vorname())
+                .nachname(req.nachname())
+                .passwordHash("$INVITE$") // wird per Einladung gesetzt
+                .role(MemberRole.MEMBER)
+                .build();
+        return ResponseEntity.ok(toDto(memberRepository.save(m)));
+    }
+
+    public record CreateMemberRequest(String email, String vorname, String nachname) {}
+
+    Map<String, Object> toDto(Member m) {
+        Map<String, Object> dto = new LinkedHashMap<>();
+        dto.put("id", m.getId().toString());
+        dto.put("email", m.getEmail() != null ? m.getEmail() : "");
+        dto.put("username", m.getUsername() != null ? m.getUsername() : "");
+        dto.put("vorname", m.getVorname() != null ? m.getVorname() : "");
+        dto.put("nachname", m.getNachname() != null ? m.getNachname() : "");
+        dto.put("role", m.getRole().name());
+        dto.put("istAktiv", m.isIstAktiv());
+        dto.put("eintrittsdatum", m.getEintrittsdatum() != null ? m.getEintrittsdatum().toString() : null);
+        dto.put("austrittsdatum", m.getAustrittsdatum() != null ? m.getAustrittsdatum().toString() : null);
+        if (m.getGitarrengruppe() != null) {
+            Gitarrengruppe g = m.getGitarrengruppe();
+            Map<String, Object> gruppeMap = new LinkedHashMap<>();
+            gruppeMap.put("id", g.getId().toString());
+            gruppeMap.put("wochentag", g.getWochentag());
+            gruppeMap.put("vonUhrzeit", g.getVonUhrzeit().toString());
+            gruppeMap.put("bisUhrzeit", g.getBisUhrzeit().toString());
+            if (g.getLocation() != null) {
+                Map<String, Object> locMap = new LinkedHashMap<>();
+                locMap.put("id", g.getLocation().getId().toString());
+                locMap.put("name", g.getLocation().getName());
+                locMap.put("adresse", g.getLocation().getAdresse() != null ? g.getLocation().getAdresse() : "");
+                gruppeMap.put("location", locMap);
+            }
+            dto.put("gruppe", gruppeMap);
+        } else {
+            dto.put("gruppe", null);
+        }
+        return dto;
+    }
+}

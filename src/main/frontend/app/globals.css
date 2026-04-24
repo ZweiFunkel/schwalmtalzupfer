@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #22c55e;      /* Electric Green */
+  --secondary: #1d4ed8;    /* Musikschul-Blau */
+  --bg-dark: #0f172a;
+  --bg-card: rgba(255, 255, 255, 0.07);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-slide-up-delay {
+  animation: slideUp 0.8s 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-slide-up-delay-2 {
+  animation: slideUp 0.8s 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Glassmorphism helper */
+.glass-card {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Smooth scale transition */
+.hover\:scale-105:hover { transform: scale(1.05); }
+.active\:scale-100:active { transform: scale(1); }
+
+/* ── Custom Scrollbar ────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a; /* slate-950 */
+}
+::-webkit-scrollbar-thumb {
+  background: #22c55e40; /* green-500 @ 25% */
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #22c55e99; /* green-500 @ 60% */
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #22c55e40 #0f172a;
+}
+
+/* ── Light Mode Overrides ──────────────────────────── */
+/* Applied when .dark class is NOT on <html> */
+
+/* Base body */
+html:not(.dark) body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Backgrounds */
+html:not(.dark) .bg-slate-950 { background-color: #f8fafc !important; }
+html:not(.dark) .bg-slate-900 { background-color: #f1f5f9 !important; }
+html:not(.dark) .bg-slate-800 { background-color: #e2e8f0 !important; }
+html:not(.dark) .bg-gray-950  { background-color: #f8fafc !important; }
+
+/* Navbar backdrop */
+html:not(.dark) .bg-slate-950\/90 { background-color: rgba(248,250,252,0.95) !important; }
+html:not(.dark) .bg-slate-800\/50 { background-color: rgba(226,232,240,0.7) !important; }
+html:not(.dark) .bg-slate-900\/50 { background-color: rgba(241,245,249,0.8) !important; }
+
+/* Navbar user-menu / dropdown panels */
+html:not(.dark) .bg-slate-900.py-1 { background-color: #ffffff !important; }
+
+/* Text */
+html:not(.dark) .text-white   { color: #0f172a !important; }
+html:not(.dark) .text-gray-100 { color: #1e293b !important; }
+html:not(.dark) .text-gray-200 { color: #334155 !important; }
+html:not(.dark) .text-gray-300 { color: #475569 !important; }
+html:not(.dark) .text-gray-400 { color: #64748b !important; }
+html:not(.dark) .text-gray-500 { color: #94a3b8 !important; }
+
+/* Hero Section: immer weiß – liegt auf dunklem Overlay über Hintergrundbild */
+html:not(.dark) .hero-section,
+html:not(.dark) .hero-section .text-white   { color: #ffffff !important; }
+html:not(.dark) .hero-section .text-gray-200 { color: rgba(255,255,255,0.88) !important; }
+html:not(.dark) .hero-section .text-gray-400 { color: rgba(255,255,255,0.6)  !important; }
+
+/* Borders */
+html:not(.dark) .border-white\/5  { border-color: rgba(15,23,42,0.08)  !important; }
+html:not(.dark) .border-white\/10 { border-color: rgba(15,23,42,0.12)  !important; }
+
+/* Wave SVG fill (HeroSection bottom wave) */
+html:not(.dark) .fill-slate-950 { fill: #f8fafc !important; }
+
+/* Navbar theme-toggle button */
+html:not(.dark) .bg-slate-800.p-1\.5 { background-color: #e2e8f0 !important; }
+
+/* Scrollbar */
+html:not(.dark) ::-webkit-scrollbar-track { background: #f1f5f9; }
+html:not(.dark) * { scrollbar-color: #22c55e40 #f1f5f9; }
+
+/* Glass card */
+html:not(.dark) .glass-card {
+  background: rgba(255,255,255,0.7);
+  border-color: rgba(0,0,0,0.08);
+}
+

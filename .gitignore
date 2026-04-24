@@ -1,0 +1,47 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Secrets & local config ###
+src/main/resources/application.yml
+src/main/frontend/.env.local
+
+### Frontend build artifacts ###
+src/main/frontend/node_modules/
+src/main/frontend/.next/
+src/main/frontend/out/
+src/main/frontend/tsconfig.tsbuildinfo
+
+### Maven wrapper binary ###
+.mvn/wrapper/maven-wrapper.jar
+
