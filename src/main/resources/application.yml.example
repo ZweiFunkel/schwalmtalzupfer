@@ -47,7 +47,7 @@ app:
     bucket: ${R2_BUCKET:your-bucket-name}
     public-url: ${R2_PUBLIC_URL:}
   invitation:
-    base-url: ${APP_BASE_URL:http://localhost:8080}
+    base-url: ${APP_BASE_URL:https://localhost:8080}
     token-validity-hours: 72
   mail:
     from: ${MAIL_FROM_ADDRESS:noreply@schwalmtalzupfer.de}
