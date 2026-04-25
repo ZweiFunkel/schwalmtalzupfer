@@ -113,9 +113,6 @@ export default function KontaktPage() {
           >
             {sending ? 'Wird gesendet…' : 'Nachricht senden'}
           </button>
-          <p className="text-xs text-gray-500 text-center">
-            Die Nachricht wird von <span className="text-gray-400">noreply@schwalmtalzupfer.de</span> an unser Team gesendet.
-          </p>
 
           {/* Kopier-Fallback: sobald E-Mail ausgefüllt */}
           {email && (

@@ -26,6 +26,10 @@ public class Page {
     @Column(nullable = false)
     private String title;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean published = true;
+
     @OneToMany(mappedBy = "page", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("position ASC")
     @Builder.Default

@@ -54,6 +54,8 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/pages/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/termine/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/galerie/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
                 .requestMatchers("/api/invitation/accept").permitAll()
                 .requestMatchers("/api/invitation/invite").hasAnyRole("BOARD", "ADMIN")

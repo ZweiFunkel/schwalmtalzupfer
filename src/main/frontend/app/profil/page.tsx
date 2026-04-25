@@ -96,7 +96,31 @@ export default function ProfilPage() {
                 </div>
                 <div>
                   <p className="text-gray-400">Adresse</p>
-                  <p className="text-white font-medium">{gruppe.location.adresse || '–'}</p>
+                  {gruppe.location.adresse ? (
+                    (() => {
+                      const adr: string = gruppe.location.adresse
+                      const isUrl = adr.startsWith('http://') || adr.startsWith('https://')
+                      const href = isUrl
+                        ? adr
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adr)}`
+                      return (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-green-400 hover:text-green-300 font-medium transition"
+                        >
+                          <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {isUrl ? 'In Maps öffnen' : adr}
+                        </a>
+                      )
+                    })()
+                  ) : (
+                    <p className="text-white font-medium">–</p>
+                  )}
                 </div>
               </>
             )}

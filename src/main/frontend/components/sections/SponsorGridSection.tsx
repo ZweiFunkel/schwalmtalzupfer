@@ -46,23 +46,25 @@ function LocationRow({ loc, isDarkTheme }: { loc: SponsorLocation; isDarkTheme: 
   )
 }
 
-function SponsorCard({ sponsor, onImage, isDarkTheme }: { sponsor: Sponsor; onImage?: (src: string, alt: string) => void; isDarkTheme: boolean }) {
+function SponsorCardExpanded({ sponsor, onImage, isDarkTheme }: {
+  sponsor: Sponsor
+  onImage?: (src: string, alt: string) => void
+  isDarkTheme: boolean
+}) {
   const hasLocations = sponsor.locations && sponsor.locations.length > 0
-
-  const cardBg    = isDarkTheme ? 'border-white/10 bg-slate-800/50 hover:border-green-500/30' : 'border-gray-200 bg-white hover:border-green-400/50 shadow-sm'
+  const cardBg    = isDarkTheme ? 'border-green-500/30 bg-slate-800/50' : 'border-green-400/50 bg-white shadow-lg'
   const headingCl = isDarkTheme ? 'text-white' : 'text-gray-900'
   const phoneCl   = isDarkTheme ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'
   const addrCl    = isDarkTheme ? 'text-gray-500 border-white/5' : 'text-gray-400 border-gray-200'
 
   return (
-    <div className={`flex flex-col rounded-2xl border overflow-hidden transition ${cardBg}`}>
-      {/* Bild */}
+    <div className={`flex flex-col rounded-2xl border overflow-hidden ${cardBg} h-full`}>
+      {/* Image */}
       {sponsor.imageUrl && (
         <div
           className={`relative w-full cursor-zoom-in overflow-hidden ${isDarkTheme ? 'bg-slate-900' : 'bg-gray-50'}`}
-          style={{ paddingBottom: '56.25%' }}
+          style={{ paddingBottom: '52%' }}
           onClick={() => onImage?.(sponsor.imageUrl!, sponsor.name)}
-          title="Klicken zum Vergrößern"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -73,13 +75,15 @@ function SponsorCard({ sponsor, onImage, isDarkTheme }: { sponsor: Sponsor; onIm
         </div>
       )}
 
-      {/* Inhalt */}
-      <div className="flex flex-col gap-2 p-5 flex-1">
-        <h3 className={`text-base font-bold leading-snug ${headingCl}`}>{sponsor.name}</h3>
-        {sponsor.person && <p className="text-sm text-green-400 font-medium">{sponsor.person}</p>}
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 pt-4 pb-2 text-left">
+        <h3 className={`flex-1 text-base font-bold leading-snug ${headingCl}`}>{sponsor.name}</h3>
+      </div>
 
-        {/* Kontakt */}
-        <div className="mt-auto pt-2 flex flex-col gap-1">
+       {/* Details */}
+      <div className="flex flex-col gap-2 px-5 pb-5 pt-1">
+         {sponsor.person && <p className="text-sm text-green-400 font-medium">{sponsor.person}</p>}
+         <div className="mt-auto pt-2 flex flex-col gap-1">
           {sponsor.website && <ExternalLink href={sponsor.website} />}
           {sponsor.phone && (
             <a href={`tel:${sponsor.phone.replace(/\s/g, '')}`} className={`text-xs transition ${phoneCl}`}>
@@ -97,8 +101,6 @@ function SponsorCard({ sponsor, onImage, isDarkTheme }: { sponsor: Sponsor; onIm
             </a>
           )}
         </div>
-
-        {/* Einzel-Adresse */}
         {!hasLocations && sponsor.address && (
           <p className={`flex items-start gap-1 text-xs leading-snug border-t pt-2 mt-1 ${addrCl}`}>
             {sponsor.mapUrl ? (
@@ -111,8 +113,6 @@ function SponsorCard({ sponsor, onImage, isDarkTheme }: { sponsor: Sponsor; onIm
             )}
           </p>
         )}
-
-        {/* Mehrere Standorte */}
         {hasLocations && (
           <div className={`flex flex-col gap-1 border-t pt-2 mt-1 ${isDarkTheme ? 'border-white/5' : 'border-gray-200'}`}>
             {sponsor.locations!.map((loc, i) => <LocationRow key={i} loc={loc} isDarkTheme={isDarkTheme} />)}
@@ -127,14 +127,16 @@ export default function SponsorGridSection({ content }: { content: SponsorGridCo
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null)
   const { theme } = useTheme()
   const isDarkTheme = theme === 'dark'
-  const sponsors = content.sponsors ?? []
+
+  // Sponsoren alphabetisch nach Namen sortieren
+  const sponsors = [...(content.sponsors ?? [])].sort((a, b) => a.name.localeCompare(b.name))
 
   return (
     <section className="bg-gray-50 dark:bg-slate-950 py-24">
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
 
         {/* Header */}
-        <div className="mb-12">
+        <div className="mb-10">
           {content.heading && (
             <div className="mb-4">
               <div className="mb-3 flex items-center gap-3">
@@ -149,15 +151,19 @@ export default function SponsorGridSection({ content }: { content: SponsorGridCo
           )}
         </div>
 
-        {/* Grid */}
+
+        {/* List */}
         {sponsors.length === 0 && (
           <p className="text-gray-500 italic">Keine Sponsoren eingetragen.</p>
         )}
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-5">
-          {sponsors.map((s, i) => (
-            <div key={i} className="break-inside-avoid mb-5">
-              <SponsorCard sponsor={s} isDarkTheme={isDarkTheme}
-                onImage={s.imageUrl ? (src, alt) => setLightbox({ src, alt }) : undefined}
+
+        <div className="columns-1 md:columns-3 gap-8 space-y-8">
+          {sponsors.map((sponsor, index) => (
+            <div key={index} className="break-inside-avoid">
+              <SponsorCardExpanded
+                sponsor={sponsor}
+                onImage={(src, alt) => setLightbox({ src, alt })}
+                isDarkTheme={isDarkTheme}
               />
             </div>
           ))}

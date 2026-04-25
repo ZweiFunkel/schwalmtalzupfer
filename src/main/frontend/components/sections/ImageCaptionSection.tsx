@@ -8,7 +8,7 @@ export default function ImageCaptionSection({ content }: { content: ImageCaption
   const [open, setOpen] = useState(false)
 
   return (
-    <section className="bg-gray-50 dark:bg-slate-900 py-16">
+    <section className="bg-white dark:bg-slate-900 py-16">
       <div className="mx-auto max-w-4xl px-6">
         <figure className="overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-white/10 cursor-zoom-in group" onClick={() => setOpen(true)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -18,7 +18,7 @@ export default function ImageCaptionSection({ content }: { content: ImageCaption
             className="w-full object-cover max-h-[520px] transition group-hover:brightness-90"
           />
           {content.caption && (
-            <figcaption className="bg-gray-100 dark:bg-slate-800/80 px-6 py-3 text-center text-sm text-gray-500 dark:text-gray-400 italic">
+            <figcaption className="bg-white dark:bg-slate-800/80 px-6 py-3 text-center text-sm text-gray-600 dark:text-gray-400 italic border-t border-gray-100 dark:border-white/5">
               {content.caption}
             </figcaption>
           )}

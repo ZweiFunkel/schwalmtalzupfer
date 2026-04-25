@@ -12,7 +12,7 @@ export default function HeroSection({ content }: { content: HeroContent }) {
     const handleScroll = () => {
       if (bgRef.current) {
         const offset = window.scrollY * 0.4
-        bgRef.current.style.transform = `translateY(${offset}px)`
+        bgRef.current.style.transform = `translateY(${offset}px) scale(1.1)`
       }
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -24,11 +24,12 @@ export default function HeroSection({ content }: { content: HeroContent }) {
 
       {/* Parallax-Hintergrundbild */}
       {content.backgroundImage && (
-        <div ref={bgRef} className="absolute inset-0 scale-110"
+        <div ref={bgRef} className="absolute inset-0"
           style={{
             backgroundImage: `url(${content.backgroundImage})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+            transform: 'scale(1.1)',
             willChange: 'transform',
           }}
         />

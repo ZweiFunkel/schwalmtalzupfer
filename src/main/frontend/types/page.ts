@@ -1,4 +1,4 @@
-export type SectionType = 'HERO' | 'EVENT_CARD' | 'PERSON_GRID' | 'TEXT_BLOCK' | 'NEXT_CONCERT' | 'BAND_GRID' | 'CHOIR_LIST' | 'IMAGE_CAPTION' | 'TERMINE_LIST' | 'ACTIVITY_GRID' | 'SPONSOR_GRID'
+export type SectionType = 'HERO' | 'EVENT_CARD' | 'PERSON_GRID' | 'TEXT_BLOCK' | 'NEXT_CONCERT' | 'BAND_GRID' | 'CHOIR_LIST' | 'IMAGE_CAPTION' | 'TERMINE_LIST' | 'ACTIVITY_GRID' | 'SPONSOR_GRID' | 'TERMINE_KONZERTE' | 'INTERN_CHANGELOG'
 
 // ---------- HERO ----------
 export interface HeroContent {
@@ -49,6 +49,13 @@ export interface TextBlockContent {
 // ---------- NEXT_CONCERT ----------
 export interface NextConcertContent {
   events: EventCardItem[]
+  autoFromTermine?: boolean
+}
+
+// ---------- TERMINE_KONZERTE ----------
+export interface TermineKonzerteContent {
+  heading?: string
+  maxItems?: number
 }
 
 // ---------- BAND_GRID ----------
@@ -78,17 +85,25 @@ export interface ImageCaptionContent {
 // ---------- TERMINE_LIST ----------
 export type TerminKategorie = 'konzert' | 'jugend' | 'ausflug' | 'sonstige'
 export interface TerminParking {
-  name?: string         // z.B. "Parkplatz Marktplatz"
-  mapUrl: string        // Google-Maps- oder Geolocation-Link
+  name?: string
+  mapUrl: string
+}
+export interface TerminTickets {
+  link?: string           // Ticket-Link
+  priceAdults?: string    // z.B. "12 €"
+  priceChildren?: string  // z.B. "5 €" oder "frei bis 12 J."
+  info?: string           // z.B. "Kasse ab 18 Uhr, Einlass ab 19 Uhr"
 }
 export interface Termin {
   title: string
-  date: string          // z.B. "28.06.2026" oder "10.07. - 12.07.2026"
-  time?: string         // z.B. "16:00 Uhr"
+  date: string
+  time?: string
   location?: string
-  mapUrl?: string       // Google-Maps-Link für den Veranstaltungsort
-  parking?: TerminParking[]  // ein oder mehrere Parkmöglichkeiten
-  note?: string
+  mapUrl?: string
+  parking?: TerminParking[]
+  note?: string            // kurze 1-Zeilen-Notiz
+  details?: string         // mehrzeilige Zusatzinfos (Markdown-ähnlich)
+  tickets?: TerminTickets
   kategorie: TerminKategorie
 }
 export interface TermineListContent {
@@ -137,6 +152,19 @@ export interface SponsorGridContent {
   sponsors: Sponsor[]
 }
 
+// ---------- INTERN_CHANGELOG ----------
+export type InternChangelogEntryType = 'info' | 'new' | 'update' | 'fix'
+export interface InternChangelogEntry {
+  date: string
+  title: string
+  content: string
+  type?: InternChangelogEntryType
+}
+export interface InternChangelogContent {
+  heading?: string
+  entries?: InternChangelogEntry[]
+}
+
 // ---------- Generic Section ----------
 export type SectionContent =
   | HeroContent
@@ -150,6 +178,8 @@ export type SectionContent =
   | TermineListContent
   | ActivityGridContent
   | SponsorGridContent
+  | TermineKonzerteContent
+  | InternChangelogContent
 
 export interface PageSection {
   id: string
@@ -162,5 +192,6 @@ export interface PageData {
   id: string
   slug: string
   title: string
+  published: boolean
   sections: PageSection[]
 }

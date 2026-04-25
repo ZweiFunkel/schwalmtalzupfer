@@ -1,0 +1,264 @@
+'use client'
+import { getApiBase } from '@/lib/api'
+import React, { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
+import Lightbox from '@/components/Lightbox'
+
+const API_BASE = getApiBase()
+
+// ─── Label-Mapping ───────────────────────────────────────────────────────────
+const LABELS: Record<string, string> = {
+  galerie:                    'Galerie',
+  ausfluege:                  'Ausflüge',
+  sonstiges:                  'Sonstiges',
+  sommerkonzerte:             'Sommerkonzerte',
+  winterkonzerte:             'Winterkonzerte',
+  allgaeu:                    'Allgäu',
+  frankreich:                 'Frankreich',
+  kaerkestour:                'Kärkestour',
+  ponyhof:                    'Ponyhof',
+  'cd-aufnahme':              'CD Aufnahme',
+  'weihnachtsmarkt-waldniel': 'Weihnachtsmarkt Waldniel',
+}
+const label = (s: string) =>
+  LABELS[s.toLowerCase()] ?? s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' ')
+
+// ─── Smart Title ─────────────────────────────────────────────────────────────
+/**
+ * Leitet einen menschenlesbaren Titel aus dem Pfad ab.
+ * Beispiele (Teile nach "galerie"):
+ *   ['sommerkonzerte']          → "Sommerkonzerte"
+ *   ['sommerkonzerte', '2012']  → "Sommerkonzerte 2012"
+ *   ['ausfluege', 'frankreich'] → "Frankreich"
+ *   ['ausfluege', 'frankreich', '2022'] → "Frankreich 2022"
+ */
+function buildTitle(parts: string[]): string {
+  const relevant = parts.slice(1) // 'galerie' überspringen
+  if (relevant.length === 0) return 'Galerie'
+  const last = relevant[relevant.length - 1]
+  const isYear = /^\d{4}$/.test(last)
+  if (isYear && relevant.length >= 2) {
+    return `${label(relevant[relevant.length - 2])} ${last}`
+  }
+  return label(last)
+}
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface BrowseFolder { name: string; prefix: string; coverUrl: string; imageCount: number; hasSubFolders: boolean }
+interface BrowseImage  { key: string; url: string; name: string }
+interface BrowseResult { prefix: string; folders: BrowseFolder[]; images: BrowseImage[] }
+
+// ─── Breadcrumb ──────────────────────────────────────────────────────────────
+function Breadcrumb({ prefix }: { prefix: string }) {
+  // prefix = 'galerie/sommerkonzerte/2023/' → parts = ['galerie','sommerkonzerte','2023']
+  const parts = prefix.replace(/\/$/, '').split('/').filter(Boolean)
+  return (
+    <nav className="mb-6 flex flex-wrap items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+      {parts.map((part, i) => {
+        const isLast = i === parts.length - 1
+        // '/galerie', '/galerie/sommerkonzerte', …
+        const href = '/' + parts.slice(0, i + 1).join('/')
+        return (
+          <React.Fragment key={i}>
+            {i > 0 && <span className="opacity-40">/</span>}
+            {isLast ? (
+              <span className="font-semibold text-gray-900 dark:text-white">{label(part)}</span>
+            ) : (
+              <Link href={href} className="hover:text-green-600 dark:hover:text-green-400 transition">
+                {label(part)}
+              </Link>
+            )}
+          </React.Fragment>
+        )
+      })}
+    </nav>
+  )
+}
+
+// ─── Skeleton ────────────────────────────────────────────────────────────────
+function CardSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      {[...Array(count)].map((_, i) => (
+        <div key={i} className="aspect-[3/2] animate-pulse rounded-2xl bg-gray-200 dark:bg-slate-800" />
+      ))}
+    </div>
+  )
+}
+
+// ─── Folder Card ─────────────────────────────────────────────────────────────
+function FolderCard({ folder }: { folder: BrowseFolder }) {
+  // 'galerie/sommerkonzerte/' → '/galerie/sommerkonzerte'
+  const href = '/' + folder.prefix.replace(/\/$/, '')
+  return (
+    <Link
+      href={href}
+      className="group relative overflow-hidden rounded-2xl bg-gray-100 dark:bg-slate-800 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+    >
+      <div className="aspect-[4/3] overflow-hidden">
+        {folder.coverUrl
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={folder.coverUrl} alt="" loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          : <div className="flex h-full w-full items-center justify-center text-5xl opacity-20">🖼️</div>
+        }
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 p-3">
+        <p className="text-base font-bold text-white leading-tight">{label(folder.name)}</p>
+        <p className="mt-0.5 text-xs text-white/60">
+          {folder.imageCount > 0
+            ? `${folder.imageCount} Foto${folder.imageCount !== 1 ? 's' : ''}`
+            : folder.hasSubFolders ? 'Unteralben' : 'Leer'}
+        </p>
+      </div>
+      <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </Link>
+  )
+}
+
+// ─── Photo Grid ──────────────────────────────────────────────────────────────
+function PhotoGrid({ images }: { images: BrowseImage[] }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  // alt='' → Lightbox zeigt keinen hässlichen Dateinamen als Untertitel
+  const lbImages = images.map(img => ({ src: img.url, alt: '' }))
+  const close = useCallback(() => setLightboxIndex(null), [])
+  const prev  = useCallback(() => setLightboxIndex(i => (i !== null && i > 0 ? i - 1 : i)), [])
+  const next  = useCallback(() => setLightboxIndex(i => (i !== null && i < images.length - 1 ? i + 1 : i)), [images.length])
+
+  return (
+    <>
+      <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
+        {images.length} Foto{images.length !== 1 ? 's' : ''} &nbsp;·&nbsp; Klicken zum Öffnen &nbsp;·&nbsp; ← → zum Navigieren
+      </p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {images.map((img, i) => (
+          <button
+            key={img.key}
+            onClick={() => setLightboxIndex(i)}
+            className="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500"
+            aria-label={`Foto ${i + 1} öffnen`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={img.url} alt="" loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+              <svg className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition drop-shadow-lg"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+              </svg>
+            </div>
+          </button>
+        ))}
+      </div>
+      {lightboxIndex !== null && (
+        <Lightbox
+          src={lbImages[lightboxIndex].src}
+          alt={lbImages[lightboxIndex].alt}
+          onClose={close}
+          images={lbImages}
+          index={lightboxIndex}
+          onPrev={prev}
+          onNext={next}
+        />
+      )}
+    </>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+interface Props {
+  /** R2-Prefix des aktuellen Ordners, z.B. 'galerie/sommerkonzerte/2023/' */
+  prefix?: string
+}
+
+export default function GalerieModernView({ prefix = 'galerie/' }: Props) {
+  const [data, setData]   = useState<BrowseResult | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const currentPrefix = prefix.endsWith('/') ? prefix : prefix + '/'
+  const isRoot = currentPrefix === 'galerie/'
+  const parts  = currentPrefix.replace(/\/$/, '').split('/').filter(Boolean)
+  const currentName = parts[parts.length - 1] ?? 'galerie'
+
+  useEffect(() => {
+    setLoading(true)
+    setData(null)
+    fetch(`${API_BASE}/api/galerie/browse?prefix=${encodeURIComponent(currentPrefix)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        setData(d)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [currentPrefix])
+
+  const hasContent = data && (data.folders.length > 0 || data.images.length > 0)
+
+  return (
+    <div className="mx-auto max-w-7xl px-6 py-12 sm:px-8">
+
+      {/* Breadcrumb (nur wenn tiefer als Startebene) */}
+      {!isRoot && <Breadcrumb prefix={currentPrefix} />}
+
+      {/* Überschrift */}
+      {isRoot ? (
+        <div className="mb-8">
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">Galerie</h1>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">
+            Fotos aus Konzerten, Ausflügen und Vereinsleben
+          </p>
+        </div>
+      ) : (
+        <h2 className="mb-8 text-2xl font-extrabold text-gray-900 dark:text-white sm:text-3xl">
+          {buildTitle(parts)}
+        </h2>
+      )}
+
+      {/* Ladeanimation */}
+      {loading && <CardSkeleton count={isRoot ? 4 : 6} />}
+
+      {/* Inhalt */}
+      {!loading && data && (
+        <>
+          {data.folders.length > 0 && (
+            <div className={`grid gap-6 ${
+              isRoot
+                ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
+                : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-3'
+            }`}>
+              {data.folders.map(folder => (
+                <FolderCard key={folder.prefix} folder={folder} />
+              ))}
+            </div>
+          )}
+
+          {data.images.length > 0 && (
+            <div className={data.folders.length > 0 ? 'mt-10' : ''}>
+              <PhotoGrid images={data.images} />
+            </div>
+          )}
+
+          {!hasContent && (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="mb-4 text-6xl opacity-20">📂</div>
+              <p className="text-gray-500 dark:text-gray-400">Noch keine Inhalte in diesem Bereich.</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* API-Fehler */}
+      {!loading && !data && (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="mb-4 text-6xl opacity-20">⚠️</div>
+          <p className="text-gray-500 dark:text-gray-400">Galerie konnte nicht geladen werden.</p>
+        </div>
+      )}
+    </div>
+  )
+}
