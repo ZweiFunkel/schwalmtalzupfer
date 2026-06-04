@@ -191,19 +191,33 @@ export default function GalerieModernView({ prefix: prefixProp }: Props) {
 
   const [data, setData]   = useState<BrowseResult | null>(null)
   const [loading, setLoading] = useState(true)
+  const [apiError, setApiError] = useState(false)
   const isRoot = currentPrefix === 'galerie/'
   const parts  = currentPrefix.replace(/\/$/, '').split('/').filter(Boolean)
+
+  // Seitentitel
+  useEffect(() => {
+    const title = currentPrefix === 'galerie/' ? 'Galerie' : buildTitle(
+      currentPrefix.replace(/\/$/, '').split('/').filter(Boolean)
+    )
+    document.title = `${title} – Schwalmtalzupfer`
+  }, [currentPrefix])
 
   useEffect(() => {
     setLoading(true)
     setData(null)
+    setApiError(false)
     fetch(`${API_BASE}/api/galerie/browse?prefix=${encodeURIComponent(currentPrefix)}`)
-      .then(r => r.ok ? r.json() : null)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
       .then(d => {
         setData(d)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch((err) => {
+        console.error('Galerie API error:', err)
+        setApiError(true)
+        setLoading(false)
+      })
   }, [currentPrefix])
 
   const hasContent = data && (data.folders.length > 0 || data.images.length > 0)
@@ -262,10 +276,19 @@ export default function GalerieModernView({ prefix: prefixProp }: Props) {
       )}
 
       {/* API-Fehler */}
-      {!loading && !data && (
+      {!loading && apiError && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="mb-4 text-6xl opacity-20">⚠️</div>
-          <p className="text-gray-500 dark:text-gray-400">Galerie konnte nicht geladen werden.</p>
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Galerie konnte nicht geladen werden.</p>
+          <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
+            Möglicherweise ist die R2-Speicher-Verbindung nicht konfiguriert.
+          </p>
+          <button
+            onClick={() => { setApiError(false); setLoading(true); fetch(`${API_BASE}/api/galerie/browse?prefix=${encodeURIComponent(currentPrefix)}`).then(r => r.ok ? r.json() : Promise.reject()).then(d => { setData(d); setLoading(false) }).catch(() => { setApiError(true); setLoading(false) }) }}
+            className="mt-4 rounded-lg border border-gray-300 dark:border-white/20 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:border-green-500/50 hover:text-green-600 dark:hover:text-green-400 transition"
+          >
+            Erneut versuchen
+          </button>
         </div>
       )}
     </div>

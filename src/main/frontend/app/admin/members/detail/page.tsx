@@ -57,6 +57,7 @@ function MemberDetailContent() {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
 
+  useEffect(() => { document.title = 'Mitglied – Schwalmtalzupfer' }, [])
   useEffect(() => {
     if (!loading && (!user || (user.role !== 'ROLE_ADMIN' && user.role !== 'ROLE_BOARD'))) {
       router.push('/')

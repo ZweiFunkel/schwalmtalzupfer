@@ -721,6 +721,8 @@ function VideosPageInner() {
   const [selection, setSelection] = useState<Selection | null>(null)
   const [navOpen, setNavOpen] = useState(false)
 
+  useEffect(() => { document.title = 'Videos – Schwalmtalzupfer' }, [])
+
   useEffect(() => {
     if (!loading && !user) router.push('/login')
   }, [user, loading, router])

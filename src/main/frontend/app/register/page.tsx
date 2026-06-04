@@ -1,7 +1,7 @@
 'use client'
 import { getApiBase } from '@/lib/api'
 
-import React, { useState, Suspense } from 'react'
+import React, { useState, Suspense, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 
 const API_BASE = getApiBase()
@@ -98,6 +98,7 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
+  useEffect(() => { document.title = 'Registrierung – Schwalmtalzupfer' }, [])
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-8 shadow-2xl">

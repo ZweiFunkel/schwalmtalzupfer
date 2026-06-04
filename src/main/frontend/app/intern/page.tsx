@@ -15,6 +15,8 @@ export default function InternPage() {
   const router = useRouter()
   const [cmsSections, setCmsSections] = useState<PageSection[]>([])
 
+  useEffect(() => { document.title = 'Intern – Schwalmtalzupfer' }, [])
+
   useEffect(() => {
     if (!loading && !user) router.push('/login')
   }, [user, loading, router])

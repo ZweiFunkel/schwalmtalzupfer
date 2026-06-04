@@ -7,10 +7,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/intern/videos")
@@ -22,6 +24,10 @@ public class VideoController {
     @Value("${youtube.api.key:}")
     private String youtubeApiKey;
 
+    // Cache: playlistId → (timestamp, items); TTL 1 Stunde
+    private final ConcurrentHashMap<String, Object[]> playlistCache = new ConcurrentHashMap<>();
+    private static final long CACHE_TTL_MS = 60 * 60 * 1000L;
+
     /** Alle Videos abrufen – für alle angemeldeten Nutzer */
     @GetMapping
     @PreAuthorize("hasAnyRole('GUEST', 'MEMBER', 'BOARD', 'ADMIN')")
@@ -29,16 +35,29 @@ public class VideoController {
         return videoRepository.findAllByOrderByPositionAscTitleAsc();
     }
     
-    /** Playlist-Videos von YouTube abrufen */
+    /** Playlist-Videos von YouTube abrufen (mit 1h Cache) */
     @GetMapping("/playlist/{playlistId}")
     @PreAuthorize("hasAnyRole('GUEST', 'MEMBER', 'BOARD', 'ADMIN')")
     public ResponseEntity<List<PlaylistItem>> getPlaylistItems(@PathVariable String playlistId) {
-        System.out.println("=== Playlist Request ===");
+        // Cache prüfen
+        Object[] cached = playlistCache.get(playlistId);
+        if (cached != null) {
+            long cachedAt = (long) cached[0];
+            if (Instant.now().toEpochMilli() - cachedAt < CACHE_TTL_MS) {
+                @SuppressWarnings("unchecked")
+                List<PlaylistItem> cachedItems = (List<PlaylistItem>) cached[1];
+                System.out.println("Cache hit for playlist: " + playlistId + " (" + cachedItems.size() + " items)");
+                return ResponseEntity.ok(cachedItems);
+            }
+            playlistCache.remove(playlistId);
+        }
+
+        System.out.println("=== Playlist Request (cache miss) ===");
         System.out.println("Playlist ID: " + playlistId);
-        System.out.println("API Key: '" + youtubeApiKey + "' (length: " + (youtubeApiKey == null ? "null" : youtubeApiKey.length()) + ")");
-        
+        System.out.println("API Key length: " + (youtubeApiKey == null ? "null" : youtubeApiKey.length()));
+
         if (youtubeApiKey == null || youtubeApiKey.isEmpty()) {
-            System.out.println("API Key is null or empty!");
+            System.out.println("API Key is null or empty – returning empty list");
             return ResponseEntity.ok(new ArrayList<>());
         }
         
@@ -104,6 +123,8 @@ public class VideoController {
             }
             
             System.out.println("Returning " + items.size() + " items");
+            // Ergebnis cachen (auch leere Liste, um wiederholte API-Calls bei privaten Playlists zu vermeiden)
+            playlistCache.put(playlistId, new Object[]{Instant.now().toEpochMilli(), items});
             return ResponseEntity.ok(items);
         } catch (Exception e) {
             System.err.println("ERROR fetching playlist: " + e.getMessage());

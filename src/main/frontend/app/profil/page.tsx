@@ -15,6 +15,8 @@ export default function ProfilPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  useEffect(() => { document.title = 'Profil – Schwalmtalzupfer' }, [])
+
   useEffect(() => {
     if (!loading && !user) router.push('/login')
     // GUEST role users (like zupf/zupf) cannot access their profile - redirect to intern

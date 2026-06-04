@@ -30,59 +30,68 @@ public class GalerieController {
     @GetMapping("/browse")
     public Map<String, Object> browse(@RequestParam(name = "prefix", defaultValue = "galerie/") String prefixParam) {
         final String prefix = prefixParam.endsWith("/") ? prefixParam : prefixParam + "/";
+        try {
+            // Direkte Kinder (mit Delimiter)
+            ListObjectsV2Response direct = s3Client.listObjectsV2(
+                    ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).delimiter("/").build());
 
-        // Direkte Kinder (mit Delimiter)
-        ListObjectsV2Response direct = s3Client.listObjectsV2(
-                ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).delimiter("/").build());
+            List<Map<String, Object>> folders = new ArrayList<>();
+            for (CommonPrefix cp : direct.commonPrefixes()) {
+                String folderPrefix = cp.prefix();
+                String folderName = folderPrefix.substring(prefix.length(), folderPrefix.length() - 1);
 
-        List<Map<String, Object>> folders = new ArrayList<>();
-        for (CommonPrefix cp : direct.commonPrefixes()) {
-            String folderPrefix = cp.prefix();
-            String folderName = folderPrefix.substring(prefix.length(), folderPrefix.length() - 1);
+                // Alle Bilder im Unterordner zählen (rekursiv, paginiert) + Cover ermitteln
+                List<String> imageKeys = listAllImageKeys(folderPrefix);
 
-            // Alle Bilder im Unterordner zählen (rekursiv, paginiert) + Cover ermitteln
-            List<String> imageKeys = listAllImageKeys(folderPrefix);
+                // Hat dieser Ordner selbst Unterordner?
+                boolean hasSubFolders = !s3Client.listObjectsV2(
+                        ListObjectsV2Request.builder().bucket(bucket)
+                                .prefix(folderPrefix).delimiter("/").maxKeys(1).build()
+                ).commonPrefixes().isEmpty();
 
-            // Hat dieser Ordner selbst Unterordner?
-            boolean hasSubFolders = !s3Client.listObjectsV2(
-                    ListObjectsV2Request.builder().bucket(bucket)
-                            .prefix(folderPrefix).delimiter("/").maxKeys(1).build()
-            ).commonPrefixes().isEmpty();
+                Map<String, Object> folder = new HashMap<>();
+                folder.put("name", folderName);
+                folder.put("prefix", folderPrefix);
+                folder.put("coverUrl", imageKeys.isEmpty() ? "" : buildPublicUrl(imageKeys.get(0)));
+                folder.put("imageCount", imageKeys.size());
+                folder.put("hasSubFolders", hasSubFolders);
+                folders.add(folder);
+            }
 
-            Map<String, Object> folder = new HashMap<>();
-            folder.put("name", folderName);
-            folder.put("prefix", folderPrefix);
-            folder.put("coverUrl", imageKeys.isEmpty() ? "" : buildPublicUrl(imageKeys.get(0)));
-            folder.put("imageCount", imageKeys.size());
-            folder.put("hasSubFolders", hasSubFolders);
-            folders.add(folder);
+            // Ordner nach Namen absteigend sortieren (neueste zuerst, z.B. 2024 vor 2022)
+            folders.sort((a, b) -> {
+                String nameA = (String) a.get("name");
+                String nameB = (String) b.get("name");
+                return nameB.compareTo(nameA);
+            });
+
+            // Direkte Bilddateien auf diesem Level - absteigend nach Key
+            List<Map<String, Object>> images = direct.contents().stream()
+                    .filter(obj -> !obj.key().equals(prefix) && isImage(obj.key()))
+                    .sorted(Comparator.comparing(S3Object::key).reversed())
+                    .map(obj -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("key", obj.key());
+                        m.put("url", buildPublicUrl(obj.key()));
+                        m.put("name", getFileName(obj.key()));
+                        return m;
+                    })
+                    .toList();
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("prefix", prefix);
+            result.put("folders", folders);
+            result.put("images", images);
+            return result;
+        } catch (Exception e) {
+            System.err.println("ERROR in galerie browse for prefix '" + prefix + "': " + e.getMessage());
+            // Leeres Ergebnis zurückgeben statt 500 – Frontend zeigt "Keine Inhalte" an
+            Map<String, Object> empty = new HashMap<>();
+            empty.put("prefix", prefix);
+            empty.put("folders", Collections.emptyList());
+            empty.put("images", Collections.emptyList());
+            return empty;
         }
-        
-        // Ordner nach Namen absteigend sortieren (neueste zuerst, z.B. 2024 vor 2022)
-        folders.sort((a, b) -> {
-            String nameA = (String) a.get("name");
-            String nameB = (String) b.get("name");
-            return nameB.compareTo(nameA);
-        });
-
-        // Direkte Bilddateien auf diesem Level - absteigend nach Key (neueste zuerst, z.B. 2024 vor 2022)
-        List<Map<String, Object>> images = direct.contents().stream()
-                .filter(obj -> !obj.key().equals(prefix) && isImage(obj.key()))
-                .sorted(Comparator.comparing(S3Object::key).reversed())
-                .map(obj -> {
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("key", obj.key());
-                    m.put("url", buildPublicUrl(obj.key()));
-                    m.put("name", getFileName(obj.key()));
-                    return m;
-                })
-                .toList();
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("prefix", prefix);
-        result.put("folders", folders);
-        result.put("images", images);
-        return result;
     }
 
     /**

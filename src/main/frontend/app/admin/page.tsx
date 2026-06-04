@@ -2868,6 +2868,8 @@ export default function AdminPage() {
     if (typeof window !== 'undefined') localStorage.setItem('admin_tab', t)
   }
 
+  useEffect(() => { document.title = 'Admin – Schwalmtalzupfer' }, [])
+
   useEffect(() => { if (!loading && (!user || !isBoard(user))) router.push('/') }, [user, loading, router])
 
   // Redirect board users to members tab by default

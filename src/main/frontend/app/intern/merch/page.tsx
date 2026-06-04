@@ -91,6 +91,8 @@ export default function MerchPage() {
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)
 
+  useEffect(() => { document.title = 'Merch – Schwalmtalzupfer' }, [])
+
   useEffect(() => {
     if (!loading && !user) router.push('/login')
   }, [user, loading, router])
