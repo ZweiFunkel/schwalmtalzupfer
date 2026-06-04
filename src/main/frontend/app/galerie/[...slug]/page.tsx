@@ -1,10 +1,20 @@
 import GalerieModernView from '@/components/GalerieModernView'
 
-// generateStaticParams() gibt [] zurück – keine Seiten werden vorgebaut.
-// GalerieModernView liest den Pfad selbst via usePathname() (client-side).
-// Spring Boot liefert galerie/index.html als Fallback für alle /galerie/** Pfade.
+// Bekannte Top-Level-Galerie-Ordner vorbauen.
+// Unbekannte Unterpfade werden durch Spring Boot's Parent-Fallback (WebConfig)
+// auf den nächsten vorhandenen index.html weitergeleitet; GalerieModernView
+// liest dann usePathname() und zeigt den richtigen Ordner.
 export function generateStaticParams() {
-  return []
+  return [
+    { slug: ['ausfluege'] },
+    { slug: ['sommerkonzerte'] },
+    { slug: ['winterkonzerte'] },
+    { slug: ['sonstiges'] },
+    { slug: ['ausfluege', 'allgaeu'] },
+    { slug: ['ausfluege', 'frankreich'] },
+    { slug: ['ausfluege', 'kaerkestour'] },
+    { slug: ['ausfluege', 'ponyhof'] },
+  ]
 }
 
 export default function GalerieSlugPage() {
