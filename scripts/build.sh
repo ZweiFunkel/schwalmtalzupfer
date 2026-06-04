@@ -166,7 +166,6 @@ if [[ -d "$NEXT_CACHE" ]]; then
 fi
 
 info "Starte ./mvnw clean package -DskipTests ..."
-info "NEXT_PUBLIC_API_URL = $NEXT_PUBLIC_API_URL"
 info "JAVA_HOME = $JAVA_HOME"
 echo ""
 
