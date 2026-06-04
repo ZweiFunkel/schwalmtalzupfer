@@ -59,8 +59,10 @@ if [[ -z "$API_URL" ]]; then
   done
 fi
 
-ok "NEXT_PUBLIC_API_URL = $API_URL"
-export NEXT_PUBLIC_API_URL="$API_URL"
+# NEXT_PUBLIC_API_URL wird NICHT mehr gesetzt – alle Client-Fetches nutzen
+# relative URLs (leerer String), damit CORS-Probleme vermieden werden.
+# Die --url Angabe wird nur für die Abschlussausgabe verwendet.
+ok "App-URL: $API_URL (wird nicht in Bundle eingebettet)"
 
 # ── Java 21 sicherstellen ─────────────────────────────────────────────────────
 hr
