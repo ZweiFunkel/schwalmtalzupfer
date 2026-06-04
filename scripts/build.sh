@@ -66,48 +66,34 @@ export NEXT_PUBLIC_API_URL="$API_URL"
 hr
 echo -e "${BOLD}  Schritt 1 – Java prüfen${NC}"
 hr
-JAVA_MIN=21
-JAVA_OK=false
-if command -v java &>/dev/null; then
-  JAVA_VER=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
-  [[ "$JAVA_VER" == "1" ]] && JAVA_VER=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f2)
-  if [[ "$JAVA_VER" -ge "$JAVA_MIN" ]]; then
-    ok "Java bereits installiert: $(java -version 2>&1 | head -1)"
-    JAVA_OK=true
-  else
-    warn "Java $JAVA_VER zu alt – brauche ≥$JAVA_MIN."
-  fi
-fi
-if [[ "$JAVA_OK" == "false" ]]; then
-  info "Installiere Java 21 (OpenJDK)..."
+
+find_java21() {
+  for c in /usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/jvm/java-21-openjdk \
+            /usr/lib/jvm/temurin-21 /usr/lib/jvm/java-21; do
+    [[ -x "$c/bin/javac" ]] && echo "$c" && return 0
+  done
+  # Generischer Fallback
+  find /usr/lib/jvm -maxdepth 2 -name 'javac' 2>/dev/null | while read jc; do
+    d=$(dirname "$(dirname "$jc")")
+    ver=$("$jc" -version 2>&1 | awk '{print $2}' | cut -d'.' -f1)
+    [[ "$ver" -ge 21 ]] 2>/dev/null && echo "$d" && break
+  done
+}
+
+JAVA21_HOME=$(find_java21)
+if [[ -z "$JAVA21_HOME" ]]; then
+  info "Kein Java-21-JDK (javac) gefunden – installiere openjdk-21-jdk..."
   apt-get update -qq
   apt-get install -y openjdk-21-jdk -qq
-  ok "Java 21 installiert."
-fi
-
-# JAVA_HOME explizit auf den Java-21-JDK-Pfad setzen.
-# Nicht von 'which java' ableiten – der kann noch auf ein altes JDK zeigen.
-# Suche das erste JDK-Verzeichnis >= 21.
-JAVA21_HOME=""
-for candidate in /usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/jvm/java-21-openjdk \
-                 /usr/lib/jvm/temurin-21 /usr/lib/jvm/java-21; do
-  if [[ -x "$candidate/bin/javac" ]]; then
-    JAVA21_HOME="$candidate"
-    break
-  fi
-done
-if [[ -z "$JAVA21_HOME" ]]; then
-  # Fallback: erstes JDK-Verzeichnis mit javac >= 21
-  JAVA21_HOME=$(find /usr/lib/jvm -maxdepth 1 -name 'java-2[1-9]*' -o -name 'temurin-2[1-9]*' 2>/dev/null \
-    | sort -V | tail -1)
+  JAVA21_HOME=$(find_java21)
 fi
 if [[ -z "$JAVA21_HOME" || ! -x "$JAVA21_HOME/bin/javac" ]]; then
-  err "Kein Java-21-JDK mit javac gefunden!"
+  err "Java-21-JDK konnte nicht installiert werden! Abbruch."
   exit 1
 fi
 export JAVA_HOME="$JAVA21_HOME"
 export PATH="$JAVA_HOME/bin:$PATH"
-ok "JAVA_HOME = $JAVA_HOME  (javac: $(javac -version 2>&1))"
+ok "JAVA_HOME = $JAVA_HOME  |  $(java -version 2>&1 | head -1)  |  $(javac -version 2>&1)"
 
 # ── Maven installieren ────────────────────────────────────────────────────────
 hr
@@ -247,5 +233,3 @@ fi
 hr
 ok "Fertig! App erreichbar unter: $API_URL"
 echo ""
-
-
