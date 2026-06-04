@@ -1,7 +1,7 @@
 'use client'
 import { getApiBase } from '@/lib/api'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 const API_BASE = getApiBase()
 
@@ -13,6 +13,8 @@ export default function KontaktPage() {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => { document.title = 'Kontakt – Schwalmtalzupfer' }, [])
 
   const mailtoText = `An: info@schwalmtalzupfer.de\nBetreff: ${betreff}\nVon: ${email}\n\n${nachricht}`
 

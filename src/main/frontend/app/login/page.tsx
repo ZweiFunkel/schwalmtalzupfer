@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -8,6 +8,7 @@ import Link from 'next/link'
 export default function LoginPage() {
   const { login } = useAuth()
   const router = useRouter()
+  useEffect(() => { document.title = 'Login – Schwalmtalzupfer' }, [])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

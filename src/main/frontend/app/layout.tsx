@@ -11,8 +11,16 @@ import { ThemeProvider } from '@/lib/ThemeProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Schwalmtalzupfer',
+  title: {
+    default: 'Schwalmtalzupfer',
+    template: '%s – Schwalmtalzupfer',
+  },
   description: 'Offizielle Website des Schwalmtalzupfer e.V. – Jugendförderung & Musikschule',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

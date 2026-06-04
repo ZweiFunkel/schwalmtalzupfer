@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Impressum – Schwalmtalzupfer',
+  title: 'Impressum',
   description: 'Impressum des Schwalmtalzupfer e.V.',
 }
 

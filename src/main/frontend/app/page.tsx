@@ -11,6 +11,7 @@ export default function HomePage() {
   const [page, setPage] = useState<PageData | null | undefined>(undefined)
 
   useEffect(() => {
+    document.title = 'Schwalmtalzupfer'
     fetch(`${API_BASE}/api/pages/home`)
       .then(r => (r.ok ? r.json() : null))
       .then(setPage)

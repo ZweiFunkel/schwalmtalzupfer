@@ -7,6 +7,17 @@ import { PageData } from '@/types/page'
 
 const API_BASE = getApiBase()
 
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  try {
+    const res = await fetch(`${API_BASE}/api/pages/${params.slug}`)
+    if (!res.ok) return {}
+    const page: PageData = await res.json()
+    return { title: page.title }
+  } catch {
+    return {}
+  }
+}
+
 export async function generateStaticParams() {
   try {
     const res = await fetch(`${API_BASE}/api/pages`)
