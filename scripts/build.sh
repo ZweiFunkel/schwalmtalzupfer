@@ -79,19 +79,35 @@ if command -v java &>/dev/null; then
   fi
 fi
 if [[ "$JAVA_OK" == "false" ]]; then
-  info "Installiere Java 21 (Temurin)..."
+  info "Installiere Java 21 (OpenJDK)..."
   apt-get update -qq
-  apt-get install -y wget apt-transport-https gnupg -qq
-  wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public \
-    | gpg --dearmor | tee /usr/share/keyrings/adoptium.gpg > /dev/null
-  echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] \
-https://packages.adoptium.net/artifactory/deb $(. /etc/os-release; echo "$VERSION_CODENAME") main" \
-    > /etc/apt/sources.list.d/adoptium.list
-  apt-get update -qq
-  apt-get install -y temurin-21-jdk -qq
-  ok "Java 21 installiert: $(java -version 2>&1 | head -1)"
+  apt-get install -y openjdk-21-jdk -qq
+  ok "Java 21 installiert."
 fi
-export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+
+# JAVA_HOME explizit auf den Java-21-JDK-Pfad setzen.
+# Nicht von 'which java' ableiten – der kann noch auf ein altes JDK zeigen.
+# Suche das erste JDK-Verzeichnis >= 21.
+JAVA21_HOME=""
+for candidate in /usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/jvm/java-21-openjdk \
+                 /usr/lib/jvm/temurin-21 /usr/lib/jvm/java-21; do
+  if [[ -x "$candidate/bin/javac" ]]; then
+    JAVA21_HOME="$candidate"
+    break
+  fi
+done
+if [[ -z "$JAVA21_HOME" ]]; then
+  # Fallback: erstes JDK-Verzeichnis mit javac >= 21
+  JAVA21_HOME=$(find /usr/lib/jvm -maxdepth 1 -name 'java-2[1-9]*' -o -name 'temurin-2[1-9]*' 2>/dev/null \
+    | sort -V | tail -1)
+fi
+if [[ -z "$JAVA21_HOME" || ! -x "$JAVA21_HOME/bin/javac" ]]; then
+  err "Kein Java-21-JDK mit javac gefunden!"
+  exit 1
+fi
+export JAVA_HOME="$JAVA21_HOME"
+export PATH="$JAVA_HOME/bin:$PATH"
+ok "JAVA_HOME = $JAVA_HOME  (javac: $(javac -version 2>&1))"
 
 # ── Maven installieren ────────────────────────────────────────────────────────
 hr
