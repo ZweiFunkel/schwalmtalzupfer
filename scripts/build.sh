@@ -120,6 +120,16 @@ fi
 hr
 echo -e "${BOLD}  Schritt 4 – Maven Build${NC}"
 hr
+
+# Next.js Build-Cache leeren (wird von mvn clean NICHT entfernt, kann veraltete
+# Kompilierungs-Infos enthalten die zu falschen Build-Fehlern führen)
+NEXT_CACHE="$APP_DIR/src/main/frontend/.next"
+if [[ -d "$NEXT_CACHE" ]]; then
+  info "Leere Next.js Build-Cache (.next/) ..."
+  rm -rf "$NEXT_CACHE"
+  ok "Cache geleert."
+fi
+
 info "Starte mvn clean package -DskipTests ..."
 info "NEXT_PUBLIC_API_URL = $NEXT_PUBLIC_API_URL"
 echo ""
@@ -189,4 +199,5 @@ fi
 hr
 ok "Fertig! App erreichbar unter: $API_URL"
 echo ""
+
 
