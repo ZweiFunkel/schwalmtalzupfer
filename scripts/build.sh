@@ -161,11 +161,12 @@ if [[ -d "$NEXT_CACHE" ]]; then
   ok "Cache geleert."
 fi
 
-info "Starte mvn clean package -DskipTests ..."
+info "Starte ./mvnw clean package -DskipTests ..."
 info "NEXT_PUBLIC_API_URL = $NEXT_PUBLIC_API_URL"
+info "JAVA_HOME = $JAVA_HOME"
 echo ""
 
-mvn clean package -DskipTests
+"$APP_DIR/mvnw" clean package -DskipTests
 
 echo ""
 ok "Build erfolgreich!"
