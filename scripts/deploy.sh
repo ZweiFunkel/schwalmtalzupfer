@@ -50,15 +50,7 @@ if [[ -z "$SERVER" ]]; then
   done
 fi
 
-# ── API-URL ermitteln ─────────────────────────────────────────────────────────
-if [[ -z "${NEXT_PUBLIC_API_URL:-}" ]]; then
-  echo ""
-  echo -e "${YELLOW}  ?  Öffentliche App-Domain (z.B. https://intern.schwalmtalzupfer.de):${NC}"
-  read -r -p "     → " API_URL
-  export NEXT_PUBLIC_API_URL="$API_URL"
-else
-  info "NEXT_PUBLIC_API_URL = $NEXT_PUBLIC_API_URL"
-fi
+# NEXT_PUBLIC_API_URL wird NICHT gesetzt – Client nutzt relative URLs (kein CORS).
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 echo ""
@@ -68,7 +60,6 @@ if $SKIP_BUILD; then
   JAR_FILE=$(find target/ -name "*.jar" -not -name "*-sources.jar" 2>/dev/null | sort -t- -k2 | tail -1)
 else
   info "Baue JAR mit Maven..."
-  info "NEXT_PUBLIC_API_URL = $NEXT_PUBLIC_API_URL"
   echo ""
   mvn clean package -DskipTests
   echo ""

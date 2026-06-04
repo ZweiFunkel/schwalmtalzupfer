@@ -60,20 +60,46 @@ public class VideoController {
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> itemsList = (List<Map<String, Object>>) response.get("items");
                 for (Map<String, Object> item : itemsList) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> snippet = (Map<String, Object>) item.get("snippet");
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> resourceId = (Map<String, Object>) snippet.get("resourceId");
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> thumbnails = (Map<String, Object>) snippet.get("thumbnails");
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> defaultThumb = (Map<String, Object>) thumbnails.get("default");
-                    
-                    PlaylistItem playlistItem = new PlaylistItem();
-                    playlistItem.setVideoId((String) resourceId.get("videoId"));
-                    playlistItem.setTitle((String) snippet.get("title"));
-                    playlistItem.setThumbnail((String) defaultThumb.get("url"));
-                    items.add(playlistItem);
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> snippet = (Map<String, Object>) item.get("snippet");
+                        if (snippet == null) continue;
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> resourceId = (Map<String, Object>) snippet.get("resourceId");
+                        if (resourceId == null) continue;
+                        String videoId = (String) resourceId.get("videoId");
+                        if (videoId == null || videoId.isBlank()) continue;
+
+                        // Skip deleted/private videos ("Deleted video" / "Private video")
+                        String title = (String) snippet.get("title");
+                        if (title == null || title.equals("Deleted video") || title.equals("Private video")) continue;
+
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> thumbnails = (Map<String, Object>) snippet.get("thumbnails");
+                        String thumbUrl = null;
+                        if (thumbnails != null) {
+                            for (String size : new String[]{"medium", "default", "high", "standard", "maxres"}) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> t = (Map<String, Object>) thumbnails.get(size);
+                                if (t != null && t.get("url") != null) {
+                                    thumbUrl = (String) t.get("url");
+                                    break;
+                                }
+                            }
+                        }
+                        // Fallback: YouTube thumbnail URL by video ID
+                        if (thumbUrl == null) {
+                            thumbUrl = "https://img.youtube.com/vi/" + videoId + "/mqdefault.jpg";
+                        }
+
+                        PlaylistItem playlistItem = new PlaylistItem();
+                        playlistItem.setVideoId(videoId);
+                        playlistItem.setTitle(title);
+                        playlistItem.setThumbnail(thumbUrl);
+                        items.add(playlistItem);
+                    } catch (Exception itemEx) {
+                        System.err.println("Skipping playlist item due to error: " + itemEx.getMessage());
+                    }
                 }
             }
             

@@ -334,6 +334,7 @@ function VideoCard({ video }: { video: VideoEntry }) {
   const [currentVideoId, setCurrentVideoId] = useState(video.type === 'PLAYLIST' ? '' : video.youtubeId)
   const [loading, setLoading] = useState(false)
   const [showPlaylist, setShowPlaylist] = useState(true)
+  const [embedError, setEmbedError] = useState(false)
 
   const thumbnailUrl = video.thumbnailUrl
     ?? (video.type === 'VIDEO' ? `https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg` : null)
@@ -361,6 +362,9 @@ function VideoCard({ video }: { video: VideoEntry }) {
   const activeSrc = video.type === 'PLAYLIST' && !loading && playlistItems.length === 0
     ? `https://www.youtube-nocookie.com/embed/videoseries?list=${video.youtubeId}&rel=0&modestbranding=1&autoplay=1`
     : `https://www.youtube-nocookie.com/embed/${currentVideoId || video.youtubeId}?rel=0&modestbranding=1&autoplay=1`
+
+  // Reset embed error when video changes
+  useEffect(() => { setEmbedError(false) }, [currentVideoId, viewMode])
 
   // Groß / Kino → Modal
   if (viewMode === 'large' || viewMode === 'cinema') {
@@ -447,14 +451,29 @@ function VideoCard({ video }: { video: VideoEntry }) {
             <>
               {/* iframe player */}
               <div className="relative aspect-video bg-black">
-                <iframe
-                  key={currentVideoId}
-                  src={activeSrc}
-                  title={currentTitle}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="absolute inset-0 w-full h-full border-0"
-                />
+                {embedError ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-900 text-center px-4">
+                    <span className="text-3xl">⚠️</span>
+                    <p className="text-sm text-gray-300">Einbettung nicht verfügbar</p>
+                    <a href={ytUrl(video)} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
+                      </svg>
+                      Auf YouTube öffnen
+                    </a>
+                  </div>
+                ) : (
+                  <iframe
+                    key={currentVideoId}
+                    src={activeSrc}
+                    title={currentTitle}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full border-0"
+                    onError={() => setEmbedError(true)}
+                  />
+                )}
               </div>
 
               {/* Modus-Leiste */}
