@@ -210,7 +210,10 @@ function PlayerModal({
 
   const isCinema = mode === 'cinema'
   const currentTitle = playlistItems.find(i => i.videoId === currentVideoId)?.title ?? video.title
-  const src = `https://www.youtube-nocookie.com/embed/${currentVideoId}?rel=0&modestbranding=1&autoplay=1`
+  // Wenn Playlist-Items nicht geladen werden konnten (kein API-Key), Playlist-Embed-URL verwenden
+  const src = video.type === 'PLAYLIST' && !loading && playlistItems.length === 0
+    ? `https://www.youtube-nocookie.com/embed/videoseries?list=${video.youtubeId}&rel=0&modestbranding=1&autoplay=1`
+    : `https://www.youtube-nocookie.com/embed/${currentVideoId}?rel=0&modestbranding=1&autoplay=1`
 
   return (
     <div
@@ -354,7 +357,10 @@ function VideoCard({ video }: { video: VideoEntry }) {
   const currentTitle = hasPlaylist
     ? (playlistItems.find(i => i.videoId === currentVideoId)?.title ?? video.title)
     : video.title
-  const activeSrc = `https://www.youtube-nocookie.com/embed/${currentVideoId || video.youtubeId}?rel=0&modestbranding=1&autoplay=1`
+  // Fallback: Wenn Playlist-API fehlschlägt (z.B. kein API-Key), direkten Playlist-Embed nutzen
+  const activeSrc = video.type === 'PLAYLIST' && !loading && playlistItems.length === 0
+    ? `https://www.youtube-nocookie.com/embed/videoseries?list=${video.youtubeId}&rel=0&modestbranding=1&autoplay=1`
+    : `https://www.youtube-nocookie.com/embed/${currentVideoId || video.youtubeId}?rel=0&modestbranding=1&autoplay=1`
 
   // Groß / Kino → Modal
   if (viewMode === 'large' || viewMode === 'cinema') {
@@ -437,7 +443,7 @@ function VideoCard({ video }: { video: VideoEntry }) {
                 <p className="text-sm text-gray-400">Lade Playlist…</p>
               </div>
             </div>
-          ) : (currentVideoId || video.type === 'VIDEO') ? (
+          ) : (currentVideoId || video.type === 'VIDEO' || (video.type === 'PLAYLIST' && !loading)) ? (
             <>
               {/* iframe player */}
               <div className="relative aspect-video bg-black">
