@@ -11,11 +11,17 @@ import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/noten")
@@ -171,6 +177,71 @@ public class NotenController {
         response.setContentType("application/zip");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Alle_Noten.zip\"");
         r2Service.downloadKeysAsZip(keys, response.getOutputStream());
+    }
+
+    /**
+     * Lädt eine oder mehrere Noten hoch (nur BOARD / ADMIN).
+     * Dateien, deren Name bereits im Bucket existiert, werden übersprungen.
+     * Body: multipart/form-data mit Feld "files" (mehrere Dateien erlaubt) und
+     *       optionalem Feld "prefix" (Standard: der konfigurierte Noten-Prefix).
+     */
+    @PostMapping("/upload")
+    @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> upload(
+            @RequestParam("files") List<MultipartFile> files,
+            @RequestParam(defaultValue = "") String prefix
+    ) throws IOException {
+
+        // Existierende Dateinamen ermitteln
+        Set<String> existingNames = s3Client.listObjectsV2Paginator(
+                ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).build()
+        ).contents().stream()
+                .filter(obj -> !obj.key().endsWith("/"))
+                .map(obj -> obj.key().contains("/")
+                        ? obj.key().substring(obj.key().lastIndexOf('/') + 1)
+                        : obj.key())
+                .collect(Collectors.toSet());
+
+        List<String> added = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            String original = file.getOriginalFilename();
+            if (original == null || original.isBlank()) continue;
+
+            // Pfadtrennzeichen entfernen (Windows / Browser können Pfade liefern)
+            String filename = original;
+            if (filename.contains("/"))  filename = filename.substring(filename.lastIndexOf('/') + 1);
+            if (filename.contains("\\")) filename = filename.substring(filename.lastIndexOf('\\') + 1);
+
+            if (existingNames.contains(filename)) {
+                skipped.add(filename);
+                continue;
+            }
+
+            try {
+                String key = prefix.isBlank() ? filename
+                        : (prefix.endsWith("/") ? prefix + filename : prefix + "/" + filename);
+                String ct = file.getContentType() != null && !file.getContentType().isBlank()
+                        ? file.getContentType() : guessMimeType(filename);
+                r2Service.upload(bucket, key, file.getInputStream(), ct, file.getSize());
+                added.add(filename);
+                existingNames.add(filename); // Doppelungen innerhalb desselben Uploads verhindern
+            } catch (Exception e) {
+                errors.add(filename);
+            }
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "total",        files.size(),
+                "added",        added.size(),
+                "skipped",      skipped.size(),
+                "errors",       errors.size(),
+                "addedFiles",   added,
+                "skippedFiles", skipped,
+                "errorFiles",   errors
+        ));
     }
 
     public record KeysRequest(List<String> keys) {}

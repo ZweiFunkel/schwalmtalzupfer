@@ -2,7 +2,7 @@
 import { getApiBase } from '@/lib/api'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { useAuth } from '@/lib/auth'
+import { useAuth, isBoard } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/lib/ThemeProvider'
 
@@ -41,7 +41,311 @@ function isImage(name: string) {
   return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)
 }
 
-// ─── Vorschau-Modal ────────────────────────────────────────────────────────────
+// ─── Upload-Bereich (nur BOARD / ADMIN) ────────────────────────────────────────
+interface UploadStatus {
+  phase: 'idle' | 'ready' | 'uploading' | 'done'
+  files: File[]
+  toUpload: File[]      // wirklich neu
+  duplicates: string[]  // bereits vorhanden (client-seitig erkannt)
+  processed: number
+  added: number
+  skipped: number
+  errors: number
+  currentFile: string
+  addedFiles: string[]
+  skippedFiles: string[]
+  errorFiles: string[]
+}
+
+const initialUploadStatus = (): UploadStatus => ({
+  phase: 'idle', files: [], toUpload: [], duplicates: [],
+  processed: 0, added: 0, skipped: 0, errors: 0,
+  currentFile: '', addedFiles: [], skippedFiles: [], errorFiles: [],
+})
+
+function UploadSection({
+  prefix, existingNames, onDone, dk,
+}: {
+  prefix: string
+  existingNames: Set<string>
+  onDone: () => void
+  dk: boolean
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [status, setStatus] = useState<UploadStatus>(initialUploadStatus())
+
+  const panelCl  = dk ? 'border-white/10 bg-slate-800/60' : 'border-gray-200 bg-gray-50'
+  const headCl   = dk ? 'text-white' : 'text-gray-900'
+  const subCl    = dk ? 'text-gray-400' : 'text-gray-500'
+  const tableBg  = dk ? 'bg-slate-900/60' : 'bg-white'
+  const badgeNew = 'bg-green-500/20 text-green-400 border border-green-500/30'
+  const badgeDup = 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+
+  const onFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? [])
+    if (picked.length === 0) return
+
+    const toUpload: File[] = []
+    const duplicates: string[] = []
+    for (const f of picked) {
+      if (existingNames.has(f.name)) duplicates.push(f.name)
+      else toUpload.push(f)
+    }
+    setStatus({ ...initialUploadStatus(), phase: 'ready', files: picked, toUpload, duplicates })
+    // Reset input so derselbe Auswahl nochmal gewählt werden kann
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const startUpload = async () => {
+    const { toUpload, duplicates } = status
+    const total = status.files.length
+    let added = 0, errors = 0
+    const addedFiles: string[] = []
+    const errorFiles: string[] = []
+
+    setStatus(s => ({ ...s, phase: 'uploading', processed: 0, skipped: duplicates.length, skippedFiles: duplicates }))
+
+    for (let i = 0; i < toUpload.length; i++) {
+      const file = toUpload[i]
+      setStatus(s => ({ ...s, currentFile: file.name, processed: duplicates.length + i }))
+
+      try {
+        const form = new FormData()
+        form.append('files', file)
+        form.append('prefix', prefix)
+        const res = await fetch(`${API_BASE}/api/noten/upload`, {
+          method: 'POST',
+          credentials: 'include',
+          body: form,
+        })
+        if (res.ok) {
+          const data = await res.json()
+          // Backend gibt addedFiles / skippedFiles zurück
+          if ((data.addedFiles as string[]).length > 0) {
+            added++
+            addedFiles.push(file.name)
+          } else {
+            // wurde serverseitig als Duplikat gewertet
+            setStatus(s => ({
+              ...s,
+              skipped: s.skipped + 1,
+              skippedFiles: [...s.skippedFiles, file.name],
+            }))
+          }
+        } else {
+          errors++
+          errorFiles.push(file.name)
+        }
+      } catch {
+        errors++
+        errorFiles.push(file.name)
+      }
+
+      setStatus(s => ({
+        ...s,
+        processed: duplicates.length + i + 1,
+        added,
+        errors,
+        addedFiles,
+        errorFiles,
+      }))
+    }
+
+    setStatus(s => ({
+      ...s,
+      phase: 'done',
+      processed: total,
+      currentFile: '',
+      added,
+      errors,
+      addedFiles,
+      errorFiles,
+    }))
+    if (added > 0) onDone() // Dateiliste neu laden
+  }
+
+  const reset = () => setStatus(initialUploadStatus())
+
+  // ── Phase: idle ──────────────────────────────────────────────────────────────
+  if (status.phase === 'idle') {
+    return (
+      <div className={`mb-6 rounded-xl border p-4 ${panelCl}`}>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <p className={`text-sm font-semibold ${headCl}`}>📤 Noten hochladen</p>
+            <p className={`text-xs mt-0.5 ${subCl}`}>Mehrere Dateien gleichzeitig möglich · Duplikate werden automatisch übersprungen</p>
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition shadow shadow-green-500/20">
+            📂 Dateien auswählen
+          </button>
+        </div>
+        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={onFilesSelected} />
+      </div>
+    )
+  }
+
+  // ── Phase: ready (Vorschau vor Upload) ───────────────────────────────────────
+  if (status.phase === 'ready') {
+    const total = status.files.length
+    return (
+      <div className={`mb-6 rounded-xl border p-4 ${panelCl}`}>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <p className={`text-sm font-semibold ${headCl}`}>📤 {total} Datei{total !== 1 ? 'en' : ''} ausgewählt</p>
+          <div className="flex gap-2">
+            <button onClick={reset} className={`rounded-lg border px-3 py-1.5 text-xs transition ${dk ? 'border-white/10 text-gray-400 hover:text-white' : 'border-gray-300 text-gray-500 hover:text-gray-800'}`}>
+              Abbrechen
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className={`rounded-lg border px-3 py-1.5 text-xs transition ${dk ? 'border-white/10 text-gray-400 hover:text-white' : 'border-gray-300 text-gray-500 hover:text-gray-800'}`}>
+              Neu wählen
+            </button>
+            {status.toUpload.length > 0 && (
+              <button onClick={startUpload}
+                className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition">
+                ⬆ {status.toUpload.length} Datei{status.toUpload.length !== 1 ? 'en' : ''} hochladen
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Übersicht-Badges */}
+        <div className="flex gap-3 mb-3 flex-wrap">
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeNew}`}>
+            ✅ {status.toUpload.length} neu
+          </span>
+          {status.duplicates.length > 0 && (
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeDup}`}>
+              ⚠️ {status.duplicates.length} bereits vorhanden
+            </span>
+          )}
+        </div>
+
+        {/* Dateiliste */}
+        <div className={`rounded-lg border ${dk ? 'border-white/10' : 'border-gray-200'} divide-y ${dk ? 'divide-white/5' : 'divide-gray-100'} max-h-52 overflow-y-auto ${tableBg}`}>
+          {status.files.map((f, i) => {
+            const isDup = status.duplicates.includes(f.name)
+            return (
+              <div key={i} className="flex items-center justify-between px-3 py-2 text-xs gap-2">
+                <span className={`truncate ${isDup ? 'text-gray-500' : (dk ? 'text-white' : 'text-gray-800')}`}>
+                  {fileIcon(f.name)} {f.name}
+                </span>
+                {isDup
+                  ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${badgeDup}`}>vorhanden</span>
+                  : <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${badgeNew}`}>neu</span>
+                }
+              </div>
+            )
+          })}
+        </div>
+        {status.toUpload.length === 0 && (
+          <p className={`mt-3 text-xs text-center ${subCl}`}>
+            Alle ausgewählten Dateien sind bereits vorhanden. Nichts zum Hochladen.
+          </p>
+        )}
+        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={onFilesSelected} />
+      </div>
+    )
+  }
+
+  // ── Phase: uploading ─────────────────────────────────────────────────────────
+  if (status.phase === 'uploading') {
+    const total = status.files.length
+    const pct = total > 0 ? Math.round((status.processed / total) * 100) : 0
+    return (
+      <div className={`mb-6 rounded-xl border p-4 ${panelCl}`}>
+        <p className={`text-sm font-semibold mb-3 ${headCl}`}>⬆ Upload läuft…</p>
+
+        {/* Fortschrittsbalken */}
+        <div className={`h-2 rounded-full overflow-hidden mb-3 ${dk ? 'bg-slate-700' : 'bg-gray-200'}`}>
+          <div className="h-full bg-green-500 transition-all duration-300 rounded-full" style={{ width: `${pct}%` }} />
+        </div>
+
+        {/* Live-Zähler */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+          <StatBox label="Gesamt" value={total} dk={dk} />
+          <StatBox label="Verarbeitet" value={status.processed} dk={dk} color="text-blue-400" />
+          <StatBox label="Noch offen" value={total - status.processed} dk={dk} color="text-amber-400" />
+          <StatBox label="Hinzugefügt" value={status.added} dk={dk} color="text-green-400" />
+        </div>
+
+        {status.currentFile && (
+          <p className={`text-xs truncate ${subCl}`}>
+            <span className="animate-pulse">●</span> {status.currentFile}
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  // ── Phase: done ──────────────────────────────────────────────────────────────
+  const total = status.files.length
+  return (
+    <div className={`mb-6 rounded-xl border p-4 ${panelCl}`}>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <p className={`text-sm font-semibold ${headCl}`}>
+          {status.errors > 0 ? '⚠️' : '✅'} Upload abgeschlossen
+        </p>
+        <button onClick={reset} className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition">
+          Weiteren Upload starten
+        </button>
+      </div>
+
+      {/* Abschluss-Statistik */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatBox label="Gesamt" value={total} dk={dk} />
+        <StatBox label="Hinzugefügt" value={status.added} dk={dk} color="text-green-400" />
+        <StatBox label="Bereits vorhanden" value={status.skipped} dk={dk} color="text-amber-400" />
+        <StatBox label="Fehler" value={status.errors} dk={dk} color={status.errors > 0 ? 'text-red-400' : undefined} />
+      </div>
+
+      {/* Detail-Listen */}
+      {status.addedFiles.length > 0 && (
+        <details className="mt-4">
+          <summary className={`cursor-pointer text-xs font-semibold text-green-400 select-none`}>
+            ✅ Hinzugefügte Dateien ({status.addedFiles.length})
+          </summary>
+          <ul className={`mt-2 text-xs space-y-1 ${subCl}`}>
+            {status.addedFiles.map((f, i) => <li key={i} className="truncate">· {f}</li>)}
+          </ul>
+        </details>
+      )}
+      {status.skippedFiles.length > 0 && (
+        <details className="mt-3">
+          <summary className={`cursor-pointer text-xs font-semibold text-amber-400 select-none`}>
+            ⚠️ Bereits vorhanden ({status.skippedFiles.length})
+          </summary>
+          <ul className={`mt-2 text-xs space-y-1 ${subCl}`}>
+            {status.skippedFiles.map((f, i) => <li key={i} className="truncate">· {f}</li>)}
+          </ul>
+        </details>
+      )}
+      {status.errorFiles.length > 0 && (
+        <details className="mt-3">
+          <summary className={`cursor-pointer text-xs font-semibold text-red-400 select-none`}>
+            ❌ Fehler ({status.errorFiles.length})
+          </summary>
+          <ul className={`mt-2 text-xs space-y-1 ${subCl}`}>
+            {status.errorFiles.map((f, i) => <li key={i} className="truncate">· {f}</li>)}
+          </ul>
+        </details>
+      )}
+    </div>
+  )
+}
+
+function StatBox({ label, value, dk, color }: { label: string; value: number; dk: boolean; color?: string }) {
+  return (
+    <div className={`rounded-lg p-3 text-center ${dk ? 'bg-slate-700/50' : 'bg-white border border-gray-200'}`}>
+      <div className={`text-xl font-bold ${color ?? (dk ? 'text-white' : 'text-gray-900')}`}>{value}</div>
+      <div className={`text-xs mt-0.5 ${dk ? 'text-gray-400' : 'text-gray-500'}`}>{label}</div>
+    </div>
+  )
+}
+
+
 function PreviewModal({ note, onClose }: { note: Note; onClose: () => void }) {
   const apiUrl = `${API_BASE}/api/noten/preview?key=${encodeURIComponent(note.key)}`
   const downloadUrl = `${API_BASE}/api/noten/download?key=${encodeURIComponent(note.key)}`
@@ -153,6 +457,7 @@ export default function NotenPage() {
   const router = useRouter()
   const { theme } = useTheme()
   const dk = theme === 'dark'
+  const canUpload = isBoard(user)
 
   // Theme-abhängige Klassen
   const pageBg      = dk ? '' : 'bg-white'
@@ -277,6 +582,16 @@ export default function NotenPage() {
           ⬇ Alle Noten als ZIP
         </button>
       </div>
+
+      {/* Upload-Bereich (nur BOARD / ADMIN) */}
+      {canUpload && (
+        <UploadSection
+          prefix={prefix}
+          existingNames={new Set(notes.map(n => n.name))}
+          onDone={() => loadNotes(prefix)}
+          dk={dk}
+        />
+      )}
 
       {/* Suche */}
       <div className="mb-6 flex gap-3">

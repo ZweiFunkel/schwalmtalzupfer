@@ -21,6 +21,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Prevent flash: set dark class before React hydration */}
         <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}` }} />
+        {/* YouTube IFrame Player API */}
+        <script src="https://www.youtube.com/iframe_api" async />
       </head>
       <body className={`${inter.className} bg-white dark:bg-slate-950 text-gray-900 dark:text-white antialiased`}>
         <ThemeProvider>

@@ -15,6 +15,7 @@ interface LightboxProps {
 
 export default function Lightbox({ src, alt, onClose, images, index, onPrev, onNext }: LightboxProps) {
   const hasNav = images && images.length > 1 && onPrev && onNext && index !== undefined
+  const isSvg = /\.svg(\?|$)/i.test(src)
   const isFirst = index === 0
   const isLast = index !== undefined && images ? index === images.length - 1 : true
 
@@ -91,6 +92,7 @@ export default function Lightbox({ src, alt, onClose, images, index, onPrev, onN
           src={src}
           alt={alt}
           className="block max-h-[90vh] max-w-[90vw] object-contain"
+          style={isSvg ? { width: '70vw', height: 'auto', minWidth: '200px', minHeight: '150px' } : undefined}
         />
         {alt && (
           <p className="absolute bottom-0 left-0 right-0 bg-black/60 px-4 py-2 text-center text-sm text-gray-300 italic">

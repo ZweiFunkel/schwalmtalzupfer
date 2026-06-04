@@ -6,11 +6,11 @@ import { getApiBase } from '@/lib/api'
 
 const API_BASE = getApiBase()
 
-export const dynamicParams = true
+export const dynamic = 'force-dynamic'
 
 async function getPage(slug: string): Promise<PageData | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/pages/${slug}`)
+    const res = await fetch(`${API_BASE}/api/pages/${slug}`, { cache: 'no-store' })
     if (!res.ok) return null
     return res.json()
   } catch {

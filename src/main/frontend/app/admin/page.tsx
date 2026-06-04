@@ -717,6 +717,7 @@ interface SponsorItem {
   name: string; person?: string; imageUrl?: string; address?: string; mapUrl?: string
   website?: string; phone?: string; mobile?: string; email?: string
   locations?: SponsorLocationItem[]
+  _newId?: string
 }
 
 function SponsorLocationsEditor({ locations, onChange }: { locations: SponsorLocationItem[]; onChange: (l: SponsorLocationItem[]) => void }) {
@@ -755,6 +756,7 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
   const [pickerIdx, setPickerIdx] = useState<number | null>(null)
   const [expandedIndices, setExpandedIndices] = useState<Set<number>>(new Set())
   const [sortMode, setSortMode] = useState<'manual' | 'name-asc' | 'name-desc'>('name-asc')
+  const [newSponsorIds, setNewSponsorIds] = useState<Set<string>>(new Set())
 
   // Toggle für Einklapp-Funktion
   const toggleExpanded = (i: number) => {
@@ -767,18 +769,22 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
   // Prüfen, ob ein Sponsor eingeklappt ist
   const isExpanded = (i: number) => expandedIndices.has(i)
   
-  // Sortierfunktion
+  // Sortierfunktion: neue Sponsoren bleiben am Ende, bis explizit sortiert wird
   const getSortedSponsors = () => {
-    const sorted = [...sponsors]
+    const existing = sponsors.filter(s => !s._newId || !newSponsorIds.has(s._newId))
+    const newOnes  = sponsors.filter(s => s._newId && newSponsorIds.has(s._newId))
     switch (sortMode) {
       case 'name-asc':
-        return sorted.sort((a, b) => a.name.localeCompare(b.name))
+        existing.sort((a, b) => a.name.localeCompare(b.name))
+        break
       case 'name-desc':
-        return sorted.sort((a, b) => b.name.localeCompare(a.name))
+        existing.sort((a, b) => b.name.localeCompare(a.name))
+        break
       case 'manual':
       default:
-        return sorted
+        break
     }
+    return [...existing, ...newOnes]
   }
   
   const update = (i: number, patch: Partial<SponsorItem>) => {
@@ -791,14 +797,21 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
   }
   
   const add = () => {
+    const newId = Math.random().toString(36).slice(2)
+    const newSponsor: SponsorItem = { name: 'Neuer Sponsor', _newId: newId }
+    setNewSponsorIds(prev => new Set([...prev, newId]))
     onChange({
       ...content,
-      sponsors: [...sponsors, { name: 'Neuer Sponsor' }]
+      sponsors: [...sponsors, newSponsor]
     })
   }
   
   const remove = (i: number) => {
     const sorted = getSortedSponsors()
+    const sponsorToRemove = sorted[i]
+    if (sponsorToRemove._newId) {
+      setNewSponsorIds(prev => { const s = new Set(prev); s.delete(sponsorToRemove._newId!); return s })
+    }
     const actualIndex = sponsors.findIndex(s => s === sorted[i])
     onChange({
       ...content,
@@ -821,9 +834,10 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
     onChange({ ...content, sponsors: newOrder })
   }
   
-  // Alle Sponsoren sortieren
+  // Alle Sponsoren sortieren (inkl. neuer)
   const sortAll = (mode: 'manual' | 'name-asc' | 'name-desc') => {
     setSortMode(mode)
+    setNewSponsorIds(new Set()) // Alle als "sortiert" markieren
     if (mode === 'manual') return
     
     const sorted = [...sponsors].sort((a, b) => {
@@ -874,13 +888,16 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
       
       <p className="text-xs text-gray-500">{sponsors.length} Sponsoren</p>
       {getSortedSponsors().map((s, i) => (
-        <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-2">
+        <div key={i} className={`rounded-lg border bg-slate-900 p-3 flex flex-col gap-2 ${s._newId && newSponsorIds.has(s._newId) ? 'border-green-500/40' : 'border-white/10'}`}>
           <div className="flex justify-between items-center flex-wrap gap-1">
             <div className="flex items-center gap-2">
               <button onClick={() => toggleExpanded(i)} className="text-xs text-gray-400 hover:text-white">
                 {isExpanded(i) ? '▼' : '▶'}
               </button>
               <span className="text-xs font-bold text-gray-300">Sponsor {i + 1}: {s.name || 'Unbenannter Sponsor'}</span>
+              {s._newId && newSponsorIds.has(s._newId) && (
+                <span className="text-xs text-green-400 bg-green-950/40 px-1.5 py-0.5 rounded">Neu – noch nicht sortiert</span>
+              )}
             </div>
             <div className="flex gap-1">
               <button onClick={() => move(i, -1)} disabled={i === 0} className="text-xs text-gray-500 hover:text-white px-1 disabled:opacity-30">↑</button>

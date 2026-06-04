@@ -48,6 +48,12 @@ src/main/frontend/.next/
 src/main/frontend/out/
 src/main/frontend/tsconfig.tsbuildinfo
 
+### Local SSL certificates (dev only) ###
+src/main/frontend/certificates/
+
+### Vite cache ###
+.vite/
+
 ### Maven wrapper binary ###
 .mvn/wrapper/maven-wrapper.jar
 

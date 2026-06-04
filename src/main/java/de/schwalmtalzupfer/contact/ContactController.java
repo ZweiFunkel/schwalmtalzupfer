@@ -24,7 +24,8 @@ public class ContactController {
     @Value("${app.mail.from:noreply@schwalmtalzupfer.de}")
     private String FROM;
 
-    private static final String TO = "info@schwalmtalzupfer.de";
+    @Value("${app.mail.to:simon.lankes@gmx.de}")
+    private String TO;
 
     public record ContactRequest(String betreff, String email, String nachricht) {}
 
@@ -73,7 +74,7 @@ public class ContactController {
         } catch (Exception sendmailEx) {
             log.error("Mailversand komplett fehlgeschlagen: {}", sendmailEx.getMessage());
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "E-Mail konnte nicht gesendet werden. Bitte wende dich direkt an info@schwalmtalzupfer.de"));
+                    .body(Map.of("error", "E-Mail konnte nicht gesendet werden. Bitte wende dich direkt an " + TO));
         }
     }
 }
