@@ -45,6 +45,13 @@ public class WebConfig implements WebMvcConfigurer {
                         String path = resourcePath.endsWith("/index.html")
                                 ? resourcePath.substring(0, resourcePath.length() - "/index.html".length())
                                 : resourcePath;
+                        // Zuerst: exakten Pfad + /index.html probieren (z.B. "galerie" → "galerie/index.html")
+                        if (!path.isEmpty()) {
+                            Resource exactIndex = location.createRelative(path + "/index.html");
+                            if (exactIndex.exists() && exactIndex.isReadable()) {
+                                return exactIndex;
+                            }
+                        }
                         // Letztes Segment entfernen bis index.html gefunden oder root
                         while (path.contains("/")) {
                             path = path.substring(0, path.lastIndexOf('/'));
