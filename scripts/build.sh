@@ -62,9 +62,40 @@ fi
 ok "NEXT_PUBLIC_API_URL = $API_URL"
 export NEXT_PUBLIC_API_URL="$API_URL"
 
+# ── Java 21 sicherstellen ─────────────────────────────────────────────────────
+hr
+echo -e "${BOLD}  Schritt 1 – Java prüfen${NC}"
+hr
+JAVA_MIN=21
+JAVA_OK=false
+if command -v java &>/dev/null; then
+  JAVA_VER=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
+  [[ "$JAVA_VER" == "1" ]] && JAVA_VER=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f2)
+  if [[ "$JAVA_VER" -ge "$JAVA_MIN" ]]; then
+    ok "Java bereits installiert: $(java -version 2>&1 | head -1)"
+    JAVA_OK=true
+  else
+    warn "Java $JAVA_VER zu alt – brauche ≥$JAVA_MIN."
+  fi
+fi
+if [[ "$JAVA_OK" == "false" ]]; then
+  info "Installiere Java 21 (Temurin)..."
+  apt-get update -qq
+  apt-get install -y wget apt-transport-https gnupg -qq
+  wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public \
+    | gpg --dearmor | tee /usr/share/keyrings/adoptium.gpg > /dev/null
+  echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] \
+https://packages.adoptium.net/artifactory/deb $(. /etc/os-release; echo "$VERSION_CODENAME") main" \
+    > /etc/apt/sources.list.d/adoptium.list
+  apt-get update -qq
+  apt-get install -y temurin-21-jdk -qq
+  ok "Java 21 installiert: $(java -version 2>&1 | head -1)"
+fi
+export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+
 # ── Maven installieren ────────────────────────────────────────────────────────
 hr
-echo -e "${BOLD}  Schritt 1 – Maven prüfen${NC}"
+echo -e "${BOLD}  Schritt 2 – Maven prüfen${NC}"
 hr
 if command -v mvn &>/dev/null; then
   MVN_VER=$(mvn -version 2>&1 | head -1)
@@ -78,7 +109,7 @@ fi
 
 # ── Node.js installieren ──────────────────────────────────────────────────────
 hr
-echo -e "${BOLD}  Schritt 2 – Node.js prüfen${NC}"
+echo -e "${BOLD}  Schritt 3 – Node.js prüfen${NC}"
 hr
 NODE_MIN=18
 if command -v node &>/dev/null; then
@@ -105,7 +136,7 @@ ok "npm: $(npm --version)"
 
 # ── Git Pull ──────────────────────────────────────────────────────────────────
 hr
-echo -e "${BOLD}  Schritt 3 – Quellcode aktualisieren (git pull)${NC}"
+echo -e "${BOLD}  Schritt 4 – Quellcode aktualisieren (git pull)${NC}"
 hr
 cd "$APP_DIR"
 if [[ -d ".git" ]]; then
@@ -118,7 +149,7 @@ fi
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 hr
-echo -e "${BOLD}  Schritt 4 – Maven Build${NC}"
+echo -e "${BOLD}  Schritt 5 – Maven Build${NC}"
 hr
 
 # Next.js Build-Cache leeren (wird von mvn clean NICHT entfernt, kann veraltete
@@ -150,7 +181,7 @@ ok "JAR gebaut: $NEW_JAR ($SIZE)"
 
 # ── JAR deployen ──────────────────────────────────────────────────────────────
 hr
-echo -e "${BOLD}  Schritt 5 – JAR deployen & Service (neu)starten${NC}"
+echo -e "${BOLD}  Schritt 6 – JAR deployen & Service (neu)starten${NC}"
 hr
 
 # Service stoppen falls läuft
