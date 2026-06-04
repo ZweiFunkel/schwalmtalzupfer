@@ -3,7 +3,7 @@ const isProd = process.env.NODE_ENV === 'production'
 
 // Nur im Dev-Modus relevant: lokaler Backend-Port für den Next.js-Proxy.
 // Im Production-Build läuft kein Proxy – dort muss NEXT_PUBLIC_API_URL gesetzt sein.
-const DEV_BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+const DEV_BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'
 
 const nextConfig = {
   ...(isProd ? { output: 'export', distDir: 'out' } : {}),
