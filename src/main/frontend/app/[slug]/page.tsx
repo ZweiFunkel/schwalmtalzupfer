@@ -1,4 +1,6 @@
-import React from 'react'
+'use client'
+import React, { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { PageData } from '@/types/page'
 import SectionResolver from '@/components/SectionResolver'
 import PageAnchorNav from '@/components/PageAnchorNav'
@@ -6,37 +8,55 @@ import { getApiBase } from '@/lib/api'
 
 const API_BASE = getApiBase()
 
-export const dynamic = 'force-dynamic'
-
-async function getPage(slug: string): Promise<PageData | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/pages/${slug}`, { cache: 'no-store' })
-    if (!res.ok) return null
-    return res.json()
-  } catch {
-    return null
-  }
-}
-
+// generateStaticParams: Versucht alle Seiten-Slugs vom Backend zu holen.
+// Schlägt fehl (API nicht erreichbar beim Build) → Fallback auf bekannte Slugs.
 export async function generateStaticParams() {
   try {
     const res = await fetch(`${API_BASE}/api/pages`)
-    if (!res.ok) return [{ slug: 'home' }]
+    if (!res.ok) throw new Error()
     const pages: PageData[] = await res.json()
     const params = pages.map((p) => ({ slug: p.slug }))
-    return params.length > 0 ? params : [{ slug: 'home' }]
+    return params.length > 0 ? params : fallbackSlugs()
   } catch {
-    return [{ slug: 'home' }]
+    return fallbackSlugs()
   }
+}
+
+function fallbackSlugs() {
+  return [
+    { slug: 'home' }, { slug: 'ueberuns' }, { slug: 'geschichte' },
+    { slug: 'vorstand' }, { slug: 'kontakt' }, { slug: 'termine' },
+    { slug: 'konzerte' }, { slug: 'ausfluege' }, { slug: 'sponsoren' },
+  ]
 }
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 }
 
-export default async function SlugPage({ params }: { params: { slug: string } }) {
-  const page = await getPage(params.slug)
+export default function SlugPage() {
+  const params = useParams()
+  const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug ?? '')
+  const [page, setPage]       = useState<PageData | null | undefined>(undefined)
 
+  useEffect(() => {
+    if (!slug) return
+    fetch(`${API_BASE}/api/pages/${slug}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(setPage)
+      .catch(() => setPage(null))
+  }, [slug])
+
+  // Laden
+  if (page === undefined) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="animate-pulse text-gray-400">Lade…</div>
+      </div>
+    )
+  }
+
+  // Nicht gefunden
   if (!page) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center text-center">
@@ -52,13 +72,11 @@ export default async function SlugPage({ params }: { params: { slug: string } })
 
   const sorted = [...page.sections].sort((a, b) => a.position - b.position)
 
-  // Build anchor nav if page has ≥2 TEXT_BLOCK sections with headings
   const textBlocks = sorted.filter(
     s => s.type === 'TEXT_BLOCK' && (s.content as { heading?: string }).heading
   )
   const showAnchorNav = textBlocks.length >= 2
 
-  // Assign anchor ids to TEXT_BLOCK sections
   let textBlockIdx = 0
   const anchorMap = new Map<string, { index: number; anchorId: string }>()
   for (const s of sorted) {
