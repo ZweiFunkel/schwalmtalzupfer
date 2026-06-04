@@ -40,6 +40,20 @@ public class WebConfig implements WebMvcConfigurer {
                         if (requested.exists() && requested.isReadable()) {
                             return requested;
                         }
+                        // Suche den nächsten Parent-Ordner mit index.html (SPA-Fallback).
+                        // Beispiel: galerie/sommerkonzerte/2023 → galerie/sommerkonzerte → galerie → root
+                        String path = resourcePath.endsWith("/index.html")
+                                ? resourcePath.substring(0, resourcePath.length() - "/index.html".length())
+                                : resourcePath;
+                        // Letztes Segment entfernen bis index.html gefunden oder root
+                        while (path.contains("/")) {
+                            path = path.substring(0, path.lastIndexOf('/'));
+                            Resource parentIndex = location.createRelative(
+                                    path.isEmpty() ? "index.html" : path + "/index.html");
+                            if (parentIndex.exists() && parentIndex.isReadable()) {
+                                return parentIndex;
+                            }
+                        }
                         return new ClassPathResource("/static/index.html");
                     }
 

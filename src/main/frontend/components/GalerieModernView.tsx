@@ -1,7 +1,8 @@
 'use client'
 import { getApiBase } from '@/lib/api'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import Lightbox from '@/components/Lightbox'
 
 const API_BASE = getApiBase()
@@ -172,18 +173,26 @@ function PhotoGrid({ images }: { images: BrowseImage[] }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 interface Props {
-  /** R2-Prefix des aktuellen Ordners, z.B. 'galerie/sommerkonzerte/2023/' */
+  /** R2-Prefix des aktuellen Ordners, z.B. 'galerie/sommerkonzerte/2023/'
+   *  Wenn nicht angegeben, wird der Pfad aus der URL abgeleitet (usePathname). */
   prefix?: string
 }
 
-export default function GalerieModernView({ prefix = 'galerie/' }: Props) {
+export default function GalerieModernView({ prefix: prefixProp }: Props) {
+  const pathname = usePathname()
+
+  // Prefix aus Prop oder aus der aktuellen URL ableiten
+  const currentPrefix = useMemo(() => {
+    if (prefixProp) return prefixProp.endsWith('/') ? prefixProp : prefixProp + '/'
+    // pathname = '/galerie' oder '/galerie/sommerkonzerte/2023'
+    const raw = (pathname ?? '/galerie').replace(/^\//, '')
+    return raw.endsWith('/') ? raw : raw + '/'
+  }, [prefixProp, pathname])
+
   const [data, setData]   = useState<BrowseResult | null>(null)
   const [loading, setLoading] = useState(true)
-
-  const currentPrefix = prefix.endsWith('/') ? prefix : prefix + '/'
   const isRoot = currentPrefix === 'galerie/'
   const parts  = currentPrefix.replace(/\/$/, '').split('/').filter(Boolean)
-  const currentName = parts[parts.length - 1] ?? 'galerie'
 
   useEffect(() => {
     setLoading(true)
