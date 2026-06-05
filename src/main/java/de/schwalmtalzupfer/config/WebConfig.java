@@ -57,7 +57,14 @@ public class WebConfig implements WebMvcConfigurer {
                             return null;
                         }
 
-                        // 3. Alle anderen Pfade (SPA-Routen): index.html ausliefern, damit Next.js das Routing übernimmt.
+                        // 3. SPA-Routen: erst {path}/index.html versuchen (Next.js-Static-Export-Struktur),
+                        //    danach root index.html als letzten Fallback.
+                        if (!path.isEmpty()) {
+                            Resource subIndex = location.createRelative(path + "/index.html");
+                            if (isServeableFile(subIndex)) {
+                                return subIndex;
+                            }
+                        }
                         return new ClassPathResource("/static/index.html");
                     }
 

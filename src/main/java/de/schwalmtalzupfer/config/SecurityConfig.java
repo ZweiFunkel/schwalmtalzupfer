@@ -52,6 +52,15 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'; " +
+                                     "script-src 'self' www.youtube.com s.ytimg.com; " +
+                                     "frame-src www.youtube.com youtube.com; " +
+                                     "connect-src 'self' www.youtube.com s.ytimg.com; " +
+                                     "img-src 'self' data: www.youtube.com i.ytimg.com")
+                )
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/pages/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/termine/**").permitAll()
