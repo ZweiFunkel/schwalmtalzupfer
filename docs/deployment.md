@@ -363,7 +363,90 @@ sudo journalctl -u schwalmtalzupfer -f
 
 ---
 
-## 12. Fehlerbehebung
+## 13. HTTPS ohne eigene Domain – via nip.io
+
+> **Zwischenlösung:** Solange der DNS von `schwalmtalzupfer.de` noch auf Typo3 zeigt,
+> kannst du mit [nip.io](https://nip.io) sofort HTTPS bekommen.
+> `159.195.70.118.nip.io` ist ein kostenloser DNS-Eintrag, der immer auf `159.195.70.118` zeigt –
+> kein eigener DNS-Eintrag nötig, und Let's Encrypt stellt ein gültiges Zertifikat aus.
+
+### Schritt 1: Nginx für nip.io aktualisieren
+
+Auf dem Server:
+```bash
+sudo nano /etc/nginx/sites-available/schwalmtalzupfer
+```
+
+Inhalt ersetzen durch (**nur HTTP** – Certbot fügt HTTPS selbst hinzu!):
+```nginx
+# NUR HTTP – Certbot ergänzt den HTTPS-Block automatisch!
+server {
+    listen 80;
+    server_name 159.195.70.118.nip.io 159.195.70.118;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass         http://127.0.0.1:8081;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+        proxy_set_header   Upgrade           $http_upgrade;
+        proxy_set_header   Connection        "upgrade";
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$ {
+        proxy_pass http://127.0.0.1:8081;
+        add_header Cache-Control "public, max-age=86400";
+    }
+}
+```
+
+> ⚠️ **Kein `listen 443 ssl` Block!** Certbot fügt diesen automatisch hinzu.
+> Ein vordefinierter SSL-Block ohne Zertifikat macht nginx kaputt.
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### Schritt 2: Let's Encrypt Zertifikat holen
+
+```bash
+sudo certbot --nginx -d 159.195.70.118.nip.io
+```
+
+> Certbot trägt die `ssl_certificate`-Zeilen automatisch ein **und** legt den HTTPS-Block an.
+
+### Schritt 3: App neu bauen mit nip.io-URL
+
+Lokal im Projekt:
+```bash
+export NEXT_PUBLIC_API_URL=https://159.195.70.118.nip.io
+mvn clean package -DskipTests
+```
+
+Dann wie gewohnt deployen (JAR hochladen, Service neu starten).
+
+### Schritt 4: Wenn DNS auf schwalmtalzupfer.de umzeigt
+
+```bash
+# Nginx-Config anpassen: server_name auf schwalmtalzupfer.de ändern
+# Neues Zertifikat:
+sudo certbot --nginx -d schwalmtalzupfer.de -d www.schwalmtalzupfer.de
+# App neu bauen mit:
+export NEXT_PUBLIC_API_URL=https://schwalmtalzupfer.de
+mvn clean package -DskipTests
+```
+
+---
+
 
 ```bash
 # Logs der App:

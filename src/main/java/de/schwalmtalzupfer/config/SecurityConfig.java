@@ -60,6 +60,7 @@ public class SecurityConfig {
                                      "frame-src www.youtube.com youtube.com www.youtube-nocookie.com blob:; " +
                                      "connect-src 'self' www.youtube.com www.youtube-nocookie.com s.ytimg.com; " +
                                      "img-src 'self' data: blob: www.youtube.com i.ytimg.com; " +
+                                     "media-src 'self' blob:; " +
                                      "worker-src blob:;")
                 )
             )

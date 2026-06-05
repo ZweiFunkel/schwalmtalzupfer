@@ -351,6 +351,12 @@ function PreviewModal({ note, onClose }: { note: Note; onClose: () => void }) {
   const downloadUrl = `${API_BASE}/api/noten/download?key=${encodeURIComponent(note.key)}`
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
+  // iOS Safari unterstützt keine PDF-iframes → alternativen View anzeigen
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
+  }, [])
 
   // Datei mit Auth-Credentials laden und als Blob-URL bereitstellen
   useEffect(() => {
@@ -430,12 +436,29 @@ function PreviewModal({ note, onClose }: { note: Note; onClose: () => void }) {
               <img src={blobUrl} alt={note.name} className="max-w-full max-h-[75vh] object-contain rounded-lg" />
             </div>
           ) : note.name.toLowerCase().endsWith('.pdf') ? (
-            <iframe
-              src={blobUrl}
-              title={note.name}
-              className="w-full"
-              style={{ height: '75vh', border: 'none' }}
-            />
+            isMobile ? (
+              // iOS Safari / Mobile: PDF-iframe funktioniert nicht → direkter Link
+              <div className="flex flex-col items-center justify-center gap-5 p-12 text-center">
+                <span className="text-6xl">📄</span>
+                <p className="text-white font-semibold">{note.name}</p>
+                <p className="text-gray-400 text-sm">PDF-Vorschau wird auf diesem Gerät nicht unterstützt.</p>
+                <a href={blobUrl!} target="_blank" rel="noopener noreferrer"
+                  className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition">
+                  📄 PDF im Browser öffnen
+                </a>
+                <a href={downloadUrl} target="_blank" rel="noopener noreferrer"
+                  className="rounded-lg border border-white/20 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:text-white transition">
+                  ⬇ Herunterladen
+                </a>
+              </div>
+            ) : (
+              <iframe
+                src={blobUrl!}
+                title={note.name}
+                className="w-full"
+                style={{ height: '75vh', border: 'none' }}
+              />
+            )
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 p-12 text-center">
               <span className="text-6xl">{fileIcon(note.name)}</span>
@@ -673,16 +696,18 @@ export default function NotenPage() {
                   </td>
                   <td className={`px-4 py-3 hidden md:table-cell whitespace-nowrap ${sizeCl}`}>{formatBytes(note.size)}</td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex gap-1.5 flex-col sm:flex-row">
                       {isPreviewable(note.name) && (
                         <button onClick={() => setPreview(note)}
-                          className={`rounded-lg px-3 py-1.5 text-xs transition whitespace-nowrap ${dlBtnCl}`}>
-                          👁 Vorschau
+                          className={`rounded-lg px-2 sm:px-3 py-1.5 text-xs transition ${dlBtnCl}`}>
+                          <span className="sm:hidden">👁</span>
+                          <span className="hidden sm:inline whitespace-nowrap">👁 Vorschau</span>
                         </button>
                       )}
                       <button onClick={() => downloadSingle(note.key)}
-                        className={`rounded-lg px-3 py-1.5 text-xs transition whitespace-nowrap ${dlBtnCl}`}>
-                        ⬇ Download
+                        className={`rounded-lg px-2 sm:px-3 py-1.5 text-xs transition ${dlBtnCl}`}>
+                        <span className="sm:hidden">⬇</span>
+                        <span className="hidden sm:inline whitespace-nowrap">⬇ Download</span>
                       </button>
                     </div>
                   </td>
