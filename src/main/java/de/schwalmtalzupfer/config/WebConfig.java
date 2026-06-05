@@ -44,7 +44,7 @@ public class WebConfig implements WebMvcConfigurer {
                     protected Resource getResource(String resourcePath, Resource location) throws IOException {
                         String path = normalizeResourcePath(resourcePath);
 
-                        // Echte Dateien (JS/CSS/Bilder/…): direkt ausliefern – keine Verzeichnisse.
+                        // 1. Echte Dateien (JS/CSS/Bilder/…): direkt ausliefern.
                         if (!path.isEmpty()) {
                             Resource requested = location.createRelative(path);
                             if (isServeableFile(requested)) {
@@ -52,32 +52,12 @@ public class WebConfig implements WebMvcConfigurer {
                             }
                         }
 
-                        // SPA-Route: zuerst path/index.html (z.B. "galerie" → "galerie/index.html").
-                        // Wichtig: Verzeichnisse wie "galerie/" dürfen nicht als Treffer gelten,
-                        // sonst landet man auf der Root-Startseite.
-                        if (!path.isEmpty()) {
-                            Resource exactIndex = location.createRelative(path + "/index.html");
-                            if (exactIndex.exists() && exactIndex.isReadable()) {
-                                return exactIndex;
-                            }
-                        }
-
-                        // Parent-Fallback für verschachtelte Pfade
-                        // (z.B. galerie/sommerkonzerte/2023 → galerie/sommerkonzerte → galerie → root).
-                        String walk = path;
-                        while (walk.contains("/")) {
-                            walk = walk.substring(0, walk.lastIndexOf('/'));
-                            Resource parentIndex = location.createRelative(walk + "/index.html");
-                            if (parentIndex.exists() && parentIndex.isReadable()) {
-                                return parentIndex;
-                            }
-                        }
-
-                        // Fehlende Build-Assets (_next/static/…) → 404, nicht index.html (sonst MIME-Fehler).
+                        // 2. Fehlende Build-Assets (_next/static/…) → 404, nicht index.html (sonst MIME-Fehler).
                         if (isStaticAssetPath(path)) {
                             return null;
                         }
 
+                        // 3. Alle anderen Pfade (SPA-Routen): index.html ausliefern, damit Next.js das Routing übernimmt.
                         return new ClassPathResource("/static/index.html");
                     }
 
@@ -89,6 +69,7 @@ public class WebConfig implements WebMvcConfigurer {
                         while (path.endsWith("/")) {
                             path = path.substring(0, path.length() - 1);
                         }
+                        // Remove /index.html if it's at the end, as Next.js exports might not have it for sub-paths
                         if (path.endsWith("/index.html")) {
                             path = path.substring(0, path.length() - "/index.html".length());
                         }
@@ -132,4 +113,3 @@ public class WebConfig implements WebMvcConfigurer {
                 });
     }
 }
-
