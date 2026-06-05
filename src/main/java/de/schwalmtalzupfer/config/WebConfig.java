@@ -57,12 +57,11 @@ public class WebConfig implements WebMvcConfigurer {
                             return null;
                         }
 
-                        // 3. SPA-Routen: erst {path}/index.html versuchen (Next.js-Static-Export-Struktur),
-                        //    danach root index.html als letzten Fallback.
+                        // 3. SPA-Routen: {path}.html versuchen (Next.js static export mit trailingSlash:false)
                         if (!path.isEmpty()) {
-                            Resource subIndex = location.createRelative(path + "/index.html");
-                            if (isServeableFile(subIndex)) {
-                                return subIndex;
+                            Resource htmlFile = location.createRelative(path + ".html");
+                            if (isServeableFile(htmlFile)) {
+                                return htmlFile;
                             }
                         }
                         return new ClassPathResource("/static/index.html");
