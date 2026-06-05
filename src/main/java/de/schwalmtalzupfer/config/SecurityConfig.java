@@ -55,10 +55,10 @@ public class SecurityConfig {
             .headers(headers -> headers
                 .contentSecurityPolicy(csp -> csp
                     .policyDirectives("default-src 'self'; " +
-                                     "script-src 'self' 'unsafe-inline' www.youtube.com s.ytimg.com; " +
+                                     "script-src 'self' 'unsafe-inline' www.youtube.com www.youtube-nocookie.com s.ytimg.com; " +
                                      "style-src 'self' 'unsafe-inline'; " +
                                      "frame-src www.youtube.com youtube.com www.youtube-nocookie.com blob:; " +
-                                     "connect-src 'self' www.youtube.com s.ytimg.com; " +
+                                     "connect-src 'self' www.youtube.com www.youtube-nocookie.com s.ytimg.com; " +
                                      "img-src 'self' data: blob: www.youtube.com i.ytimg.com; " +
                                      "worker-src blob:;")
                 )

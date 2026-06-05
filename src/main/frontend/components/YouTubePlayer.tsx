@@ -52,14 +52,18 @@ export default function YouTubePlayer({
       try {
         playerRef.current = new window.YT.Player(playerId, {
           videoId,
+          // Privacy-enhanced mode: weniger Tracking und bessere Kompatibilität
+          // mit HTTP-Seiten und strengen Browser-Einstellungen.
+          host: 'https://www.youtube-nocookie.com',
           playerVars: {
             autoplay: autoplay ? 1 : 0,
-            controls: 0, // Hide YouTube controls
+            controls: 0,
             modestbranding: 1,
             rel: 0,
             showinfo: 0,
             iv_load_policy: 3,
             disablekb: 1,
+            origin: typeof window !== 'undefined' ? window.location.origin : '',
           },
           events: {
             onReady: (event: any) => {
