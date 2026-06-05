@@ -50,10 +50,11 @@ public class ContactController {
             mailSender.send(mimeMessage);
             log.info("Kontaktmail via SMTP gesendet von {}", req.email());
             return ResponseEntity.ok(Map.of("success", true));
-        } catch (MessagingException e) {
-            log.error("Mailversand fehlgeschlagen: {}", e.getMessage(), e);
+        } catch (Exception e) {
+            String msg = "SMTP-Fehler: " + e.getClass().getName() + " - " + e.getMessage();
+            log.error(msg, e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "E-Mail konnte nicht gesendet werden. Bitte wende dich direkt an " + TO));
+                    .body(Map.of("error", "E-Mail konnte nicht gesendet werden. Bitte wende dich direkt an " + TO + " | " + msg));
         }
     }
 }
