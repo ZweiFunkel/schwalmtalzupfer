@@ -116,30 +116,7 @@ export default function KontaktPage() {
             {sending ? 'Wird gesendet…' : 'Nachricht senden'}
           </button>
 
-          {/* Kopier-Fallback: sobald E-Mail ausgefüllt */}
-          {email && (
-            <div className="mt-2 rounded-xl border border-yellow-400/30 dark:border-yellow-500/20 bg-yellow-50 dark:bg-yellow-900/10 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-400">📋 Alternativ: Nachricht kopieren</p>
-                <button
-                  type="button"
-                  onClick={copyToClipboard}
-                  className="rounded-lg border border-yellow-400/40 dark:border-yellow-500/30 bg-yellow-100 dark:bg-yellow-900/20 px-3 py-1 text-xs font-medium text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-800/30 transition"
-                >
-                  {copied ? '✓ Kopiert!' : 'Kopieren'}
-                </button>
-              </div>
-              <pre className="whitespace-pre-wrap break-words rounded-lg bg-gray-100 dark:bg-slate-950/60 p-3 text-xs text-gray-700 dark:text-gray-300 font-mono select-all">
-                {mailtoText}
-              </pre>
-              <a
-                href={`mailto:info@schwalmtalzupfer.de?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(`Von: ${email}\n\n${nachricht}`)}`}
-                className="mt-2 block text-center rounded-lg border border-yellow-400/40 dark:border-yellow-500/30 bg-yellow-100 dark:bg-yellow-900/20 py-2 text-xs text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-800/30 transition"
-              >
-                ✉️ In E-Mail-Programm öffnen
-              </a>
-            </div>
-          )}
+          {/* Kopier-Fallback entfernt */}
         </form>
       )}
 
