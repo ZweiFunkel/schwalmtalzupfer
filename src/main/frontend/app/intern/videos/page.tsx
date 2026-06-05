@@ -82,11 +82,17 @@ function buildNav(videos: VideoEntry[]): NavStructure {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Origin-Parameter verhindert "Anmelden erforderlich" in YouTube-Embeds
-const EMBED_ORIGIN = typeof window !== 'undefined' ? window.location.origin : 'https://schwalmtalzupfer.de'
-
 function embedSrc(videoId: string, autoplay = true): string {
-  return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&origin=${EMBED_ORIGIN}${autoplay ? '&autoplay=1' : ''}`
+  const params = new URLSearchParams({ rel: '0', modestbranding: '1' })
+  if (autoplay) params.set('autoplay', '1')
+  // nocookie-Domain: weniger Tracking, besser mit Brave/Firefox-Schutz
+  return `https://www.youtube-nocookie.com/embed/${videoId}?${params}`
+}
+
+function playlistEmbedSrc(playlistId: string, autoplay = true): string {
+  const params = new URLSearchParams({ list: playlistId, rel: '0', modestbranding: '1' })
+  if (autoplay) params.set('autoplay', '1')
+  return `https://www.youtube-nocookie.com/embed/videoseries?${params}`
 }
 
 function ytUrl(v: VideoEntry): string {
@@ -215,8 +221,8 @@ function PlayerModal({
   const currentTitle = playlistItems.find(i => i.videoId === currentVideoId)?.title ?? video.title
   // Wenn Playlist-Items nicht geladen werden konnten (kein API-Key), Playlist-Embed-URL verwenden
   const src = video.type === 'PLAYLIST' && !loading && playlistItems.length === 0
-    ? `https://www.youtube.com/embed/videoseries?list=${video.youtubeId}&rel=0&modestbranding=1&origin=${EMBED_ORIGIN}&autoplay=1`
-    : `https://www.youtube.com/embed/${currentVideoId}?rel=0&modestbranding=1&origin=${EMBED_ORIGIN}&autoplay=1`
+    ? playlistEmbedSrc(video.youtubeId)
+    : embedSrc(currentVideoId)
 
   return (
     <div
@@ -363,8 +369,8 @@ function VideoCard({ video }: { video: VideoEntry }) {
     : video.title
   // Fallback: Wenn Playlist-API fehlschlägt (z.B. kein API-Key), direkten Playlist-Embed nutzen
   const activeSrc = video.type === 'PLAYLIST' && !loading && playlistItems.length === 0
-    ? `https://www.youtube.com/embed/videoseries?list=${video.youtubeId}&rel=0&modestbranding=1&origin=${EMBED_ORIGIN}&autoplay=1`
-    : `https://www.youtube.com/embed/${currentVideoId || video.youtubeId}?rel=0&modestbranding=1&origin=${EMBED_ORIGIN}&autoplay=1`
+    ? playlistEmbedSrc(video.youtubeId)
+    : embedSrc(currentVideoId || video.youtubeId)
 
   // Reset embed error when video changes
   useEffect(() => { setEmbedError(false) }, [currentVideoId, viewMode])

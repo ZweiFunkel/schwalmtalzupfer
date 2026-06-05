@@ -19,12 +19,13 @@ public class AuthController {
     private final MemberRepository memberRepository;
 
     /**
-     * Gibt den aktuell eingeloggten Nutzer zurück (oder 401 wenn nicht angemeldet).
+     * Gibt den aktuell eingeloggten Nutzer zurück.
+     * Nicht angemeldet → 200 mit leerem Body (kein 401, damit der Browser nicht warnet).
      */
     @GetMapping("/me")
     public ResponseEntity<?> me(Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "Nicht angemeldet"));
+            return ResponseEntity.ok().build();
         }
         return memberRepository.findByEmail(principal.getName())
                 .or(() -> memberRepository.findByUsername(principal.getName()))

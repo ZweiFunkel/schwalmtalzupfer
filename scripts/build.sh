@@ -165,11 +165,22 @@ if [[ -d "$NEXT_CACHE" ]]; then
   ok "Cache geleert."
 fi
 
+# Spring muss laufen, damit generateStaticParams alle CMS-Seiten aus der DB lädt.
+BUILD_BACKEND_URL="http://127.0.0.1:8081"
+if ! curl -sf "$BUILD_BACKEND_URL/api/pages" -o /dev/null 2>/dev/null; then
+  warn "Spring Boot nicht erreichbar unter $BUILD_BACKEND_URL"
+  warn "CMS-Seiten (z.B. /sponsoren) werden nur aus Fallback-Slugs gebaut."
+  warn "Tipp: Service laufen lassen oder vor dem Build kurz starten."
+else
+  ok "Spring Boot erreichbar – CMS-Seiten werden aus DB geladen."
+fi
+
 info "Starte ./mvnw clean package -DskipTests ..."
 info "JAVA_HOME = $JAVA_HOME"
+info "BACKEND_URL = $BUILD_BACKEND_URL"
 echo ""
 
-"$APP_DIR/mvnw" clean package -DskipTests
+BACKEND_URL="$BUILD_BACKEND_URL" "$APP_DIR/mvnw" clean package -DskipTests -Dbackend.url="$BUILD_BACKEND_URL"
 
 echo ""
 ok "Build erfolgreich!"
@@ -182,6 +193,14 @@ if [[ -z "$NEW_JAR" || ! -f "$NEW_JAR" ]]; then
 fi
 SIZE=$(du -h "$NEW_JAR" | cut -f1)
 ok "JAR gebaut: $NEW_JAR ($SIZE)"
+
+# Prüfen ob CMS-Routen im JAR landen (sonst Reload → Startseite)
+if jar tf "$NEW_JAR" | grep -q 'BOOT-INF/classes/static/sponsoren/index.html'; then
+  ok "CMS-Route sponsoren/index.html in JAR vorhanden."
+else
+  warn "sponsoren/index.html fehlt in JAR – Reload auf Unterseiten zeigt Startseite!"
+  warn "Ursache meist: Build ohne laufenden Spring auf Port 8081."
+fi
 
 # ── JAR deployen ──────────────────────────────────────────────────────────────
 hr

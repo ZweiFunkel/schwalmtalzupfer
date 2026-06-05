@@ -37,12 +37,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refresh = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include' })
-      if (res.ok) {
-        const data = await res.json()
-        setUser(data)
-      } else {
+      if (!res.ok || res.status === 204) {
         setUser(null)
+        return
       }
+      const text = await res.text()
+      if (!text) {
+        setUser(null)
+        return
+      }
+      const data = JSON.parse(text) as AuthUser
+      setUser(data.role ? data : null)
     } catch {
       setUser(null)
     } finally {
