@@ -7,7 +7,7 @@ const DEV_BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'
 
 const nextConfig = {
   ...(isProd ? { output: 'export', distDir: 'out' } : {}),
-  trailingSlash: isProd,
+  trailingSlash: false, // Set to false for consistent URL handling without trailing slashes
   images: {
     unoptimized: true,
   },
