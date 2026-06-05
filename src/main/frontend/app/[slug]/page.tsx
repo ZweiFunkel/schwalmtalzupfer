@@ -7,6 +7,17 @@ import { PageData } from '@/types/page'
 
 const API_BASE = getApiBase()
 
+// Routen mit eigenem app/<name>/page.tsx – nicht über [slug] statisch exportieren,
+// sonst überschreibt der CMS-Slug die dedizierte Seite im Production-Build.
+const RESERVED_SLUGS = new Set([
+  'galerie', 'intern', 'kontakt', 'login', 'register', 'admin',
+  'impressum', 'noten', 'profil',
+])
+
+function filterReservedSlugs(slugs: { slug: string }[]) {
+  return slugs.filter((entry) => !RESERVED_SLUGS.has(entry.slug))
+}
+
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   try {
     const res = await fetch(`${API_BASE}/api/pages/${params.slug}`)
@@ -23,7 +34,7 @@ export async function generateStaticParams() {
     const res = await fetch(`${API_BASE}/api/pages`)
     if (!res.ok) throw new Error()
     const pages: PageData[] = await res.json()
-    const params = pages.map((p) => ({ slug: p.slug }))
+    const params = filterReservedSlugs(pages.map((p) => ({ slug: p.slug })))
     return params.length > 0 ? params : fallbackSlugs()
   } catch {
     return fallbackSlugs()
@@ -31,11 +42,11 @@ export async function generateStaticParams() {
 }
 
 function fallbackSlugs() {
-  return [
+  return filterReservedSlugs([
     { slug: 'home' }, { slug: 'ueberuns' }, { slug: 'geschichte' },
-    { slug: 'vorstand' }, { slug: 'kontakt' }, { slug: 'termine' },
+    { slug: 'vorstand' }, { slug: 'termine' },
     { slug: 'konzerte' }, { slug: 'ausfluege' }, { slug: 'sponsoren' },
-  ]
+  ])
 }
 
 export default function SlugPage({ params }: { params: { slug: string } }) {

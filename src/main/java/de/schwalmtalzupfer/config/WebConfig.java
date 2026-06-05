@@ -36,32 +36,67 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResolver(new PathResourceResolver() {
                     @Override
                     protected Resource getResource(String resourcePath, Resource location) throws IOException {
-                        Resource requested = location.createRelative(resourcePath);
-                        if (requested.exists() && requested.isReadable()) {
-                            return requested;
+                        String path = normalizeResourcePath(resourcePath);
+
+                        // Echte Dateien (JS/CSS/Bilder/…): direkt ausliefern – keine Verzeichnisse.
+                        if (!path.isEmpty()) {
+                            Resource requested = location.createRelative(path);
+                            if (isServeableFile(requested)) {
+                                return requested;
+                            }
                         }
-                        // Suche den nächsten Parent-Ordner mit index.html (SPA-Fallback).
-                        // Beispiel: galerie/sommerkonzerte/2023 → galerie/sommerkonzerte → galerie → root
-                        String path = resourcePath.endsWith("/index.html")
-                                ? resourcePath.substring(0, resourcePath.length() - "/index.html".length())
-                                : resourcePath;
-                        // Zuerst: exakten Pfad + /index.html probieren (z.B. "galerie" → "galerie/index.html")
+
+                        // SPA-Route: zuerst path/index.html (z.B. "galerie" → "galerie/index.html").
+                        // Wichtig: Verzeichnisse wie "galerie/" dürfen nicht als Treffer gelten,
+                        // sonst landet man auf der Root-Startseite.
                         if (!path.isEmpty()) {
                             Resource exactIndex = location.createRelative(path + "/index.html");
                             if (exactIndex.exists() && exactIndex.isReadable()) {
                                 return exactIndex;
                             }
                         }
-                        // Letztes Segment entfernen bis index.html gefunden oder root
-                        while (path.contains("/")) {
-                            path = path.substring(0, path.lastIndexOf('/'));
-                            Resource parentIndex = location.createRelative(
-                                    path.isEmpty() ? "index.html" : path + "/index.html");
+
+                        // Parent-Fallback für verschachtelte Pfade
+                        // (z.B. galerie/sommerkonzerte/2023 → galerie/sommerkonzerte → galerie → root).
+                        String walk = path;
+                        while (walk.contains("/")) {
+                            walk = walk.substring(0, walk.lastIndexOf('/'));
+                            Resource parentIndex = location.createRelative(walk + "/index.html");
                             if (parentIndex.exists() && parentIndex.isReadable()) {
                                 return parentIndex;
                             }
                         }
+
                         return new ClassPathResource("/static/index.html");
+                    }
+
+                    private String normalizeResourcePath(String resourcePath) {
+                        String path = resourcePath == null ? "" : resourcePath;
+                        if (path.startsWith("/")) {
+                            path = path.substring(1);
+                        }
+                        while (path.endsWith("/")) {
+                            path = path.substring(0, path.length() - 1);
+                        }
+                        if (path.endsWith("/index.html")) {
+                            path = path.substring(0, path.length() - "/index.html".length());
+                        }
+                        return path;
+                    }
+
+                    private boolean isServeableFile(Resource resource) throws IOException {
+                        if (!resource.exists() || !resource.isReadable()) {
+                            return false;
+                        }
+                        // Classpath-Verzeichnisse melden exists()+readable, sind aber keine Dateien.
+                        if (!resource.isFile()) {
+                            return false;
+                        }
+                        try (var ignored = resource.getInputStream()) {
+                            return true;
+                        } catch (IOException ex) {
+                            return false;
+                        }
                     }
 
                     @Override
