@@ -64,6 +64,21 @@ public class WebConfig implements WebMvcConfigurer {
                                 return htmlFile;
                             }
                         }
+
+                        // 4. Eltern-Pfad-Fallback: für tiefe Routen (z.B. /galerie/sonstiges/cd-aufnahme)
+                        //    den nächsten vorhandenen Elternpfad finden (z.B. galerie.html).
+                        //    GalerieModernView liest usePathname() und zeigt den richtigen Ordner.
+                        String fallback = path;
+                        while (fallback.contains("/")) {
+                            fallback = fallback.substring(0, fallback.lastIndexOf('/'));
+                            if (!fallback.isEmpty()) {
+                                Resource parentHtml = location.createRelative(fallback + ".html");
+                                if (isServeableFile(parentHtml)) {
+                                    return parentHtml;
+                                }
+                            }
+                        }
+
                         return new ClassPathResource("/static/index.html");
                     }
 
