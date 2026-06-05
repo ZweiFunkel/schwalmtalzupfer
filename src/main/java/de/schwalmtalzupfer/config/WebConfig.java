@@ -10,6 +10,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * Leitet alle Nicht-API-Routen an index.html weiter, damit das Next.js SPA-Routing funktioniert.
@@ -17,6 +18,11 @@ import java.io.IOException;
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+    private static final Set<String> STATIC_EXTENSIONS = Set.of(
+            "css", "js", "mjs", "map", "json", "png", "jpg", "jpeg", "gif", "svg", "ico",
+            "woff", "woff2", "webp", "txt", "html"
+    );
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -67,6 +73,11 @@ public class WebConfig implements WebMvcConfigurer {
                             }
                         }
 
+                        // Fehlende Build-Assets (_next/static/…) → 404, nicht index.html (sonst MIME-Fehler).
+                        if (isStaticAssetPath(path)) {
+                            return null;
+                        }
+
                         return new ClassPathResource("/static/index.html");
                     }
 
@@ -88,15 +99,24 @@ public class WebConfig implements WebMvcConfigurer {
                         if (!resource.exists() || !resource.isReadable()) {
                             return false;
                         }
-                        // Classpath-Verzeichnisse melden exists()+readable, sind aber keine Dateien.
-                        if (!resource.isFile()) {
-                            return false;
-                        }
+                        // isFile() ist in JAR-Deployments immer false – stattdessen Stream testen.
+                        // Verzeichnisse (z.B. "galerie/") werfen beim Lesen eine IOException.
                         try (var ignored = resource.getInputStream()) {
                             return true;
                         } catch (IOException ex) {
                             return false;
                         }
+                    }
+
+                    private boolean isStaticAssetPath(String path) {
+                        if (path.startsWith("_next/") || path.startsWith("assets/")) {
+                            return true;
+                        }
+                        int dot = path.lastIndexOf('.');
+                        if (dot < 0 || dot == path.length() - 1) {
+                            return false;
+                        }
+                        return STATIC_EXTENSIONS.contains(path.substring(dot + 1).toLowerCase());
                     }
 
                     @Override
