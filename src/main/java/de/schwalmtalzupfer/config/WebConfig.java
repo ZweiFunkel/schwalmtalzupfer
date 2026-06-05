@@ -1,6 +1,7 @@
 package de.schwalmtalzupfer.config;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -19,6 +20,9 @@ import java.util.Set;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    @Value("${app.cors.allowed-origins:http://localhost:3000,https://localhost:3000,http://localhost:8080}")
+    private String[] allowedOrigins;
+
     private static final Set<String> STATIC_EXTENSIONS = Set.of(
             "css", "js", "mjs", "map", "json", "png", "jpg", "jpeg", "gif", "svg", "ico",
             "woff", "woff2", "webp", "txt", "html"
@@ -27,7 +31,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:3000", "http://localhost:8080")
+                .allowedOrigins(allowedOrigins)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
