@@ -56,10 +56,10 @@ function useCountdown(dateStr: string | undefined): CD | null {
 function Digit({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-800/80 border border-white/8 shadow-inner">
-        <span className="text-2xl font-bold tabular-nums text-white">{String(value).padStart(2, '0')}</span>
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 dark:bg-slate-800/80 border border-gray-200 dark:border-white/8 shadow-sm dark:shadow-inner">
+        <span className="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{String(value).padStart(2, '0')}</span>
       </div>
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">{label}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-500">{label}</span>
     </div>
   )
 }
@@ -95,36 +95,36 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
   const isToday = cd !== null && cd.days === 0 && cd.hours === 0 && cd.minutes < 60
 
   return (
-    <section className="relative overflow-hidden bg-slate-950 py-20">
+    <section className="relative overflow-hidden bg-gray-50 dark:bg-slate-950 py-20">
       {/* Ambient glow */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-green-500/8 blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-green-500/8 blur-3xl" />
+        <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-green-500/10 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-green-500/10 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-3xl px-6">
         {/* Section label */}
         <div className="mb-8 flex items-center gap-3">
           <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-          <span className="text-xs font-bold uppercase tracking-widest text-green-400">Nächstes Konzert</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Nächstes Konzert</span>
         </div>
 
         {/* Loading skeleton */}
         {next === undefined && (
-          <div className="h-40 animate-pulse rounded-2xl bg-slate-800/60" />
+          <div className="h-40 animate-pulse rounded-2xl bg-gray-200 dark:bg-slate-800/60" />
         )}
 
         {/* No upcoming concerts */}
         {next === null && (
-          <div className="flex items-center gap-4 rounded-2xl border border-white/8 bg-slate-900/60 px-6 py-6">
+          <div className="flex items-center gap-4 rounded-2xl border border-gray-200 dark:border-white/8 bg-white dark:bg-slate-900/60 px-6 py-6">
             <span className="text-3xl opacity-30">🎵</span>
-            <p className="text-gray-400">Derzeit sind keine Konzerte geplant.</p>
+            <p className="text-gray-500 dark:text-gray-400">Derzeit sind keine Konzerte geplant.</p>
           </div>
         )}
 
         {/* Concert card */}
         {next && (
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80 backdrop-blur-sm shadow-2xl">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/80 backdrop-blur-sm shadow-lg dark:shadow-2xl">
             {/* Green top stripe */}
             <div className="h-1 w-full bg-gradient-to-r from-green-500 via-emerald-400 to-green-600" />
 
@@ -132,17 +132,17 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
               {/* Header row */}
               <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-2xl font-bold text-white leading-tight">{next.title}</h3>
-                  <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-400">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{next.title}</h3>
+                  <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
                     {next.location && (
                       <span className="flex items-center gap-1.5">📍 {next.location}</span>
                     )}
                   </div>
                   {next.description && (
-                    <p className="mt-2 text-sm text-gray-300 leading-relaxed">{next.description}</p>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{next.description}</p>
                   )}
                 </div>
-                <div className="shrink-0 rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-2.5 text-sm font-semibold text-green-400 whitespace-nowrap">
+                <div className="shrink-0 rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-2.5 text-sm font-semibold text-green-700 dark:text-green-400 whitespace-nowrap">
                   📅 {formatDate(next.date)}
                 </div>
               </div>
@@ -150,14 +150,14 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
               {/* Countdown */}
               {cd && !isToday && cd.days > 0 && (
                 <div>
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Noch</p>
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600">Noch</p>
                   <div className="flex items-end gap-3">
                     <Digit value={cd.days}    label="Tage"    />
-                    <span className="mb-4 text-xl font-light text-gray-700">:</span>
+                    <span className="mb-4 text-xl font-light text-gray-400 dark:text-gray-700">:</span>
                     <Digit value={cd.hours}   label="Std"     />
-                    <span className="mb-4 text-xl font-light text-gray-700">:</span>
+                    <span className="mb-4 text-xl font-light text-gray-400 dark:text-gray-700">:</span>
                     <Digit value={cd.minutes} label="Min"     />
-                    <span className="mb-4 text-xl font-light text-gray-700">:</span>
+                    <span className="mb-4 text-xl font-light text-gray-400 dark:text-gray-700">:</span>
                     <Digit value={cd.seconds} label="Sek"     />
                   </div>
                 </div>

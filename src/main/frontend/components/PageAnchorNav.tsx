@@ -28,9 +28,10 @@ export default function PageAnchorNav({ anchors }: { anchors: AnchorItem[] }) {
   const scrollTo = (id: string) => {
     const el = document.getElementById(id)
     if (el) {
-      const offset = 80
+      // Account for main navbar (~64px) + sticky anchor nav (~48px) + buffer
+      const offset = 124
       const top = el.getBoundingClientRect().top + window.scrollY - offset
-      window.scrollTo({ top, behavior: 'smooth' })
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
     }
   }
 

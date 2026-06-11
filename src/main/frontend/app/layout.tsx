@@ -25,9 +25,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <Navbar />
             <main>{children}</main>
-            <footer className="border-t border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-slate-950 py-12 text-center text-sm text-gray-500">
-              <div className="mb-2 text-2xl opacity-30">♩ ♪ ♫ ♬</div>
-              © 2026 Die Schwalmtalzupfer e.V.
+            <footer className="border-t border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-slate-950 py-12 text-sm text-gray-500">
+              <div className="mx-auto max-w-5xl px-6">
+                {/* Links */}
+                <div className="mb-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+                  <a href="/" className="hover:text-green-600 dark:hover:text-green-400 transition">Startseite</a>
+                  <a href="/konzerte" className="hover:text-green-600 dark:hover:text-green-400 transition">Konzerte</a>
+                  <a href="/kontakt" className="hover:text-green-600 dark:hover:text-green-400 transition">Kontakt</a>
+                  <a href="/intern" className="hover:text-green-600 dark:hover:text-green-400 transition">Mitgliederbereich</a>
+                  <a href="/impressum" className="hover:text-green-600 dark:hover:text-green-400 transition">Impressum</a>
+                </div>
+                {/* Divider */}
+                <div className="mb-4 text-center text-xl opacity-20 tracking-widest select-none">♩ ♪ ♫ ♬</div>
+                {/* Copyright */}
+                <p className="text-center">
+                  © {new Date().getFullYear()} Die Schwalmtalzupfer e.&nbsp;V.
+                </p>
+              </div>
             </footer>
             <ScrollButtons />
           </AuthProvider>

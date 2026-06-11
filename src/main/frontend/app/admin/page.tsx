@@ -191,7 +191,7 @@ function EventCardForm({ content, onChange }: { content: Record<string, unknown>
           <ImageField label="Bild (optional)" value={ev.imageUrl ?? ''} onChange={v => update(i, 'imageUrl', v)} />
         </div>
       ))}
-      <button onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
         + Event hinzufügen
       </button>
     </div>
@@ -400,7 +400,7 @@ function PersonGridForm({ content, onChange }: { content: Record<string, unknown
           </div>
         )
       })}
-      <button onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
         + Person hinzufügen
       </button>
       {cropIdx !== null && persons[cropIdx]?.imageUrl && (
@@ -446,7 +446,7 @@ function NextConcertForm({ content, onChange }: { content: Record<string, unknow
           <Field label="Beschreibung" value={ev.description} onChange={v => update(i, 'description', v)} />
         </div>
       ))}
-      <button onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
         + Konzert hinzufügen
       </button>
     </div>
@@ -495,7 +495,7 @@ function BandGridForm({ content, onChange }: { content: Record<string, unknown>;
           </div>
         )
       })}
-      <button onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
         + Mitglied hinzufügen
       </button>
       {cropIdx !== null && persons[cropIdx]?.imageUrl && (
@@ -534,7 +534,7 @@ function ChoirListForm({ content, onChange }: { content: Record<string, unknown>
           </div>
         </div>
       ))}
-      <button onClick={addVoice} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
+      <button type="button" onClick={addVoice} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
         + Stimmlage hinzufügen
       </button>
     </div>
@@ -648,7 +648,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
           </div>
         </div>
       ))}
-      <button onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
         + Termin hinzufügen
       </button>
     </div>
@@ -704,7 +704,7 @@ function ActivityGridForm({ content, onChange }: { content: Record<string, unkno
           </div>
         </div>
       ))}
-      <button onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
         + Aktivität hinzufügen
       </button>
     </div>
@@ -950,7 +950,7 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
        )}
         </div>
       ))}
-      <button onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
         + Sponsor hinzufügen
       </button>
       {pickerIdx !== null && (
@@ -1005,7 +1005,7 @@ function InternChangelogForm({ content, onChange }: { content: Record<string, un
   return (
     <div className="flex flex-col gap-4">
       <Field label="Überschrift" value={String(content.heading ?? 'Was ist neu?')} onChange={v => onChange({ ...content, heading: v })} />
-      <button onClick={add}
+      <button type="button" onClick={add}
         className="rounded-lg border border-dashed border-green-500/30 bg-green-900/10 py-2 text-sm text-green-400 hover:bg-green-900/20 transition">
         + Eintrag oben hinzufügen
       </button>
@@ -1090,11 +1090,11 @@ function SectionEditor({ section, pageSlug, onSaved, onDeleted }: {
       <div className="mb-3 flex items-center justify-between flex-wrap gap-2">
         <span className="rounded bg-green-900/40 px-2 py-0.5 text-xs font-mono font-bold text-green-400">{section.type}</span>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={toggleExpert}
+          <button type="button" onClick={toggleExpert}
             className={`rounded px-2 py-1 text-xs transition ${expertMode ? 'bg-yellow-800/40 text-yellow-400' : 'bg-slate-700 text-gray-400 hover:text-white'}`}>
             {expertMode ? '🔧 Expertenmode (aktiv)' : '🔧 Expertenmode'}
           </button>
-          <button onClick={del} className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">Löschen</button>
+          <button type="button" onClick={del} className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">Löschen</button>
         </div>
       </div>
 
@@ -1120,7 +1120,7 @@ function SectionEditor({ section, pageSlug, onSaved, onDeleted }: {
       )}
 
       {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
-      <button onClick={save} disabled={saving}
+      <button type="button" onClick={save} disabled={saving}
         className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
         {saving ? 'Speichert…' : '✓ Speichern'}
       </button>
@@ -1676,7 +1676,7 @@ function PageEditor({ page, onBack }: { page: PageMeta; onBack: () => void }) {
           className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none">
           {['HERO', 'EVENT_CARD', 'TEXT_BLOCK', 'PERSON_GRID', 'NEXT_CONCERT', 'BAND_GRID', 'CHOIR_LIST', 'IMAGE_CAPTION', 'TERMINE_LIST', 'ACTIVITY_GRID', 'SPONSOR_GRID', 'TERMINE_KONZERTE', 'INTERN_CHANGELOG'].map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <button onClick={addSection} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">
+        <button type="button" onClick={addSection} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">
           + Sektion hinzufügen
         </button>
       </div>
