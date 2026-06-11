@@ -88,7 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               {/* Copyright + Impressum-Link */}
               <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
-                <span>© {new Date().getFullYear()} Schwalmtalzupfer e.V. &nbsp;·&nbsp; Jugendförderung &amp; Musikschule</span>
+                <span>© {new Date().getFullYear()} Die Schwalmtalzupfer e.&nbsp;V.</span>
                 <Link
                   href="/impressum"
                   className="rounded-lg border border-gray-300 dark:border-white/10 px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 transition hover:border-green-500 hover:text-green-600 dark:hover:text-green-400"
