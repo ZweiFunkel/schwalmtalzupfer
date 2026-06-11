@@ -36,6 +36,7 @@ export default function AdminMembersPage() {
   const [showArchive, setShowArchive] = useState(false)
 
   // Redirect if not admin/board
+  useEffect(() => { document.title = 'Mitglieder – Schwalmtalzupfer' }, [])
   useEffect(() => {
     if (!loading && (!user || (user.role !== 'ROLE_ADMIN' && user.role !== 'ROLE_BOARD'))) {
       router.push('/')

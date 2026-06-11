@@ -9,6 +9,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -27,9 +28,12 @@ public class IbanConverter implements AttributeConverter<String, String> {
     private final byte[] keyBytes;
 
     public IbanConverter(@Value("${app.security.aes-key}") String aesKey) {
-        this.keyBytes = aesKey.getBytes(StandardCharsets.UTF_8);
-        if (this.keyBytes.length != 32) {
-            throw new IllegalArgumentException("AES key must be exactly 32 bytes (256 bit)");
+        try {
+            // SHA-256 des Keys → immer exakt 32 Bytes (256 bit), unabhängig von der Key-Länge
+            this.keyBytes = MessageDigest.getInstance("SHA-256")
+                    .digest(aesKey.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            throw new IllegalStateException("SHA-256 nicht verfügbar", e);
         }
     }
 

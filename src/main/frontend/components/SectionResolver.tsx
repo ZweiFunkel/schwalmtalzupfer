@@ -1,5 +1,5 @@
 import React from 'react'
-import { PageSection, HeroContent, EventCardContent, PersonGridContent, TextBlockContent, NextConcertContent, BandGridContent, ChoirListContent, ImageCaptionContent, TermineListContent, ActivityGridContent, SponsorGridContent } from '@/types/page'
+import { PageSection, HeroContent, EventCardContent, PersonGridContent, TextBlockContent, NextConcertContent, BandGridContent, ChoirListContent, ImageCaptionContent, TermineListContent, ActivityGridContent, SponsorGridContent, TermineKonzerteContent, InternChangelogContent } from '@/types/page'
 import HeroSection from './sections/HeroSection'
 import EventCardSection from './sections/EventCardSection'
 import PersonGridSection from './sections/PersonGridSection'
@@ -11,6 +11,8 @@ import ImageCaptionSection from './sections/ImageCaptionSection'
 import TermineListSection from './sections/TermineListSection'
 import ActivityGridSection from './sections/ActivityGridSection'
 import SponsorGridSection from './sections/SponsorGridSection'
+import TermineKonzerteSection from './sections/TermineKonzerteSection'
+import InternChangelogSection from './sections/InternChangelogSection'
 
 interface Props {
   section: PageSection
@@ -42,6 +44,10 @@ export default function SectionResolver({ section, index, anchorId }: Props) {
       return <ActivityGridSection content={section.content as ActivityGridContent} />
     case 'SPONSOR_GRID':
       return <SponsorGridSection content={section.content as SponsorGridContent} />
+    case 'TERMINE_KONZERTE':
+      return <TermineKonzerteSection content={section.content as TermineKonzerteContent} />
+    case 'INTERN_CHANGELOG':
+      return <InternChangelogSection content={section.content as InternChangelogContent} />
     default:
       return (
         <div className="py-8 text-center text-gray-400">

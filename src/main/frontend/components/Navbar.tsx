@@ -44,9 +44,12 @@ interface NavConfig {
 }
 
 function normalizeNavConfig(raw: Record<string, unknown>): NavConfig {
+  const fixedLinks = raw.fixedLinks as NavFixedLink[] | undefined
+  const hidden = raw.hidden as string[] | undefined
   if (Array.isArray(raw.dropdowns)) {
-    return { dropdowns: raw.dropdowns as NavDropdownGroup[], hidden: raw.hidden as string[] | undefined, fixedLinks: raw.fixedLinks as NavFixedLink[] | undefined }
+    return { dropdowns: raw.dropdowns as NavDropdownGroup[], hidden, fixedLinks }
   }
+  // Legacy-Format (ueberUns / vereinsleben) – fixedLinks werden jetzt auch weitergegeben
   const groups: NavDropdownGroup[] = []
   if (Array.isArray(raw.ueberUns) && (raw.ueberUns as string[]).length > 0) {
     groups.push({ label: 'Über uns', target: (raw.ueberUns as string[])[0], items: raw.ueberUns as string[] })
@@ -54,7 +57,7 @@ function normalizeNavConfig(raw: Record<string, unknown>): NavConfig {
   if (Array.isArray(raw.vereinsleben) && (raw.vereinsleben as string[]).length > 0) {
     groups.push({ label: 'Vereinsleben', items: raw.vereinsleben as string[] })
   }
-  return { dropdowns: groups, hidden: raw.hidden as string[] | undefined }
+  return { dropdowns: groups, hidden, fixedLinks }
 }
 
 const DEFAULT_CONFIG: NavConfig = {
@@ -63,7 +66,12 @@ const DEFAULT_CONFIG: NavConfig = {
     { label: 'Vereinsleben', items: ['termine', 'ausfluege', 'jugendfahrten'] },
   ],
   fixedLinks: [
-    { label: 'Intern', href: '/intern', visibility: 'member', items: [{ label: 'Noten', href: '/noten' }] },
+    { label: 'Galerie', href: '/galerie', visibility: 'public' },
+    { label: 'Intern', href: '/intern', visibility: 'member', items: [
+      { label: 'Videos',      href: '/intern/videos' },
+      { label: 'Merch',       href: '/intern/merch' },
+      { label: 'Notenarchiv', href: '/noten' },
+    ]},
     { label: 'Kontakt', href: '/kontakt', visibility: 'public' },
   ],
 }
@@ -221,11 +229,10 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         {/* Logo */}
         <a href="/" className="flex items-center gap-3 shrink-0">
-          <Image src={logoUrl} alt="Logo Schwalmtalzupfer" width={48} height={48}
-            className={`h-10 w-auto object-contain brightness-0 ${theme === 'light' ? '' : 'invert'}`}
+          <Image src={logoUrl} alt="Logo Schwalmtalzupfer" width={56} height={56}
+            className={`h-14 w-auto object-contain brightness-0 ${theme === 'light' ? '' : 'invert'}`}
             onError={(e) => { (e.target as HTMLImageElement).src = '/assets/logo.svg' }}
           />
-          <span className="text-lg font-bold text-green-600 dark:text-green-400 hidden sm:inline tracking-tight">Schwalmtalzupfer</span>
         </a>
 
         {/* Desktop Nav */}

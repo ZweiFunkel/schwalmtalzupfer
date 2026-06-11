@@ -1,22 +1,30 @@
-import React from 'react'
+'use client'
+
+import React, { useEffect, useState } from 'react'
 import { PageData } from '@/types/page'
 import SectionResolver from '@/components/SectionResolver'
 import { getApiBase } from '@/lib/api'
 
 const API_BASE = getApiBase()
 
-async function getHomePage(): Promise<PageData | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/pages/home`)
-    if (!res.ok) return null
-    return res.json()
-  } catch {
-    return null
-  }
-}
+export default function HomePage() {
+  const [page, setPage] = useState<PageData | null | undefined>(undefined)
 
-export default async function HomePage() {
-  const page = await getHomePage()
+  useEffect(() => {
+    document.title = 'Schwalmtalzupfer'
+    fetch(`${API_BASE}/api/pages/home`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(setPage)
+      .catch(() => setPage(null))
+  }, [])
+
+  if (page === undefined) {
+    return (
+      <div className="flex min-h-[80vh] items-center justify-center">
+        <div className="animate-pulse text-gray-400 text-lg">Lade…</div>
+      </div>
+    )
+  }
 
   if (!page) {
     return (
@@ -42,4 +50,3 @@ export default async function HomePage() {
     </>
   )
 }
-

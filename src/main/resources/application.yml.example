@@ -24,20 +24,21 @@ spring:
     virtual:
       enabled: true
   mail:
-    # Gmail SMTP: MAIL_HOST=smtp.gmail.com, MAIL_PORT=587
-    # MAIL_USERNAME=dein-google-konto@gmail.com, MAIL_PASSWORD=App-Passwort (Google App Password)
-    host: ${MAIL_HOST:localhost}
-    port: ${MAIL_PORT:25}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    host: smtp.gmail.com
+    port: 587
+    username: schwalmtalzupfer@gmail.com
+    password: ${MAIL_PASSWORD}        # Google App-Passwort (siehe unten)
     properties:
-      mail.smtp.auth: ${MAIL_SMTP_AUTH:false}
-      mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS:false}
-      mail.smtp.starttls.required: false
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
       mail.smtp.connectiontimeout: 5000
       mail.smtp.timeout: 5000
 
 app:
+  cors:
+    # Komma-getrennte Liste erlaubter Origins (die öffentliche URL der App + localhost für Dev)
+    allowed-origins: ${APP_CORS_ORIGINS:https://schwalmtalzupfer.de,https://159.195.70.118.nip.io,http://localhost:3000,https://localhost:3000}
   security:
     aes-key: ${APP_SECURITY_AES_KEY:dein-32-zeichen-schluessel-hier!}
   r2:
@@ -51,6 +52,7 @@ app:
     token-validity-hours: 72
   mail:
     from: ${MAIL_FROM_ADDRESS:noreply@schwalmtalzupfer.de}
+    to: ${MAIL_TO_ADDRESS:simon.lankes@gmx.de}
 
 server:
   port: 8080

@@ -35,12 +35,24 @@ build/
 ### Secrets & local config ###
 src/main/resources/application.yml
 src/main/frontend/.env.local
+src/main/frontend/env.local
+
+### One-time scripts (not for version control) ###
+plans/
+src/main/resources/db/migration/delete_galerie_textblock.sql
+src/main/resources/db/migration/fix_galerie_section.sql
 
 ### Frontend build artifacts ###
 src/main/frontend/node_modules/
 src/main/frontend/.next/
 src/main/frontend/out/
 src/main/frontend/tsconfig.tsbuildinfo
+
+### Local SSL certificates (dev only) ###
+src/main/frontend/certificates/
+
+### Vite cache ###
+.vite/
 
 ### Maven wrapper binary ###
 .mvn/wrapper/maven-wrapper.jar

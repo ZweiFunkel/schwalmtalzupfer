@@ -15,7 +15,9 @@
 	<description>Schwalmtaler Zupfer 2.0 – Fullstack Monolith</description>
 
 	<properties>
-		<java.version>25</java.version>
+		<!-- Für generateStaticParams beim Frontend-Build (Spring muss unter dieser URL laufen) -->
+		<backend.url>http://127.0.0.1:8081</backend.url>
+		<java.version>21</java.version>
 		<node.version>v20.11.0</node.version>
 		<npm.version>10.2.4</npm.version>
 		<frontend.src.dir>${project.basedir}/src/main/frontend</frontend.src.dir>
@@ -113,6 +115,10 @@
 						<phase>generate-resources</phase>
 						<configuration>
 							<arguments>run build</arguments>
+							<environmentVariables>
+								<BACKEND_URL>${backend.url}</BACKEND_URL>
+								<NODE_ENV>production</NODE_ENV>
+							</environmentVariables>
 						</configuration>
 					</execution>
 				</executions>

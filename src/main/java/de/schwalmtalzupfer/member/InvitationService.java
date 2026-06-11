@@ -3,14 +3,16 @@ package de.schwalmtalzupfer.member;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -61,17 +63,18 @@ public class InvitationService {
         tokenRepository.save(invitation);
 
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromAddress);
-            message.setTo(email);
-            message.setSubject("Einladung – Schwalmtaler Zupfer");
-            message.setText("Hallo,\n\ndu wurdest eingeladen, dem Schwalmtaler Zupfer beizutreten (Rolle: " + rolle.name() + ").\n"
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(fromAddress);
+            helper.setTo(email);
+            helper.setSubject("Einladung – Schwalmtaler Zupfer");
+            helper.setText("Hallo,\n\ndu wurdest eingeladen, dem Schwalmtaler Zupfer beizutreten (Rolle: " + rolle.name() + ").\n"
                     + "Bitte registriere dich unter folgendem Link (gültig für " + tokenValidityHours + " Stunden):\n\n"
-                    + baseUrl + "/register?token=" + token + "\n\nViele Grüße");
-            mailSender.send(message);
+                    + baseUrl + "/register?token=" + token + "\n\nViele Grüße", false);
+            mailSender.send(mimeMessage);
             log.info("Einladung an {} verschickt (Rolle: {}).", email, rolle);
-        } catch (Exception e) {
-            log.warn("E-Mail-Versand fehlgeschlagen (Platzhalter): {}", e.getMessage());
+        } catch (MessagingException e) {
+            log.warn("E-Mail-Versand fehlgeschlagen: {}", e.getMessage(), e);
         }
         return token;
     }

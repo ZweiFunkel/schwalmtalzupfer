@@ -1,7 +1,7 @@
 'use client'
 import { getApiBase } from '@/lib/api'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 const API_BASE = getApiBase()
 
@@ -13,6 +13,8 @@ export default function KontaktPage() {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => { document.title = 'Kontakt – Schwalmtalzupfer' }, [])
 
   const mailtoText = `An: info@schwalmtalzupfer.de\nBetreff: ${betreff}\nVon: ${email}\n\n${nachricht}`
 
@@ -51,19 +53,19 @@ export default function KontaktPage() {
 
   return (
     <div className="mx-auto max-w-xl px-6 py-12">
-      <h1 className="mb-2 text-3xl font-bold text-white">Kontakt</h1>
-      <p className="mb-8 text-gray-400">
+      <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Kontakt</h1>
+      <p className="mb-8 text-gray-500 dark:text-gray-400">
         Du hast eine Frage oder möchtest uns etwas mitteilen? Schreib uns – wir melden uns so schnell wie möglich.
       </p>
 
       {sent ? (
-        <div className="rounded-xl border border-green-500/30 bg-green-900/20 p-6 text-center">
+        <div className="rounded-xl border border-green-500/30 bg-green-50 dark:bg-green-900/20 p-6 text-center">
           <p className="text-2xl mb-2">✓</p>
-          <p className="text-green-400 font-semibold">Nachricht erfolgreich gesendet!</p>
-          <p className="text-sm text-gray-400 mt-1">Wir werden uns bald bei dir melden.</p>
+          <p className="text-green-700 dark:text-green-400 font-semibold">Nachricht erfolgreich gesendet!</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Wir werden uns bald bei dir melden.</p>
           <button
             onClick={() => setSent(false)}
-            className="mt-4 text-sm text-green-400 underline hover:text-green-300"
+            className="mt-4 text-sm text-green-600 dark:text-green-400 underline hover:text-green-500 dark:hover:text-green-300"
           >
             Weitere Nachricht senden
           </button>
@@ -71,40 +73,40 @@ export default function KontaktPage() {
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="mb-1 block text-sm text-gray-400">Deine E-Mail-Adresse *</label>
+            <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400">Deine E-Mail-Adresse *</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
               placeholder="deine@email.de"
-              className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-green-500 focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-gray-400">Betreff *</label>
+            <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400">Betreff *</label>
             <input
               type="text"
               value={betreff}
               onChange={e => setBetreff(e.target.value)}
               required
               placeholder="Worum geht es?"
-              className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-green-500 focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-gray-400">Nachricht *</label>
+            <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400">Nachricht *</label>
             <textarea
               value={nachricht}
               onChange={e => setNachricht(e.target.value)}
               required
               rows={6}
               placeholder="Deine Nachricht…"
-              className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white placeholder-gray-500 focus:border-green-500 focus:outline-none resize-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-green-500 focus:outline-none resize-none"
             />
           </div>
           {error && (
-            <p className="rounded-lg bg-red-900/30 border border-red-500/30 px-3 py-2 text-sm text-red-400">{error}</p>
+            <p className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-500/30 px-3 py-2 text-sm text-red-600 dark:text-red-400">{error}</p>
           )}
           <button
             type="submit"
@@ -113,38 +115,11 @@ export default function KontaktPage() {
           >
             {sending ? 'Wird gesendet…' : 'Nachricht senden'}
           </button>
-          <p className="text-xs text-gray-500 text-center">
-            Die Nachricht wird von <span className="text-gray-400">noreply@schwalmtalzupfer.de</span> an unser Team gesendet.
-          </p>
 
-          {/* Kopier-Fallback: sobald E-Mail ausgefüllt */}
-          {email && (
-            <div className="mt-2 rounded-xl border border-yellow-500/20 bg-yellow-900/10 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold text-yellow-400">📋 Alternativ: Nachricht kopieren</p>
-                <button
-                  type="button"
-                  onClick={copyToClipboard}
-                  className="rounded-lg border border-yellow-500/30 bg-yellow-900/20 px-3 py-1 text-xs font-medium text-yellow-300 hover:bg-yellow-800/30 transition"
-                >
-                  {copied ? '✓ Kopiert!' : 'Kopieren'}
-                </button>
-              </div>
-              <pre className="whitespace-pre-wrap break-words rounded-lg bg-slate-950/60 p-3 text-xs text-gray-300 font-mono select-all">
-                {mailtoText}
-              </pre>
-              <a
-                href={`mailto:info@schwalmtalzupfer.de?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(`Von: ${email}\n\n${nachricht}`)}`}
-                className="mt-2 block text-center rounded-lg border border-yellow-500/30 bg-yellow-900/20 py-2 text-xs text-yellow-300 hover:bg-yellow-800/30 transition"
-              >
-                ✉️ In E-Mail-Programm öffnen
-              </a>
-            </div>
-          )}
+          {/* Kopier-Fallback entfernt */}
         </form>
       )}
 
     </div>
   )
 }
-
