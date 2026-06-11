@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main>{children}</main>
             <footer className="border-t border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-slate-950 py-12 text-center text-sm text-gray-500">
               <div className="mb-2 text-2xl opacity-30">♩ ♪ ♫ ♬</div>
-              © {new Date().getFullYear()} Schwalmtalzupfer e.V. &nbsp;&nbsp; Jugendförderung &amp; Musikschule
+              © 2026 Die Schwalmtalzupfer e.V.
             </footer>
             <ScrollButtons />
           </AuthProvider>
