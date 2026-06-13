@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { SponsorGridContent, Sponsor, SponsorLocation } from '@/types/page'
 import Lightbox from '@/components/Lightbox'
 import { useTheme } from '@/lib/ThemeProvider'
@@ -46,6 +46,39 @@ function LocationRow({ loc, isDarkTheme }: { loc: SponsorLocation; isDarkTheme: 
   )
 }
 
+function SponsorImage({ src, alt, isDarkTheme, onClick }: {
+  src: string; alt: string; isDarkTheme: boolean; onClick?: () => void
+}) {
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => { setLoaded(false) }, [src])
+
+  return (
+    <div
+      className={`relative w-full cursor-zoom-in overflow-hidden ${isDarkTheme ? 'bg-slate-900' : 'bg-gray-50'}`}
+      style={{ paddingBottom: '52%' }}
+      onClick={onClick}
+    >
+      {/* Skeleton while loading */}
+      {!loaded && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 animate-pulse bg-gray-200 dark:bg-slate-800" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/logo.svg" alt="" className="relative h-8 w-8 animate-spin-slow brightness-0 opacity-20 dark:invert" />
+        </div>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        loading="eager"
+        onLoad={() => setLoaded(true)}
+        className={`absolute inset-0 h-full w-full object-contain p-4 hover:scale-105 transition-all duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </div>
+  )
+}
+
 function SponsorCardExpanded({ sponsor, onImage, isDarkTheme }: {
   sponsor: Sponsor
   onImage?: (src: string, alt: string) => void
@@ -61,18 +94,12 @@ function SponsorCardExpanded({ sponsor, onImage, isDarkTheme }: {
     <div className={`flex flex-col rounded-2xl border overflow-hidden ${cardBg} h-full`}>
       {/* Image */}
       {sponsor.imageUrl && (
-        <div
-          className={`relative w-full cursor-zoom-in overflow-hidden ${isDarkTheme ? 'bg-slate-900' : 'bg-gray-50'}`}
-          style={{ paddingBottom: '52%' }}
+        <SponsorImage
+          src={sponsor.imageUrl}
+          alt={sponsor.name}
+          isDarkTheme={isDarkTheme}
           onClick={() => onImage?.(sponsor.imageUrl!, sponsor.name)}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={sponsor.imageUrl}
-            alt={sponsor.name}
-            className="absolute inset-0 h-full w-full object-contain p-4 hover:scale-105 transition-transform duration-300"
-          />
-        </div>
+        />
       )}
 
       {/* Header */}
@@ -159,7 +186,11 @@ export default function SponsorGridSection({ content }: { content: SponsorGridCo
 
         <div className="columns-1 md:columns-3 gap-8 space-y-8">
           {sponsors.map((sponsor, index) => (
-            <div key={index} className="break-inside-avoid">
+            <div
+              key={index}
+              className="break-inside-avoid opacity-0 animate-[fadeInUp_0.4s_ease-out_forwards]"
+              style={{ animationDelay: `${index * 60}ms` }}
+            >
               <SponsorCardExpanded
                 sponsor={sponsor}
                 onImage={(src, alt) => setLightbox({ src, alt })}
