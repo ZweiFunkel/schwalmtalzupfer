@@ -93,16 +93,16 @@ function NavDropdownMenu({ label, target, items, onClose }: {
   }, [])
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative group/nav" ref={ref}>
       <div className="flex items-center">
         {/* Label: link if target, otherwise opens dropdown */}
         {target ? (
-          <Link href={`/${target}`} className="transition hover:text-green-600 dark:hover:text-green-400">{label}</Link>
+          <Link href={`/${target}`} className="transition hover:text-green-600 dark:hover:text-green-400 group-hover/nav:text-green-600 dark:group-hover/nav:text-green-400">{label}</Link>
         ) : (
-          <button onClick={() => setOpen(o => !o)} className="transition hover:text-green-600 dark:hover:text-green-400">{label}</button>
+          <button onClick={() => setOpen(o => !o)} className="transition hover:text-green-600 dark:hover:text-green-400 group-hover/nav:text-green-600 dark:group-hover/nav:text-green-400">{label}</button>
         )}
         {/* Arrow always toggles dropdown */}
-        <button onClick={() => setOpen(o => !o)} className="ml-1 p-0.5 text-gray-400 hover:text-green-500 transition">
+        <button onClick={() => setOpen(o => !o)} className="ml-1 p-0.5 text-gray-400 group-hover/nav:text-green-500 transition">
           <svg className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
@@ -139,10 +139,10 @@ function NavFixedDropdown({ link, onClose }: { link: NavFixedLink; onClose?: () 
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative group/nav" ref={ref}>
       <div className="flex items-center">
-        <Link href={link.href} className="transition hover:text-green-600 dark:hover:text-green-400">{link.label}</Link>
-        <button onClick={() => setOpen(o => !o)} className="ml-1 p-0.5 text-gray-400 hover:text-green-500 transition">
+        <Link href={link.href} className="transition hover:text-green-600 dark:hover:text-green-400 group-hover/nav:text-green-600 dark:group-hover/nav:text-green-400">{link.label}</Link>
+        <button onClick={() => setOpen(o => !o)} className="ml-1 p-0.5 text-gray-400 group-hover/nav:text-green-500 transition">
           <svg className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>

@@ -36,7 +36,7 @@ export default function PageAnchorNav({ anchors }: { anchors: AnchorItem[] }) {
   }
 
   return (
-    <div className="sticky top-[60px] z-40 border-b border-gray-200 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
+    <div className="sticky top-20 z-40 border-b border-gray-200 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-3xl gap-1 px-6 py-2">
         {anchors.map(a => (
           <button

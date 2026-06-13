@@ -380,15 +380,15 @@ function VideoCard({ video }: { video: VideoEntry }) {
     return (
       <>
         {/* Karte bleibt sichtbar (gedimmt) im Grid */}
-        <div className="overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-lg opacity-40 pointer-events-none select-none">
-          <div className="aspect-video bg-slate-800">
+        <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-lg opacity-40 pointer-events-none select-none">
+          <div className="aspect-video bg-gray-100 dark:bg-slate-800">
             {thumbnailUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={thumbnailUrl} alt={video.title} className="h-full w-full object-cover" />
             )}
           </div>
           <div className="px-4 py-3">
-            <p className="text-sm font-medium text-gray-200 truncate">{video.title}</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{video.title}</p>
           </div>
         </div>
         <PlayerModal
@@ -403,20 +403,20 @@ function VideoCard({ video }: { video: VideoEntry }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-lg">
+    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-lg">
       {viewMode === 'thumbnail' ? (
         /* ── Thumbnail ── */
         <div className="group cursor-pointer" onClick={() => setViewMode('standard')}>
-          <div className="relative aspect-video overflow-hidden bg-slate-800">
+          <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-slate-800">
             {thumbnailUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={thumbnailUrl} alt={video.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
             ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-800 to-slate-900">
-                <svg className="h-10 w-10 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-900">
+                <svg className="h-10 w-10 text-gray-400 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
                 </svg>
-                <span className="text-xs font-medium text-slate-500">Playlist</span>
+                <span className="text-xs font-medium text-gray-400 dark:text-slate-500">Playlist</span>
               </div>
             )}
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10 transition-all duration-200 group-hover:bg-black/50">
@@ -436,9 +436,9 @@ function VideoCard({ video }: { video: VideoEntry }) {
             )}
           </div>
           <div className="flex items-center justify-between gap-2 px-4 py-3">
-            <p className="text-sm font-medium text-gray-200 truncate group-hover:text-white transition">{video.title}</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate group-hover:text-gray-900 dark:group-hover:text-white transition">{video.title}</p>
             <a href={ytUrl(video)} target="_blank" rel="noopener noreferrer" title="Direkt auf YouTube"
-              className="shrink-0 rounded-lg border border-white/10 p-1.5 text-gray-500 hover:border-red-500/50 hover:text-red-400 transition"
+              className="shrink-0 rounded-lg border border-gray-200 dark:border-white/10 p-1.5 text-gray-400 dark:text-gray-500 hover:border-red-500/50 hover:text-red-400 transition"
               onClick={e => e.stopPropagation()}>
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
@@ -450,10 +450,10 @@ function VideoCard({ video }: { video: VideoEntry }) {
         /* ── Standard (inline) ── */
         <div className="flex flex-col">
           {loading ? (
-            <div className="aspect-video bg-slate-800 flex items-center justify-center">
+            <div className="aspect-video bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
               <div className="text-center">
                 <div className="animate-pulse text-4xl mb-2">🎬</div>
-                <p className="text-sm text-gray-400">Lade Playlist…</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Lade Playlist…</p>
               </div>
             </div>
           ) : (currentVideoId || video.type === 'VIDEO' || (video.type === 'PLAYLIST' && !loading)) ? (
@@ -486,22 +486,22 @@ function VideoCard({ video }: { video: VideoEntry }) {
               </div>
 
               {/* Modus-Leiste */}
-              <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/5 bg-slate-950/60">
-                <p className="text-xs text-gray-400 truncate min-w-0">{currentTitle}</p>
+              <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-slate-950/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate min-w-0">{currentTitle}</p>
                 <div className="flex shrink-0 items-center gap-1.5">
                   {/* Modi */}
-                  <div className="flex rounded-md overflow-hidden border border-white/10 text-xs">
+                  <div className="flex rounded-md overflow-hidden border border-gray-200 dark:border-white/10 text-xs">
                     <button
                       disabled
-                      className="px-2.5 py-1 bg-white/15 text-white font-medium cursor-default"
+                      className="px-2.5 py-1 bg-gray-200 dark:bg-white/15 text-gray-700 dark:text-white font-medium cursor-default"
                     >Standard</button>
                     <button
                       onClick={() => setViewMode('large')}
-                      className="px-2.5 py-1 border-l border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition"
+                      className="px-2.5 py-1 border-l border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition"
                     >Groß</button>
                     <button
                       onClick={() => setViewMode('cinema')}
-                      className="px-2.5 py-1 border-l border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition"
+                      className="px-2.5 py-1 border-l border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition"
                     >Kino</button>
                   </div>
                   {/* Playlist-Toggle */}
@@ -511,7 +511,7 @@ function VideoCard({ video }: { video: VideoEntry }) {
                       className={`flex items-center gap-1 rounded border px-2 py-1 text-xs transition ${
                         showPlaylist
                           ? 'border-green-500/50 text-green-400 bg-green-500/10'
-                          : 'border-white/10 text-gray-400 hover:text-green-400 hover:border-green-500/40'
+                          : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 hover:border-green-500/40'
                       }`}
                     >
                       <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -523,7 +523,7 @@ function VideoCard({ video }: { video: VideoEntry }) {
                   {/* Schließen */}
                   <button
                     onClick={() => setViewMode('thumbnail')}
-                    className="rounded border border-white/10 p-1 text-gray-400 hover:text-white hover:border-white/30 transition"
+                    className="rounded border border-gray-200 dark:border-white/10 p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30 transition"
                     title="Schließen"
                   >
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -535,7 +535,7 @@ function VideoCard({ video }: { video: VideoEntry }) {
 
               {/* Playlist (ein-/ausblendbar) */}
               {showPlaylist && hasPlaylist && (
-                <div className="border-t border-white/10 p-3">
+                <div className="border-t border-gray-100 dark:border-white/10 p-3">
                   <div className="flex gap-2 overflow-x-auto pb-1">
                     {playlistItems.map((item, idx) => (
                       <button
@@ -544,7 +544,7 @@ function VideoCard({ video }: { video: VideoEntry }) {
                         className={`shrink-0 rounded-lg overflow-hidden border-2 transition ${
                           currentVideoId === item.videoId
                             ? 'border-green-500'
-                            : 'border-transparent hover:border-white/20'
+                            : 'border-transparent hover:border-gray-300 dark:hover:border-white/20'
                         }`}
                       >
                         <div className="relative w-28 h-16">
@@ -561,8 +561,8 @@ function VideoCard({ video }: { video: VideoEntry }) {
               )}
             </>
           ) : (
-            <div className="aspect-video bg-slate-800 flex items-center justify-center">
-              <p className="text-sm text-gray-400">Lade…</p>
+            <div className="aspect-video bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Lade…</p>
             </div>
           )}
         </div>
@@ -575,9 +575,14 @@ function VideoCard({ video }: { video: VideoEntry }) {
 
 function EmptyVideos({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/10 py-14 text-center">
-      <span className="text-4xl">🎬</span>
-      <p className="text-sm text-gray-400">{label} – noch keine Videos vorhanden.</p>
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-200 dark:border-white/10 py-14 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-slate-800">
+        <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+      </div>
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500">Noch keine Videos vorhanden</p>
     </div>
   )
 }
@@ -631,8 +636,8 @@ function WeitereContent({ videos, sub }: { videos: VideoEntry[]; sub: string }) 
         .map(([year, vids]) => (
           <div key={year}>
             <div className="mb-4 flex items-center gap-3">
-              <span className="text-sm font-bold uppercase tracking-widest text-gray-500">{year || 'Weitere'}</span>
-              <span className="flex-1 h-px bg-white/10" />
+              <span className="text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{year || 'Weitere'}</span>
+              <span className="flex-1 h-px bg-gray-200 dark:bg-white/10" />
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
               {vids.map(v => <VideoCard key={v.id} video={v} />)}
@@ -645,75 +650,95 @@ function WeitereContent({ videos, sub }: { videos: VideoEntry[]; sub: string }) 
 
 // ─── Sidebar nav ──────────────────────────────────────────────────────────────
 
-const NAV_BTN_BASE = 'w-full rounded-lg px-3 py-1.5 text-left text-sm transition'
-const NAV_BTN_ACTIVE = 'bg-green-600 text-white font-semibold'
-const NAV_BTN_IDLE = 'text-gray-400 hover:bg-slate-800 hover:text-white'
+function NavItem({ active, onClick, children, indent = false }: {
+  active: boolean; onClick: () => void; children: React.ReactNode; indent?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left text-sm transition-all duration-150 rounded-lg px-3 py-1.5 flex items-center gap-2 ${indent ? 'pl-5' : ''}
+        ${active
+          ? 'bg-green-600 text-white font-semibold shadow-sm shadow-green-700/20'
+          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white'
+        }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function SidebarSection({ label, color, children }: { label: string; color: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-1.5 px-1">
+        <span className={`h-2 w-2 rounded-full shrink-0 ${color}`} />
+        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{label}</span>
+      </div>
+      {children}
+    </div>
+  )
+}
 
 function SidebarNav({ nav, selection, onSelect }: {
   nav: NavStructure
   selection: Selection | null
   onSelect: (s: Selection) => void
 }) {
-  function KonzertSection({ cat, label, emoji, years }: {
-    cat: 'SOMMER' | 'WINTER'; label: string; emoji: string; years: KonzertNavYear[]
+  function KonzertSection({ cat, label, color, years }: {
+    cat: 'SOMMER' | 'WINTER'; label: string; color: string; years: KonzertNavYear[]
   }) {
     return (
-      <div>
-        <div className="mb-1.5 flex items-center gap-1.5 px-1">
-          <span className="text-base">{emoji}</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{label}</span>
-        </div>
+      <SidebarSection label={label} color={color}>
         {years.length === 0 ? (
-          <p className="px-2 pb-1 text-xs italic text-gray-600">Keine Videos</p>
+          <p className="px-2 pb-1 text-xs italic text-gray-400 dark:text-gray-600">Keine Videos</p>
         ) : (
           <div className="flex flex-col gap-0.5">
             {years.map(({ year, days }) =>
               days.length === 0 ? (
-                <button key={year} onClick={() => onSelect({ cat, year, day: null })}
-                  className={`${NAV_BTN_BASE} ${isSel(selection, { cat, year, day: null }) ? NAV_BTN_ACTIVE : NAV_BTN_IDLE}`}>
+                <NavItem key={year} active={isSel(selection, { cat, year, day: null })} onClick={() => onSelect({ cat, year, day: null })}>
                   {year}
-                </button>
+                </NavItem>
               ) : (
                 <div key={year}>
-                  <p className="px-3 pt-1 text-xs font-semibold text-gray-500">{year}</p>
-                  {days.map(day => (
-                    <button key={day} onClick={() => onSelect({ cat, year, day })}
-                      className={`${NAV_BTN_BASE} pl-5 flex items-center gap-1.5 ${isSel(selection, { cat, year, day }) ? NAV_BTN_ACTIVE : NAV_BTN_IDLE}`}>
-                      <span className="text-[9px] opacity-50">▸</span>{day}
-                    </button>
-                  ))}
+                  <NavItem active={isSel(selection, { cat, year, day: null })} onClick={() => onSelect({ cat, year, day: null })}>
+                    <span className="font-medium">{year}</span>
+                    <span className="ml-auto text-[10px] opacity-60">{days.length}d</span>
+                  </NavItem>
+                  <div className="relative ml-3 mt-0.5 mb-1 flex flex-col gap-0.5">
+                    <div className="absolute left-0 top-1 bottom-1 w-px bg-gray-200 dark:bg-white/10" />
+                    {days.map(day => (
+                      <NavItem key={day} active={isSel(selection, { cat, year, day })} onClick={() => onSelect({ cat, year, day })} indent>
+                        {day}
+                      </NavItem>
+                    ))}
+                  </div>
                 </div>
               )
             )}
           </div>
         )}
-      </div>
+      </SidebarSection>
     )
   }
 
   return (
     <nav className="flex flex-col gap-5">
-      <KonzertSection cat="SOMMER" label="Sommerkonzert" emoji="☀️" years={nav.sommer} />
-      <KonzertSection cat="WINTER" label="Winterkonzert" emoji="❄️" years={nav.winter} />
+      <KonzertSection cat="SOMMER" label="Sommerkonzert" color="bg-amber-400" years={nav.sommer} />
+      <KonzertSection cat="WINTER" label="Winterkonzert" color="bg-sky-400" years={nav.winter} />
 
-      <div>
-        <div className="mb-1.5 flex items-center gap-1.5 px-1">
-          <span className="text-base">🎤</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Weitere Auftritte</span>
-        </div>
+      <SidebarSection label="Weitere Auftritte" color="bg-purple-400">
         {nav.weitere.length === 0 ? (
-          <p className="px-2 pb-1 text-xs italic text-gray-600">Keine Videos</p>
+          <p className="px-2 pb-1 text-xs italic text-gray-400 dark:text-gray-600">Keine Videos</p>
         ) : (
           <div className="flex flex-col gap-0.5">
             {nav.weitere.map(sub => (
-              <button key={sub} onClick={() => onSelect({ cat: 'WEITERE', sub })}
-                className={`${NAV_BTN_BASE} ${isSel(selection, { cat: 'WEITERE', sub }) ? NAV_BTN_ACTIVE : NAV_BTN_IDLE}`}>
+              <NavItem key={sub} active={isSel(selection, { cat: 'WEITERE', sub })} onClick={() => onSelect({ cat: 'WEITERE', sub })}>
                 {sub}
-              </button>
+              </NavItem>
             ))}
           </div>
         )}
-      </div>
+      </SidebarSection>
     </nav>
   )
 }
@@ -775,18 +800,34 @@ function VideosPageInner() {
 
   const nav = buildNav(videos)
 
+  const catColor = selection
+    ? selection.cat === 'SOMMER' ? 'from-amber-500/10 to-transparent border-amber-200 dark:border-amber-500/20'
+    : selection.cat === 'WINTER' ? 'from-sky-500/10 to-transparent border-sky-200 dark:border-sky-500/20'
+    : 'from-purple-500/10 to-transparent border-purple-200 dark:border-purple-500/20'
+    : 'from-gray-100 to-transparent border-gray-200 dark:from-white/5 dark:border-white/10'
+
+  const catAccent = selection
+    ? selection.cat === 'SOMMER' ? 'bg-amber-400'
+    : selection.cat === 'WINTER' ? 'bg-sky-400'
+    : 'bg-purple-400'
+    : 'bg-gray-300'
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      {/* Breadcrumb */}
-      <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Link href="/intern" className="hover:text-green-400 transition">Intern</Link>
-          <span>/</span>
-          <span className="text-gray-300">Videos</span>
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      {/* Page header */}
+      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+            <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition">Intern</Link>
+            <span>/</span>
+            <span className="text-gray-500 dark:text-gray-300">Videos</span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Video-Archiv</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Konzerte & Auftritte der Schwalmtalzupfer</p>
         </div>
         {isBoard(user) && (
           <Link href="/admin?tab=videos"
-            className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-gray-400 hover:border-green-500/40 hover:text-green-400 transition">
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:border-green-500/40 hover:text-green-500 dark:hover:text-green-400 transition">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
@@ -795,21 +836,22 @@ function VideosPageInner() {
         )}
       </div>
 
-      <h1 className="mb-8 text-3xl font-bold text-white">🎬 Videos</h1>
-
       {/* Mobile: collapsible nav toggle */}
-      <div className="mb-4 md:hidden">
+      <div className="mb-5 md:hidden">
         <button
           onClick={() => setNavOpen(v => !v)}
-          className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm"
+          className="flex w-full items-center justify-between rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 px-4 py-3 text-sm shadow-sm"
         >
-          <span className="font-medium text-gray-200">{selectionLabel(selection)}</span>
+          <div className="flex items-center gap-2.5">
+            <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${catAccent}`} />
+            <span className="font-medium text-gray-700 dark:text-gray-200">{selectionLabel(selection)}</span>
+          </div>
           <svg className={`h-4 w-4 text-gray-400 transition-transform ${navOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
         {navOpen && (
-          <div className="mt-2 rounded-xl border border-white/10 bg-slate-900/90 p-4">
+          <div className="mt-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/90 p-4 shadow-lg">
             {videosLoading
               ? <p className="text-xs text-gray-500">Lade…</p>
               : <SidebarNav nav={nav} selection={selection} onSelect={handleSelect} />
@@ -819,38 +861,59 @@ function VideosPageInner() {
       </div>
 
       {/* Desktop: 2-col layout */}
-      <div className="flex gap-8">
+      <div className="flex gap-6">
         {/* Sidebar */}
-        <aside className="hidden md:block w-52 shrink-0">
-          <div className="sticky top-6 rounded-xl border border-white/10 bg-slate-900/60 p-4">
-            {videosLoading
-              ? <div className="flex flex-col gap-2">{[1,2,3,4,5].map(i => <div key={i} className="h-6 animate-pulse rounded bg-slate-800" />)}</div>
-              : <SidebarNav nav={nav} selection={selection} onSelect={handleSelect} />
-            }
+        <aside className="hidden md:block w-56 shrink-0">
+          <div className="sticky top-28 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/80 shadow-sm overflow-hidden">
+            <div className="border-b border-gray-100 dark:border-white/5 px-4 py-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Archiv</span>
+            </div>
+            <div className="p-3">
+              {videosLoading
+                ? <div className="flex flex-col gap-2">{[1,2,3,4,5,6].map(i => <div key={i} className="h-7 animate-pulse rounded-lg bg-gray-100 dark:bg-slate-800" />)}</div>
+                : <SidebarNav nav={nav} selection={selection} onSelect={handleSelect} />
+              }
+            </div>
           </div>
         </aside>
 
         {/* Content */}
         <main className="flex-1 min-w-0">
           {videosLoading ? (
-            <div className="flex items-center justify-center py-20 text-gray-400">
-              <div className="text-center">
-                <div className="animate-pulse text-4xl">🎬</div>
-                <p className="mt-3 text-sm">Lade Videos…</p>
-              </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-sm">
+                  <div className="aspect-video animate-pulse bg-gray-100 dark:bg-slate-800" />
+                  <div className="p-4 flex flex-col gap-2">
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100 dark:bg-slate-800" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-gray-100 dark:bg-slate-800" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : selection ? (
             <>
-              <h2 className="mb-6 text-base font-semibold text-gray-300">{selectionLabel(selection)}</h2>
+              {/* Section header */}
+              <div className={`mb-6 flex items-center gap-3 rounded-xl border bg-gradient-to-r px-4 py-3 ${catColor}`}>
+                <div className={`h-7 w-1 rounded-full shrink-0 ${catAccent}`} />
+                <span className="font-semibold text-gray-800 dark:text-white">{selectionLabel(selection)}</span>
+              </div>
               {selection.cat === 'WEITERE'
                 ? <WeitereContent videos={videos} sub={selection.sub} />
                 : <KonzertContent videos={videos} cat={selection.cat} year={selection.year} day={selection.day} />
               }
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-600">
-              <span className="text-5xl">🎬</span>
-              <p className="text-sm">Noch keine Videos vorhanden.</p>
+            <div className="flex flex-col items-center justify-center py-24 gap-4 rounded-2xl border border-dashed border-gray-200 dark:border-white/10">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-slate-800">
+                <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="font-medium text-gray-700 dark:text-gray-300">Noch keine Videos</p>
+                <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">Videos können im Admin-Bereich hinzugefügt werden.</p>
+              </div>
             </div>
           )}
         </main>
