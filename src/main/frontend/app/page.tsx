@@ -4,18 +4,21 @@ import React, { useEffect, useState } from 'react'
 import { PageData } from '@/types/page'
 import SectionResolver from '@/components/SectionResolver'
 import { getApiBase } from '@/lib/api'
+import { usePageLoad } from '@/lib/AppLoadingContext'
 
 const API_BASE = getApiBase()
 
 export default function HomePage() {
   const [page, setPage] = useState<PageData | null | undefined>(undefined)
+  const pageDone = usePageLoad('home-page')
 
   useEffect(() => {
     document.title = 'Schwalmtalzupfer'
     fetch(`${API_BASE}/api/pages/home`)
       .then(r => (r.ok ? r.json() : null))
-      .then(setPage)
-      .catch(() => setPage(null))
+      .then(data => { setPage(data); pageDone() })
+      .catch(() => { setPage(null); pageDone() })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (page === undefined) {

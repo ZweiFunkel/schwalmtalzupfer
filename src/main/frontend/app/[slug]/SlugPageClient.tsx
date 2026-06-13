@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { PageData } from '@/types/page'
 import { getApiBase } from '@/lib/api'
+import { usePageLoad } from '@/lib/AppLoadingContext'
 import SectionResolver from '@/components/SectionResolver'
 import PageAnchorNav from '@/components/PageAnchorNav'
 
@@ -17,13 +18,15 @@ function slugify(text: string) {
 
 export default function SlugPageClient({ slug }: { slug: string }) {
   const [page, setPage] = useState<PageData | null | undefined>(undefined)
+  const pageDone = usePageLoad('slug-page')
 
   useEffect(() => {
     if (!slug) return
     fetch(API_BASE + '/api/pages/' + slug)
       .then(r => (r.ok ? r.json() : null))
-      .then(setPage)
-      .catch(() => setPage(null))
+      .then(data => { setPage(data); pageDone() })
+      .catch(() => { setPage(null); pageDone() })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug])
 
   if (page === undefined) {

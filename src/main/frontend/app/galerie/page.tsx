@@ -5,11 +5,13 @@ import { PageData } from '@/types/page'
 import SectionResolver from '@/components/SectionResolver'
 import GalerieModernView from '@/components/GalerieModernView'
 import { getApiBase } from '@/lib/api'
+import { usePageLoad } from '@/lib/AppLoadingContext'
 
 const API_BASE = getApiBase()
 
 export default function GaleriePage() {
   const [sections, setSections] = useState<PageData['sections']>([])
+  const pageDone = usePageLoad('galerie-page')
 
   useEffect(() => { document.title = 'Galerie – Schwalmtalzupfer' }, [])
 
@@ -18,8 +20,10 @@ export default function GaleriePage() {
       .then(r => r.ok ? r.json() : null)
       .then((page: PageData | null) => {
         if (page) setSections([...page.sections].sort((a, b) => a.position - b.position))
+        pageDone()
       })
-      .catch(() => {})
+      .catch(() => pageDone())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

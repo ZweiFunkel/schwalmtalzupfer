@@ -1,9 +1,12 @@
 'use client'
-import React, { createContext, useCallback, useContext, useState } from 'react'
+import React, { createContext, useCallback, useContext, useRef, useState } from 'react'
 
-interface AppLoadingCtx { setReady: () => void }
+interface AppLoadingCtx {
+  register: (key: string) => void
+  done: (key: string) => void
+}
 
-const AppLoadingContext = createContext<AppLoadingCtx>({ setReady: () => {} })
+const AppLoadingContext = createContext<AppLoadingCtx>({ register: () => {}, done: () => {} })
 
 function FullPageSpinner() {
   return (
@@ -25,11 +28,27 @@ function FullPageSpinner() {
 }
 
 export function AppLoadingProvider({ children }: { children: React.ReactNode }) {
-  const [ready, setReadyState] = useState(false)
-  const setReady = useCallback(() => setReadyState(true), [])
+  const pendingRef = useRef<Set<string>>(new Set())
+  const initialDoneRef = useRef(false)
+  const [ready, setReady] = useState(false)
+
+  const register = useCallback((key: string) => {
+    // Only track during initial load
+    if (!initialDoneRef.current) {
+      pendingRef.current.add(key)
+    }
+  }, [])
+
+  const done = useCallback((key: string) => {
+    pendingRef.current.delete(key)
+    if (pendingRef.current.size === 0 && !initialDoneRef.current) {
+      initialDoneRef.current = true
+      setReady(true)
+    }
+  }, [])
 
   return (
-    <AppLoadingContext.Provider value={{ setReady }}>
+    <AppLoadingContext.Provider value={{ register, done }}>
       {!ready && <FullPageSpinner />}
       {children}
     </AppLoadingContext.Provider>
@@ -37,3 +56,18 @@ export function AppLoadingProvider({ children }: { children: React.ReactNode }) 
 }
 
 export const useAppLoading = () => useContext(AppLoadingContext)
+
+/**
+ * Hook für Seiten: registriert einen Ladepunkt synchron beim Rendern
+ * und gibt eine done()-Funktion zurück, die nach dem Fetch aufgerufen wird.
+ */
+export function usePageLoad(key: string) {
+  const { register, done } = useAppLoading()
+  const registeredRef = useRef(false)
+  // Synchron während des Renderns registrieren – bevor Effekte laufen
+  if (!registeredRef.current) {
+    register(key)
+    registeredRef.current = true
+  }
+  return useCallback(() => done(key), [done, key])
+}

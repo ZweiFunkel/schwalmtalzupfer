@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { useAuth, isAdmin, isBoard, isGuestOnly } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/lib/ThemeProvider'
-import { useAppLoading } from '@/lib/AppLoadingContext'
+import { usePageLoad } from '@/lib/AppLoadingContext'
 
 const API_BASE = getApiBase()
 
@@ -172,7 +172,7 @@ export default function Navbar() {
   const [userOpen, setUserOpen] = useState(false)
   const [logoUrl, setLogoUrl] = useState('/assets/logo.svg')
   const [navConfig, setNavConfig] = useState<NavConfig | null>(null)
-  const { setReady } = useAppLoading()
+  const navDone = usePageLoad('nav')
   const userRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -192,9 +192,9 @@ export default function Navbar() {
           try { cfg = normalizeNavConfig(JSON.parse(data.nav_config)) } catch { /* keep default */ }
         }
         setNavConfig(cfg)
-        setReady()
+        navDone()
       })
-      .catch(() => { setNavConfig(DEFAULT_CONFIG); setReady() })
+      .catch(() => { setNavConfig(DEFAULT_CONFIG); navDone() })
   }, [setReady])
 
   useEffect(() => {
