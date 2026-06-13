@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { SponsorGridContent, Sponsor, SponsorLocation } from '@/types/page'
 import Lightbox from '@/components/Lightbox'
 import { useTheme } from '@/lib/ThemeProvider'
@@ -50,8 +50,12 @@ function SponsorImage({ src, alt, isDarkTheme, onClick }: {
   src: string; alt: string; isDarkTheme: boolean; onClick?: () => void
 }) {
   const [loaded, setLoaded] = useState(false)
+  const imgRef = useRef<HTMLImageElement>(null)
 
-  useEffect(() => { setLoaded(false) }, [src])
+  // Gecachte Bilder feuern kein onLoad — direkt nach Mount prüfen
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true)
+  }, [])
 
   return (
     <div
@@ -59,7 +63,6 @@ function SponsorImage({ src, alt, isDarkTheme, onClick }: {
       style={{ paddingBottom: '52%' }}
       onClick={onClick}
     >
-      {/* Skeleton while loading */}
       {!loaded && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="absolute inset-0 animate-pulse bg-gray-200 dark:bg-slate-800" />
@@ -69,10 +72,12 @@ function SponsorImage({ src, alt, isDarkTheme, onClick }: {
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        ref={imgRef}
         src={src}
         alt={alt}
         loading="eager"
         onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
         className={`absolute inset-0 h-full w-full object-contain p-4 hover:scale-105 transition-all duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
       />
     </div>

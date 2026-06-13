@@ -1,5 +1,5 @@
 'use client'
-import React, { createContext, useCallback, useContext, useRef, useState } from 'react'
+import React, { createContext, useCallback, useContext, useLayoutEffect, useRef, useState } from 'react'
 
 interface AppLoadingCtx {
   register: (key: string) => void
@@ -29,22 +29,25 @@ function FullPageSpinner() {
 
 export function AppLoadingProvider({ children }: { children: React.ReactNode }) {
   const pendingRef = useRef<Set<string>>(new Set())
-  const initialDoneRef = useRef(false)
+  const doneRef = useRef(false)
   const [ready, setReady] = useState(false)
 
   const register = useCallback((key: string) => {
-    // Only track during initial load
-    if (!initialDoneRef.current) {
+    if (!doneRef.current) {
       pendingRef.current.add(key)
     }
   }, [])
 
   const done = useCallback((key: string) => {
     pendingRef.current.delete(key)
-    if (pendingRef.current.size === 0 && !initialDoneRef.current) {
-      initialDoneRef.current = true
-      setReady(true)
-    }
+    // requestAnimationFrame gives Suspense-deferred page components one
+    // render cycle to call register() before we decide we're finished
+    requestAnimationFrame(() => {
+      if (pendingRef.current.size === 0 && !doneRef.current) {
+        doneRef.current = true
+        setReady(true)
+      }
+    })
   }, [])
 
   return (
@@ -58,16 +61,18 @@ export function AppLoadingProvider({ children }: { children: React.ReactNode }) 
 export const useAppLoading = () => useContext(AppLoadingContext)
 
 /**
- * Hook für Seiten: registriert einen Ladepunkt synchron beim Rendern
- * und gibt eine done()-Funktion zurück, die nach dem Fetch aufgerufen wird.
+ * Registriert einen Lade-Slot via useLayoutEffect (läuft vor useEffect-Fetches),
+ * gibt eine done()-Funktion zurück, die nach dem Fetch aufgerufen wird.
  */
 export function usePageLoad(key: string) {
   const { register, done } = useAppLoading()
-  const registeredRef = useRef(false)
-  // Synchron während des Renderns registrieren – bevor Effekte laufen
-  if (!registeredRef.current) {
+
+  // useLayoutEffect läuft synchron nach DOM-Commit, BEVOR irgendein useEffect-Fetch startet.
+  // So ist der Key garantiert im Set bevor done() aufgerufen werden kann.
+  useLayoutEffect(() => {
     register(key)
-    registeredRef.current = true
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return useCallback(() => done(key), [done, key])
 }
