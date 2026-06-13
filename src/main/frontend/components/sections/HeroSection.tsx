@@ -35,8 +35,8 @@ export default function HeroSection({ content }: { content: HeroContent }) {
         />
       )}
 
-      {/* Mehrschichtiges Overlay für maximale Lesbarkeit */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80" />
+      {/* Konfigurierbares Overlay für Lesbarkeit – overlayOpacity 0–1, Standard 0.55 */}
+      <div className="absolute inset-0 bg-black" style={{ opacity: content.overlayOpacity ?? 0.55 }} />
       {/* Farbiger Hauch unten für Übergang zur nächsten Sektion */}
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
 

@@ -143,6 +143,7 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
 
 function HeroForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
   const set = (key: string, val: unknown) => onChange({ ...content, [key]: val })
+  const overlayOpacity = typeof content.overlayOpacity === 'number' ? content.overlayOpacity : 0.55
   return (
     <div className="flex flex-col gap-3">
       <Field label="Hauptüberschrift" value={String(content.headline ?? '')} onChange={v => set('headline', v)} />
@@ -150,6 +151,22 @@ function HeroForm({ content, onChange }: { content: Record<string, unknown>; onC
       <Field label="Button-Text (CTA)" value={String(content.ctaLabel ?? '')} onChange={v => set('ctaLabel', v)} />
       <Field label="Button-Link (CTA)" value={String(content.ctaHref ?? '')} onChange={v => set('ctaHref', v)} />
       <ImageField label="Hintergrundbild" value={String(content.backgroundImage ?? content.imageUrl ?? '')} onChange={v => set('backgroundImage', v)} />
+      <div>
+        <label className="mb-1 block text-xs text-gray-400">
+          Bild-Abdunkelung: <span className="text-white font-semibold">{Math.round(overlayOpacity * 100)} %</span>
+          <span className="ml-2 text-gray-500">(0 % = kein Overlay, 100 % = komplett schwarz)</span>
+        </label>
+        <input
+          type="range" min={0} max={1} step={0.05}
+          value={overlayOpacity}
+          onChange={e => set('overlayOpacity', parseFloat(e.target.value))}
+          className="w-full accent-green-500"
+        />
+        <div className="flex justify-between text-xs text-gray-600 mt-0.5">
+          <span>hell (0 %)</span>
+          <span>dunkel (100 %)</span>
+        </div>
+      </div>
     </div>
   )
 }

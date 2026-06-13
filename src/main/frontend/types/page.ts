@@ -5,6 +5,7 @@ export interface HeroContent {
   headline: string
   subheadline?: string
   backgroundImage?: string
+  overlayOpacity?: number   // 0 = kein Overlay, 1 = komplett schwarz, Standard ~0.55
   ctaLabel?: string
   ctaHref?: string
 }
