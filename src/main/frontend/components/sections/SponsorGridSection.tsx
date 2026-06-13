@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { SponsorGridContent, Sponsor, SponsorLocation } from '@/types/page'
 import Lightbox from '@/components/Lightbox'
 import { useTheme } from '@/lib/ThemeProvider'
+import { usePageLoad } from '@/lib/AppLoadingContext'
 
 function MapPin() {
   return (
@@ -46,16 +47,25 @@ function LocationRow({ loc, isDarkTheme }: { loc: SponsorLocation; isDarkTheme: 
   )
 }
 
-function SponsorImage({ src, alt, isDarkTheme, onClick }: {
-  src: string; alt: string; isDarkTheme: boolean; onClick?: () => void
+function SponsorImage({ src, alt, isDarkTheme, onClick, onLoaded }: {
+  src: string; alt: string; isDarkTheme: boolean; onClick?: () => void; onLoaded?: () => void
 }) {
   const [loaded, setLoaded] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
+  const reportedRef = useRef(false)
+
+  const markLoaded = useCallback(() => {
+    setLoaded(true)
+    if (!reportedRef.current) {
+      reportedRef.current = true
+      onLoaded?.()
+    }
+  }, [onLoaded])
 
   // Gecachte Bilder feuern kein onLoad — direkt nach Mount prüfen
   useEffect(() => {
-    if (imgRef.current?.complete) setLoaded(true)
-  }, [])
+    if (imgRef.current?.complete) markLoaded()
+  }, [markLoaded])
 
   return (
     <div
@@ -76,18 +86,19 @@ function SponsorImage({ src, alt, isDarkTheme, onClick }: {
         src={src}
         alt={alt}
         loading="eager"
-        onLoad={() => setLoaded(true)}
-        onError={() => setLoaded(true)}
+        onLoad={markLoaded}
+        onError={markLoaded}
         className={`absolute inset-0 h-full w-full object-contain p-4 hover:scale-105 transition-all duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
       />
     </div>
   )
 }
 
-function SponsorCardExpanded({ sponsor, onImage, isDarkTheme }: {
+function SponsorCardExpanded({ sponsor, onImage, isDarkTheme, onLoaded }: {
   sponsor: Sponsor
   onImage?: (src: string, alt: string) => void
   isDarkTheme: boolean
+  onLoaded?: () => void
 }) {
   const hasLocations = sponsor.locations && sponsor.locations.length > 0
   const cardBg    = isDarkTheme ? 'border-green-500/30 bg-slate-800/50' : 'border-green-400/50 bg-white shadow-lg'
@@ -104,6 +115,7 @@ function SponsorCardExpanded({ sponsor, onImage, isDarkTheme }: {
           alt={sponsor.name}
           isDarkTheme={isDarkTheme}
           onClick={() => onImage?.(sponsor.imageUrl!, sponsor.name)}
+          onLoaded={onLoaded}
         />
       )}
 
@@ -159,9 +171,30 @@ export default function SponsorGridSection({ content }: { content: SponsorGridCo
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null)
   const { theme } = useTheme()
   const isDarkTheme = theme === 'dark'
+  const sponsorsDone = usePageLoad('sponsor-images')
 
   // Sponsoren alphabetisch nach Namen sortieren
   const sponsors = [...(content.sponsors ?? [])].sort((a, b) => a.name.localeCompare(b.name))
+  const imageCount = sponsors.filter(s => s.imageUrl).length
+  const loadedCountRef = useRef(0)
+  const pageReleasedRef = useRef(false)
+
+  const handleImageLoaded = useCallback(() => {
+    loadedCountRef.current += 1
+    if (loadedCountRef.current >= imageCount && !pageReleasedRef.current) {
+      pageReleasedRef.current = true
+      sponsorsDone()
+    }
+  }, [imageCount, sponsorsDone])
+
+  // Keine Bilder vorhanden → sofort freigeben
+  useEffect(() => {
+    if (imageCount === 0 && !pageReleasedRef.current) {
+      pageReleasedRef.current = true
+      sponsorsDone()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <section className="bg-gray-50 dark:bg-slate-950 py-24">
@@ -200,6 +233,7 @@ export default function SponsorGridSection({ content }: { content: SponsorGridCo
                 sponsor={sponsor}
                 onImage={(src, alt) => setLightbox({ src, alt })}
                 isDarkTheme={isDarkTheme}
+                onLoaded={handleImageLoaded}
               />
             </div>
           ))}
