@@ -195,7 +195,7 @@ export default function Navbar() {
         navDone()
       })
       .catch(() => { setNavConfig(DEFAULT_CONFIG); navDone() })
-  }, [setReady])
+  }, [navDone])
 
   useEffect(() => {
     const h = (e: MouseEvent) => { if (userRef.current && !userRef.current.contains(e.target as Node)) setUserOpen(false) }
