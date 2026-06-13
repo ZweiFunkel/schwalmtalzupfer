@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -27,13 +28,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de" suppressHydrationWarning>
-      <head>
-        {/* Prevent flash: set dark class before React hydration */}
-        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}` }} />
-        {/* YouTube IFrame Player API */}
-        <script src="https://www.youtube.com/iframe_api" async />
-      </head>
       <body className={`${inter.className} bg-white dark:bg-slate-950 text-gray-900 dark:text-white antialiased`}>
+        {/* Prevent dark-mode flash before React hydration */}
+        <Script id="theme-init" strategy="beforeInteractive">{`try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}`}</Script>
+        {/* YouTube IFrame Player API */}
+        <Script src="https://www.youtube.com/iframe_api" strategy="lazyOnload" />
         <ThemeProvider>
           <AppLoadingProvider>
           <AuthProvider>
