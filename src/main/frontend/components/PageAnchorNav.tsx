@@ -12,9 +12,10 @@ export default function PageAnchorNav({ anchors }: { anchors: AnchorItem[] }) {
 
   useEffect(() => {
     const handler = () => {
+      const threshold = window.innerHeight * 0.4
       for (let i = anchors.length - 1; i >= 0; i--) {
         const el = document.getElementById(anchors[i].id)
-        if (el && el.getBoundingClientRect().top <= 120) {
+        if (el && el.getBoundingClientRect().top <= threshold) {
           setActive(anchors[i].id)
           return
         }
