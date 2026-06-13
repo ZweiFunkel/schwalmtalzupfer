@@ -2,6 +2,7 @@
 import { getApiBase } from '@/lib/api'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useAuth, isBoard } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/lib/ThemeProvider'
@@ -596,6 +597,13 @@ export default function NotenPage() {
 
   return (
     <div className={`mx-auto max-w-5xl px-6 py-12 ${pageBg}`}>
+      {/* Breadcrumb */}
+      <div className={`mb-6 flex items-center gap-2 text-sm ${subCl}`}>
+        <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition">Intern</Link>
+        <span>/</span>
+        <span className={headingCl}>Notenarchiv</span>
+      </div>
+
       {/* Header */}
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>

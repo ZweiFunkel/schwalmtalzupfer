@@ -187,14 +187,14 @@ export default function Navbar() {
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
         if (data.logo_url) setLogoUrl(data.logo_url)
+        let cfg = DEFAULT_CONFIG
         if (data.nav_config) {
-          try { setNavConfig(normalizeNavConfig(JSON.parse(data.nav_config))) } catch { setNavConfig(DEFAULT_CONFIG) }
-        } else {
-          setNavConfig(DEFAULT_CONFIG)
+          try { cfg = normalizeNavConfig(JSON.parse(data.nav_config)) } catch { /* keep default */ }
         }
+        setNavConfig(cfg)
+        setReady()
       })
-      .catch(() => setNavConfig(DEFAULT_CONFIG))
-      .finally(() => setReady())
+      .catch(() => { setNavConfig(DEFAULT_CONFIG); setReady() })
   }, [setReady])
 
   useEffect(() => {
