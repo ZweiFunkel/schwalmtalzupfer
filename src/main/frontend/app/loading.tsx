@@ -10,7 +10,7 @@ export default function Loading() {
         <img
           src="/assets/logo.svg"
           alt="Schwalmtalzupfer"
-          className="relative h-14 w-14 animate-spin-slow"
+          className="relative h-14 w-14 animate-spin-slow brightness-0 dark:invert"
         />
       </div>
 

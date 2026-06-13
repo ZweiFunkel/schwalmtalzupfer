@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { useAuth, isAdmin, isBoard, isGuestOnly } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/lib/ThemeProvider'
+import { useAppLoading } from '@/lib/AppLoadingContext'
 
 const API_BASE = getApiBase()
 
@@ -170,7 +171,8 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
   const [logoUrl, setLogoUrl] = useState('/assets/logo.svg')
-  const [navConfig, setNavConfig] = useState<NavConfig>(DEFAULT_CONFIG)
+  const [navConfig, setNavConfig] = useState<NavConfig | null>(null)
+  const { setReady } = useAppLoading()
   const userRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -186,11 +188,14 @@ export default function Navbar() {
       .then(data => {
         if (data.logo_url) setLogoUrl(data.logo_url)
         if (data.nav_config) {
-          try { setNavConfig(normalizeNavConfig(JSON.parse(data.nav_config))) } catch { /* keep default */ }
+          try { setNavConfig(normalizeNavConfig(JSON.parse(data.nav_config))) } catch { setNavConfig(DEFAULT_CONFIG) }
+        } else {
+          setNavConfig(DEFAULT_CONFIG)
         }
       })
-      .catch(() => {})
-  }, [])
+      .catch(() => setNavConfig(DEFAULT_CONFIG))
+      .finally(() => setReady())
+  }, [setReady])
 
   useEffect(() => {
     const h = (e: MouseEvent) => { if (userRef.current && !userRef.current.contains(e.target as Node)) setUserOpen(false) }
@@ -217,9 +222,10 @@ export default function Navbar() {
     return true
   }
 
-  const allDropdownSlugs = new Set(navConfig.dropdowns.flatMap(g => g.items).concat('home'))
-  const hidden = new Set(navConfig.hidden ?? [])
-  const fixedLinks: NavFixedLink[] = navConfig.fixedLinks ?? [{ label: 'Intern', href: '/intern', visibility: 'member' }, { label: 'Kontakt', href: '/kontakt', visibility: 'public' }]
+  const cfg = navConfig ?? DEFAULT_CONFIG
+  const allDropdownSlugs = new Set(cfg.dropdowns.flatMap(g => g.items).concat('home'))
+  const hidden = new Set(cfg.hidden ?? [])
+  const fixedLinks: NavFixedLink[] = cfg.fixedLinks ?? [{ label: 'Intern', href: '/intern', visibility: 'member' }, { label: 'Kontakt', href: '/kontakt', visibility: 'public' }]
   // Slugs die bereits als fixedLink geführt werden, nicht nochmal in extraPages zeigen
   const fixedLinkSlugs = new Set(fixedLinks.map(l => l.href.replace(/^\//, '')))
   const extraPages = pages.filter(p => !allDropdownSlugs.has(p.slug) && !hidden.has(p.slug) && !fixedLinkSlugs.has(p.slug))
@@ -238,7 +244,7 @@ export default function Navbar() {
         {/* Desktop Nav */}
         <nav className="hidden items-center gap-5 text-sm font-medium text-gray-600 dark:text-gray-300 md:flex">
           <Link href="/" className="transition hover:text-green-600 dark:hover:text-green-400">Startseite</Link>
-          {navConfig.dropdowns.filter(g => isVisible(g.visibility)).map((group, i) => {
+          {cfg.dropdowns.filter(g => isVisible(g.visibility)).map((group, i) => {
             const items = resolveItems(group.items)
             return (
               <NavDropdownMenu key={i} label={group.label} target={group.target} items={items} />
@@ -325,7 +331,7 @@ export default function Navbar() {
         <nav className="border-t border-gray-200 dark:border-white/5 bg-white dark:bg-slate-950 px-6 py-5 md:hidden">
           <ul className="flex flex-col gap-4 text-sm font-medium text-gray-600 dark:text-gray-300">
             <li><Link href="/" className="hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}>Startseite</Link></li>
-            {navConfig.dropdowns.filter(g => isVisible(g.visibility)).map((group, i) => (
+            {cfg.dropdowns.filter(g => isVisible(g.visibility)).map((group, i) => (
               <li key={i} className="border-t border-gray-100 dark:border-white/5 pt-3">
                 {group.target
                   ? <Link href={`/${group.target}`} className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}>{group.label}</Link>

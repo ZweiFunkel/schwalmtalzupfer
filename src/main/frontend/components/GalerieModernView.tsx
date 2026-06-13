@@ -223,7 +223,20 @@ export default function GalerieModernView({ prefix: prefixProp }: Props) {
   const hasContent = data && (data.folders.length > 0 || data.images.length > 0)
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-12 sm:px-8">
+    <div className="relative mx-auto max-w-7xl px-6 py-12 sm:px-8">
+
+      {/* Lade-Overlay beim Wechsel zwischen Ordnern */}
+      {loading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/logo.svg" alt="" className="h-10 w-10 animate-spin-slow brightness-0 dark:invert" />
+            <div className="h-0.5 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
+              <div className="h-full w-full origin-left animate-[shimmer_1.5s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-green-500 to-transparent" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Breadcrumb (nur wenn tiefer als Startebene) */}
       {!isRoot && <Breadcrumb prefix={currentPrefix} />}
@@ -242,8 +255,8 @@ export default function GalerieModernView({ prefix: prefixProp }: Props) {
         </h2>
       )}
 
-      {/* Ladeanimation */}
-      {loading && <CardSkeleton count={isRoot ? 4 : 6} />}
+      {/* Skeleton beim ersten Laden */}
+      {loading && !data && <CardSkeleton count={isRoot ? 4 : 6} />}
 
       {/* Inhalt */}
       {!loading && data && (

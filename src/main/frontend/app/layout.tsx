@@ -7,6 +7,7 @@ import ScrollButtons from '@/components/ScrollButtons'
 import AnnouncementBanner from '@/components/AnnouncementBanner'
 import { AuthProvider } from '@/lib/auth'
 import { ThemeProvider } from '@/lib/ThemeProvider'
+import { AppLoadingProvider } from '@/lib/AppLoadingContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${inter.className} bg-white dark:bg-slate-950 text-gray-900 dark:text-white antialiased`}>
         <ThemeProvider>
+          <AppLoadingProvider>
           <AuthProvider>
             <AnnouncementBanner />
             <Navbar />
@@ -99,6 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </footer>
             <ScrollButtons />
           </AuthProvider>
+          </AppLoadingProvider>
         </ThemeProvider>
       </body>
     </html>
