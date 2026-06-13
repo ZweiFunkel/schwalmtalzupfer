@@ -7,7 +7,7 @@ const AppLoadingContext = createContext<AppLoadingCtx>({ setReady: () => {} })
 
 function FullPageSpinner() {
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-6 bg-white dark:bg-slate-950">
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-6 bg-white dark:bg-slate-950">
       <div className="relative flex items-center justify-center">
         <div className="absolute h-20 w-20 rounded-full bg-green-500/10 animate-ping" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -31,9 +31,7 @@ export function AppLoadingProvider({ children }: { children: React.ReactNode }) 
   return (
     <AppLoadingContext.Provider value={{ setReady }}>
       {!ready && <FullPageSpinner />}
-      <div className={ready ? '' : 'invisible'}>
-        {children}
-      </div>
+      {children}
     </AppLoadingContext.Provider>
   )
 }
