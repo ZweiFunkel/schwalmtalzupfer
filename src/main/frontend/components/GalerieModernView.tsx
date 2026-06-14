@@ -1,6 +1,6 @@
 'use client'
 import { getApiBase } from '@/lib/api'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Lightbox from '@/components/Lightbox'
@@ -124,47 +124,145 @@ function FolderCard({ folder }: { folder: BrowseFolder }) {
 
 // ─── Photo Grid ──────────────────────────────────────────────────────────────
 function thumbUrl(key: string) {
-  return `${API_BASE}/api/galerie/thumbnail?key=${encodeURIComponent(key)}&width=600`
+  return `${API_BASE}/api/galerie/thumbnail?key=${encodeURIComponent(key)}`
 }
+
+// Einzelnes Foto-Tile: lädt erst wenn es (fast) im Viewport ist,
+// zeigt Skeleton solange und blendet das Bild beim Laden ein.
+function PhotoThumb({ img, eager, onLoaded, onClick }: {
+  img: BrowseImage
+  eager: boolean
+  onLoaded?: () => void
+  onClick: () => void
+}) {
+  const [src, setSrc]     = useState<string | null>(eager ? thumbUrl(img.key) : null)
+  const [loaded, setLoaded] = useState(false)
+  const containerRef = useRef<HTMLButtonElement>(null)
+  const reportedRef  = useRef(false)
+
+  const markLoaded = useCallback(() => {
+    setLoaded(true)
+    if (!reportedRef.current) {
+      reportedRef.current = true
+      onLoaded?.()
+    }
+  }, [onLoaded])
+
+  // Gecachtes Bild feuert kein onLoad
+  const imgRef = useRef<HTMLImageElement>(null)
+  useEffect(() => {
+    if (imgRef.current?.complete) markLoaded()
+  }, [src, markLoaded])
+
+  // IntersectionObserver lädt das Bild, sobald es 200 px vor dem Viewport ist
+  useEffect(() => {
+    if (eager) return
+    const el = containerRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setSrc(thumbUrl(img.key))
+        obs.disconnect()
+      }
+    }, { rootMargin: '300px' })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [eager, img.key])
+
+  return (
+    <button
+      ref={containerRef}
+      onClick={onClick}
+      className="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500"
+      aria-label="Foto öffnen"
+    >
+      {/* Skeleton — verschwindet wenn Bild geladen */}
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-gray-200 dark:bg-slate-700" />
+      )}
+
+      {/* Bild — wird eingeblendet sobald geladen */}
+      {src && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          ref={imgRef}
+          src={src}
+          alt=""
+          decoding="async"
+          onLoad={markLoaded}
+          onError={markLoaded}
+          className={`absolute inset-0 h-full w-full object-cover transition-all duration-500 group-hover:scale-105 ${
+            loaded ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      )}
+
+      {/* Hover-Overlay */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center pointer-events-none">
+        <svg className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition drop-shadow-lg"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+        </svg>
+      </div>
+    </button>
+  )
+}
+
+// Wie viele Bilder sind "above the fold"? (ca. 2 Reihen × 5 Spalten)
+const ABOVE_FOLD = 10
 
 function PhotoGrid({ images }: { images: BrowseImage[] }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
-  // Lightbox verwendet das Originalbild in voller Auflösung
+  const [gridVisible, setGridVisible]     = useState(false)
+
   const lbImages = images.map(img => ({ src: img.url, alt: '' }))
   const close = useCallback(() => setLightboxIndex(null), [])
   const prev  = useCallback(() => setLightboxIndex(i => (i !== null && i > 0 ? i - 1 : i)), [])
   const next  = useCallback(() => setLightboxIndex(i => (i !== null && i < images.length - 1 ? i + 1 : i)), [images.length])
+
+  // Zählt wie viele der ersten ABOVE_FOLD Bilder fertig sind
+  const aboveFoldTarget = Math.min(images.length, ABOVE_FOLD)
+  const loadedRef = useRef(0)
+  const handleAboveFoldLoad = useCallback(() => {
+    loadedRef.current += 1
+    if (loadedRef.current >= aboveFoldTarget) setGridVisible(true)
+  }, [aboveFoldTarget])
+
+  // Wenn keine Bilder: sofort sichtbar
+  useEffect(() => {
+    if (images.length === 0) setGridVisible(true)
+  }, [images.length])
 
   return (
     <>
       <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
         {images.length} Foto{images.length !== 1 ? 's' : ''} &nbsp;·&nbsp; Klicken zum Öffnen &nbsp;·&nbsp; ← → zum Navigieren
       </p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+
+      {/* Skeleton-Platzhalter solange die ersten Bilder noch laden */}
+      {!gridVisible && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {[...Array(aboveFoldTarget)].map((_, i) => (
+            <div key={i} className="aspect-square rounded-xl animate-pulse bg-gray-200 dark:bg-slate-700" />
+          ))}
+        </div>
+      )}
+
+      {/* Echtes Grid — eingeblendet sobald above-fold Bilder bereit sind */}
+      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 transition-opacity duration-500 ${
+        gridVisible ? 'opacity-100' : 'opacity-0 absolute pointer-events-none'
+      }`}>
         {images.map((img, i) => (
-          <button
+          <PhotoThumb
             key={img.key}
+            img={img}
+            eager={i < ABOVE_FOLD}
+            onLoaded={i < ABOVE_FOLD ? handleAboveFoldLoad : undefined}
             onClick={() => setLightboxIndex(i)}
-            className="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500"
-            aria-label={`Foto ${i + 1} öffnen`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={thumbUrl(img.key)}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-              <svg className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition drop-shadow-lg"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
-              </svg>
-            </div>
-          </button>
+          />
         ))}
       </div>
+
       {lightboxIndex !== null && (
         <Lightbox
           src={lbImages[lightboxIndex].src}

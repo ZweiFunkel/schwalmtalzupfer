@@ -14,6 +14,7 @@ import java.util.*;
 public class GalerieController {
 
     private final S3Client s3Client;
+    private final ThumbnailService thumbnailService;
 
     @Value("${app.r2.bucket}")
     private String bucket;
@@ -77,6 +78,12 @@ public class GalerieController {
                         return m;
                     })
                     .toList();
+
+            // Thumbnails für alle direkten Bilder im Hintergrund vorwärmen
+            if (!images.isEmpty()) {
+                List<String> keys = images.stream().map(m -> (String) m.get("key")).toList();
+                thumbnailService.warmAsync(keys);
+            }
 
             Map<String, Object> result = new HashMap<>();
             result.put("prefix", prefix);
