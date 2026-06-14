@@ -123,9 +123,13 @@ function FolderCard({ folder }: { folder: BrowseFolder }) {
 }
 
 // ─── Photo Grid ──────────────────────────────────────────────────────────────
+function thumbUrl(key: string) {
+  return `${API_BASE}/api/galerie/thumbnail?key=${encodeURIComponent(key)}&width=600`
+}
+
 function PhotoGrid({ images }: { images: BrowseImage[] }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
-  // alt='' → Lightbox zeigt keinen hässlichen Dateinamen als Untertitel
+  // Lightbox verwendet das Originalbild in voller Auflösung
   const lbImages = images.map(img => ({ src: img.url, alt: '' }))
   const close = useCallback(() => setLightboxIndex(null), [])
   const prev  = useCallback(() => setLightboxIndex(i => (i !== null && i > 0 ? i - 1 : i)), [])
@@ -145,8 +149,13 @@ function PhotoGrid({ images }: { images: BrowseImage[] }) {
             aria-label={`Foto ${i + 1} öffnen`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={img.url} alt="" loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+            <img
+              src={thumbUrl(img.key)}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
               <svg className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition drop-shadow-lg"
                 fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
