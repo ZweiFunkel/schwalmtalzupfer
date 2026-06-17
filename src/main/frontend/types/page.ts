@@ -8,6 +8,7 @@ export interface HeroContent {
   overlayOpacity?: number   // 0 = kein Overlay, 1 = komplett schwarz, Standard ~0.55
   imageZoom?: number      // Zoom-Faktor: 1.0 = Standard, 2.0 = sehr nah; Standard 1.0
   imagePosition?: string  // CSS background-position, z.B. 'center', 'top', 'center 30%'
+  parallax?: boolean      // Parallax-Scrolleffekt; Standard true
   ctaLabel?: string
   ctaHref?: string
 }

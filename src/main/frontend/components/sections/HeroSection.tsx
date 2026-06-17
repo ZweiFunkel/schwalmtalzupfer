@@ -8,7 +8,7 @@ export default function HeroSection({ content }: { content: HeroContent }) {
 
   // Parallax-Effekt: Hintergrundbild bewegt sich langsamer als der Scroll
   useEffect(() => {
-    if (!content.backgroundImage) return
+    if (!content.backgroundImage || content.parallax === false) return
     // 1.1 = Puffer damit beim Parallax-Versatz keine weißen Ränder sichtbar werden
     const baseScale = 1.1 * (content.imageZoom ?? 1.0)
     const handleScroll = () => {
@@ -19,7 +19,7 @@ export default function HeroSection({ content }: { content: HeroContent }) {
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [content.backgroundImage, content.imageZoom])
+  }, [content.backgroundImage, content.imageZoom, content.parallax])
 
   return (
     <section className="hero-section relative flex min-h-screen items-center justify-center overflow-hidden bg-gray-950 text-white">

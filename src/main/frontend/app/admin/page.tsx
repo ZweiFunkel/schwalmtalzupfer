@@ -157,6 +157,7 @@ function HeroForm({ content, onChange }: { content: Record<string, unknown>; onC
   const overlayOpacity = typeof content.overlayOpacity === 'number' ? content.overlayOpacity : 0.55
   const imageZoom      = typeof content.imageZoom === 'number' ? content.imageZoom : 1.0
   const imagePosition  = (content.imagePosition as string) ?? 'center'
+  const parallax       = content.parallax !== false
 
   const zoomLabel = imageZoom <= 1.0 ? 'Standard' : imageZoom <= 1.3 ? 'Näher' : imageZoom <= 1.6 ? 'Nah' : 'Sehr nah'
 
@@ -167,6 +168,18 @@ function HeroForm({ content, onChange }: { content: Record<string, unknown>; onC
       <Field label="Button-Text (CTA)" value={String(content.ctaLabel ?? '')} onChange={v => set('ctaLabel', v)} />
       <Field label="Button-Link (CTA)" value={String(content.ctaHref ?? '')} onChange={v => set('ctaHref', v)} />
       <ImageField label="Hintergrundbild" value={String(content.backgroundImage ?? content.imageUrl ?? '')} onChange={v => set('backgroundImage', v)} />
+
+      {/* Parallax */}
+      <label className="flex cursor-pointer items-center gap-2.5">
+        <input
+          type="checkbox"
+          checked={parallax}
+          onChange={e => set('parallax', e.target.checked)}
+          className="h-4 w-4 accent-green-500 rounded"
+        />
+        <span className="text-sm text-gray-300">Parallax-Scrolleffekt</span>
+        <span className="text-xs text-gray-500">(Bild bewegt sich langsamer als der Inhalt)</span>
+      </label>
 
       {/* Zoom */}
       <div>
