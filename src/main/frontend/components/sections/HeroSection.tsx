@@ -9,53 +9,35 @@ export default function HeroSection({ content }: { content: HeroContent }) {
   // Parallax-Effekt: Hintergrundbild bewegt sich langsamer als der Scroll
   useEffect(() => {
     if (!content.backgroundImage) return
+    // 1.1 = Puffer damit beim Parallax-Versatz keine weißen Ränder sichtbar werden
+    const baseScale = 1.1 * (content.imageZoom ?? 1.0)
     const handleScroll = () => {
       if (bgRef.current) {
         const offset = window.scrollY * 0.4
-        bgRef.current.style.transform = `translateY(${offset}px) scale(1.1)`
+        bgRef.current.style.transform = `translateY(${offset}px) scale(${baseScale})`
       }
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [content.backgroundImage])
+  }, [content.backgroundImage, content.imageZoom])
 
   return (
     <section className="hero-section relative flex min-h-screen items-center justify-center overflow-hidden bg-gray-950 text-white">
 
       {/* Parallax-Hintergrundbild */}
-      {content.backgroundImage && (() => {
-        const fit      = content.imageFit ?? 'contain-blur'
-        const position = content.imagePosition ?? 'center'
-        return (
-          <div ref={bgRef} className="absolute inset-0" style={{ transform: 'scale(1.1)', willChange: 'transform' }}>
-            {fit === 'cover' ? (
-              /* Klassisch: Bild füllt den gesamten Bereich, wird ggf. beschnitten */
-              <div className="absolute inset-0" style={{
-                backgroundImage: `url(${content.backgroundImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition: position,
-              }} />
-            ) : (
-              /* Vollbild: weichgezeichneter Hintergrund + ungekürtztes Bild vorne */
-              <>
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `url(${content.backgroundImage})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: position,
-                  filter: 'blur(24px)',
-                  transform: 'scale(1.08)',
-                }} />
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `url(${content.backgroundImage})`,
-                  backgroundSize: 'contain',
-                  backgroundPosition: position,
-                  backgroundRepeat: 'no-repeat',
-                }} />
-              </>
-            )}
-          </div>
-        )
-      })()}
+      {content.backgroundImage && (
+        <div
+          ref={bgRef}
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${content.backgroundImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: content.imagePosition ?? 'center',
+            transform: `scale(${1.1 * (content.imageZoom ?? 1.0)})`,
+            willChange: 'transform',
+          }}
+        />
+      )}
 
       {/* Konfigurierbares Overlay für Lesbarkeit – overlayOpacity 0–1, Standard 0.55 */}
       <div className="absolute inset-0 bg-black" style={{ opacity: content.overlayOpacity ?? 0.55 }} />

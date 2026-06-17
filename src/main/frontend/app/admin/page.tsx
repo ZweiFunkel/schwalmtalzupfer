@@ -155,8 +155,10 @@ const POSITION_LABELS: Record<string, string> = {
 function HeroForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
   const set = (key: string, val: unknown) => onChange({ ...content, [key]: val })
   const overlayOpacity = typeof content.overlayOpacity === 'number' ? content.overlayOpacity : 0.55
-  const imageFit       = (content.imageFit as string) ?? 'contain-blur'
+  const imageZoom      = typeof content.imageZoom === 'number' ? content.imageZoom : 1.0
   const imagePosition  = (content.imagePosition as string) ?? 'center'
+
+  const zoomLabel = imageZoom <= 1.0 ? 'Standard' : imageZoom <= 1.3 ? 'Näher' : imageZoom <= 1.6 ? 'Nah' : 'Sehr nah'
 
   return (
     <div className="flex flex-col gap-3">
@@ -166,29 +168,27 @@ function HeroForm({ content, onChange }: { content: Record<string, unknown>; onC
       <Field label="Button-Link (CTA)" value={String(content.ctaHref ?? '')} onChange={v => set('ctaHref', v)} />
       <ImageField label="Hintergrundbild" value={String(content.backgroundImage ?? content.imageUrl ?? '')} onChange={v => set('backgroundImage', v)} />
 
-      {/* Bildmodus */}
+      {/* Zoom */}
       <div>
-        <label className="mb-1.5 block text-xs text-gray-400">Bildmodus</label>
-        <div className="flex gap-2">
-          {([['contain-blur', '🖼 Vollbild (empfohlen)', 'Bild vollständig sichtbar, weichgezeichneter Hintergrund füllt Ränder'],
-             ['cover',        '🔍 Ausschnitt (Cover)',   'Bild füllt den gesamten Bereich – wird ggf. beschnitten']] as const).map(([val, label, hint]) => (
-            <button
-              key={val} type="button"
-              onClick={() => set('imageFit', val)}
-              title={hint}
-              className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition ${
-                imageFit === val
-                  ? 'border-green-500 bg-green-500/10 text-green-400'
-                  : 'border-white/10 bg-slate-800 text-gray-400 hover:border-white/20 hover:text-white'
-              }`}
-            >{label}</button>
-          ))}
+        <label className="mb-1 block text-xs text-gray-400">
+          Zoom: <span className="text-white font-semibold">{zoomLabel}</span>
+          <span className="ml-2 text-gray-500">({imageZoom.toFixed(1)}×)</span>
+        </label>
+        <input
+          type="range" min={1.0} max={2.0} step={0.1}
+          value={imageZoom}
+          onChange={e => set('imageZoom', parseFloat(e.target.value))}
+          className="w-full accent-green-500"
+        />
+        <div className="flex justify-between text-xs text-gray-600 mt-0.5">
+          <span>Standard</span>
+          <span>Sehr nah</span>
         </div>
       </div>
 
-      {/* Bildposition */}
+      {/* Fokuspunkt */}
       <div>
-        <label className="mb-1.5 block text-xs text-gray-400">Bildposition / Fokuspunkt</label>
+        <label className="mb-1.5 block text-xs text-gray-400">Fokuspunkt</label>
         <div className="inline-grid grid-cols-3 gap-1">
           {POSITION_GRID.flat().map(pos => (
             <button
