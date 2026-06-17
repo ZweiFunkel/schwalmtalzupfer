@@ -141,9 +141,23 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
   )
 }
 
+const POSITION_GRID = [
+  ['left top',    'center top',    'right top'   ],
+  ['left center', 'center',        'right center'],
+  ['left bottom', 'center bottom', 'right bottom'],
+] as const
+const POSITION_LABELS: Record<string, string> = {
+  'left top': '↖', 'center top': '↑', 'right top': '↗',
+  'left center': '←', 'center': '·', 'right center': '→',
+  'left bottom': '↙', 'center bottom': '↓', 'right bottom': '↘',
+}
+
 function HeroForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
   const set = (key: string, val: unknown) => onChange({ ...content, [key]: val })
   const overlayOpacity = typeof content.overlayOpacity === 'number' ? content.overlayOpacity : 0.55
+  const imageFit       = (content.imageFit as string) ?? 'contain-blur'
+  const imagePosition  = (content.imagePosition as string) ?? 'center'
+
   return (
     <div className="flex flex-col gap-3">
       <Field label="Hauptüberschrift" value={String(content.headline ?? '')} onChange={v => set('headline', v)} />
@@ -151,6 +165,48 @@ function HeroForm({ content, onChange }: { content: Record<string, unknown>; onC
       <Field label="Button-Text (CTA)" value={String(content.ctaLabel ?? '')} onChange={v => set('ctaLabel', v)} />
       <Field label="Button-Link (CTA)" value={String(content.ctaHref ?? '')} onChange={v => set('ctaHref', v)} />
       <ImageField label="Hintergrundbild" value={String(content.backgroundImage ?? content.imageUrl ?? '')} onChange={v => set('backgroundImage', v)} />
+
+      {/* Bildmodus */}
+      <div>
+        <label className="mb-1.5 block text-xs text-gray-400">Bildmodus</label>
+        <div className="flex gap-2">
+          {([['contain-blur', '🖼 Vollbild (empfohlen)', 'Bild vollständig sichtbar, weichgezeichneter Hintergrund füllt Ränder'],
+             ['cover',        '🔍 Ausschnitt (Cover)',   'Bild füllt den gesamten Bereich – wird ggf. beschnitten']] as const).map(([val, label, hint]) => (
+            <button
+              key={val} type="button"
+              onClick={() => set('imageFit', val)}
+              title={hint}
+              className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                imageFit === val
+                  ? 'border-green-500 bg-green-500/10 text-green-400'
+                  : 'border-white/10 bg-slate-800 text-gray-400 hover:border-white/20 hover:text-white'
+              }`}
+            >{label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Bildposition */}
+      <div>
+        <label className="mb-1.5 block text-xs text-gray-400">Bildposition / Fokuspunkt</label>
+        <div className="inline-grid grid-cols-3 gap-1">
+          {POSITION_GRID.flat().map(pos => (
+            <button
+              key={pos} type="button"
+              onClick={() => set('imagePosition', pos)}
+              title={pos}
+              className={`h-9 w-9 rounded-lg border text-base transition ${
+                imagePosition === pos
+                  ? 'border-green-500 bg-green-500/20 text-green-400'
+                  : 'border-white/10 bg-slate-800 text-gray-400 hover:border-white/20 hover:text-white'
+              }`}
+            >{POSITION_LABELS[pos]}</button>
+          ))}
+        </div>
+        <p className="mt-1 text-xs text-gray-600">Aktuell: <span className="text-gray-400">{imagePosition}</span></p>
+      </div>
+
+      {/* Abdunkelung */}
       <div>
         <label className="mb-1 block text-xs text-gray-400">
           Bild-Abdunkelung: <span className="text-white font-semibold">{Math.round(overlayOpacity * 100)} %</span>

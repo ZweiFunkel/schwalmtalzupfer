@@ -6,6 +6,8 @@ export interface HeroContent {
   subheadline?: string
   backgroundImage?: string
   overlayOpacity?: number   // 0 = kein Overlay, 1 = komplett schwarz, Standard ~0.55
+  imageFit?: 'cover' | 'contain-blur'  // cover = klassisch/gezoomt, contain-blur = vollbild mit weichgezeichnetem Hintergrund
+  imagePosition?: string               // CSS background-position, z.B. 'center', 'top', 'center 30%'
   ctaLabel?: string
   ctaHref?: string
 }
