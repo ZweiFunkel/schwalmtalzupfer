@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang="de" suppressHydrationWarning data-developer="NOVEX Labs – novex-labs.de">
       <body className={`${inter.className} bg-white dark:bg-slate-950 text-gray-900 dark:text-white antialiased`}>
         {/* Prevent dark-mode flash before React hydration */}
         <Script id="theme-init" strategy="beforeInteractive">{`try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}`}</Script>
@@ -97,6 +97,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   Impressum
                 </Link>
               </div>
+
+              {/* Dev credit */}
+              <p className="mt-5 text-[11px] text-gray-400/50 dark:text-gray-700">
+                Website entwickelt von{' '}
+                <a href="https://novex-labs.de" target="_blank" rel="noopener noreferrer"
+                  className="hover:text-gray-500 dark:hover:text-gray-500 transition">
+                  NOVEX Labs
+                </a>
+              </p>
             </footer>
             <ScrollButtons />
           </AuthProvider>
