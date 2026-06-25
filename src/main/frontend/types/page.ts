@@ -20,9 +20,12 @@ export interface EventCardItem {
   location: string
   description?: string
   imageUrl?: string
+  cancelled?: boolean
+  cancellationNote?: string
 }
 
 export interface EventCardContent {
+  heading?: string
   events: EventCardItem[]
 }
 

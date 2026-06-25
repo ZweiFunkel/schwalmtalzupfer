@@ -255,19 +255,24 @@ function TextBlockForm({ content, onChange }: { content: Record<string, unknown>
   )
 }
 
-interface EventItem { title: string; date: string; location: string; description: string; imageUrl?: string }
+interface EventItem { title: string; date: string; location: string; description: string; imageUrl?: string; cancelled?: boolean; cancellationNote?: string }
 function EventCardForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
   const events: EventItem[] = (content.events as EventItem[]) ?? []
-  const update = (i: number, key: string, val: string) =>
+  const update = (i: number, key: string, val: unknown) =>
     onChange({ ...content, events: events.map((ev, idx) => idx === i ? { ...ev, [key]: val } : ev) })
   const add = () => onChange({ ...content, events: [...events, { title: 'Neues Event', date: '', location: '', description: '' }] })
   const remove = (i: number) => onChange({ ...content, events: events.filter((_, idx) => idx !== i) })
   return (
     <div className="flex flex-col gap-4">
+      <Field label="Überschrift" value={String(content.heading ?? '')} onChange={v => onChange({ ...content, heading: v })}
+        placeholder="Konzerte & Veranstaltungen" />
       {events.map((ev, i) => (
-        <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-2">
+        <div key={i} className={`rounded-lg border p-3 flex flex-col gap-2 ${ev.cancelled ? 'border-red-500/30 bg-red-900/10' : 'border-white/10 bg-slate-900'}`}>
           <div className="flex justify-between items-center mb-1">
-            <span className="text-xs font-bold text-gray-300">Event {i + 1}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-300">Event {i + 1}</span>
+              {ev.cancelled && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400 font-semibold">ABGESAGT</span>}
+            </div>
             <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕ Entfernen</button>
           </div>
           <Field label="Titel" value={ev.title} onChange={v => update(i, 'title', v)} />
@@ -275,6 +280,23 @@ function EventCardForm({ content, onChange }: { content: Record<string, unknown>
           <Field label="Ort" value={ev.location} onChange={v => update(i, 'location', v)} />
           <Field label="Beschreibung" value={ev.description} onChange={v => update(i, 'description', v)} />
           <ImageField label="Bild (optional)" value={ev.imageUrl ?? ''} onChange={v => update(i, 'imageUrl', v)} />
+          <div className={`rounded-lg border p-3 flex flex-col gap-2 ${ev.cancelled ? 'border-red-500/20 bg-red-900/10' : 'border-white/5 bg-slate-800/40'}`}>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input type="checkbox" checked={ev.cancelled ?? false} onChange={e => update(i, 'cancelled', e.target.checked)} className="h-4 w-4 accent-red-500 rounded" />
+              <span className="text-sm font-medium text-red-400">Veranstaltung absagen</span>
+            </label>
+            {ev.cancelled && (
+              <div>
+                <label className="mb-1 block text-xs text-gray-400">Absagegrund (optional, wird Besuchern angezeigt)</label>
+                <input
+                  value={ev.cancellationNote ?? ''}
+                  onChange={e => update(i, 'cancellationNote', e.target.value)}
+                  placeholder="z.B. Aufgrund der Hitzewelle muss das Konzert leider entfallen."
+                  className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-red-400 focus:outline-none"
+                />
+              </div>
+            )}
+          </div>
         </div>
       ))}
       <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
@@ -2643,7 +2665,7 @@ function VideosManager() {
 // ─── Site Settings Editor ─────────────────────────────────────────────────────
 // ─── Announcement Editor ──────────────────────────────────────────────────────
 function AnnouncementEditor() {
-  const [ann, setAnn] = useState({ id: '', text: '', link: '', linkLabel: '', style: 'info', active: false })
+  const [ann, setAnn] = useState({ id: '', text: '', body: '', link: '', linkLabel: '', style: 'info', active: false })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -2653,7 +2675,7 @@ function AnnouncementEditor() {
       .then(r => r.json())
       .then((data: Record<string, string>) => {
         if (data.announcement) {
-          try { setAnn({ id: '', text: '', link: '', linkLabel: '', style: 'info', active: false, ...JSON.parse(data.announcement) }) } catch { /* ignore */ }
+          try { setAnn({ id: '', text: '', body: '', link: '', linkLabel: '', style: 'info', active: false, ...JSON.parse(data.announcement) }) } catch { /* ignore */ }
         }
       })
       .finally(() => setLoading(false))
@@ -2693,13 +2715,23 @@ function AnnouncementEditor() {
       </div>
       <div className="p-5 flex flex-col gap-3">
         <div>
-          <label className="mb-1 block text-xs text-gray-400">Text</label>
-          <input value={ann.text} onChange={e => setAnn(a => ({ ...a, text: e.target.value }))} placeholder="z.B. Jetzt Tickets sichern!"
+          <label className="mb-1 block text-xs text-gray-400">Kurztext <span className="text-gray-600">(wird im Banner angezeigt)</span></label>
+          <input value={ann.text} onChange={e => setAnn(a => ({ ...a, text: e.target.value }))} placeholder="z.B. Sommerkonzert 2026 fällt aus!"
             className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-gray-400">
+            Beitragstext <span className="text-gray-600">(optional – öffnet beim Klick ein Modal; ersetzt externen Link)</span>
+          </label>
+          <textarea
+            value={ann.body} onChange={e => setAnn(a => ({ ...a, body: e.target.value }))}
+            rows={4} placeholder="Ausführlichere Infos zur Meldung – z.B. Hintergründe, Details, nächste Schritte..."
+            className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white resize-y focus:border-green-500 focus:outline-none"
+          />
         </div>
         <div className="flex gap-2">
           <div className="flex-[2]">
-            <label className="mb-1 block text-xs text-gray-400">Link (optional)</label>
+            <label className="mb-1 block text-xs text-gray-400">Externer Link <span className="text-gray-600">(optional, z.B. Instagram)</span></label>
             <input value={ann.link} onChange={e => setAnn(a => ({ ...a, link: e.target.value }))} placeholder="https://..."
               className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white font-mono focus:border-green-500 focus:outline-none" />
           </div>
