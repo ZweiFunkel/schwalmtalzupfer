@@ -7,6 +7,13 @@ import { MeldungModal } from '@/components/AnnouncementBanner'
 
 const API_BASE = getApiBase()
 
+function isArchived(archivedAfter?: string): boolean {
+  if (!archivedAfter) return false
+  const parts = archivedAfter.split('.')
+  if (parts.length !== 3) return false
+  return new Date(+parts[2], +parts[1] - 1, +parts[0]) < new Date()
+}
+
 function parseDate(d: string): Date {
   const parts = d.split('.')
   if (parts.length === 3) {
@@ -55,7 +62,7 @@ export default function TermineKonzerteSection({ content }: { content: TermineKo
       .then((data: Termin[]) => {
         const today = new Date(); today.setHours(0, 0, 0, 0)
         const upcoming = data
-          .filter(t => parseDate(t.date) >= today)
+          .filter(t => parseDate(t.date) >= today && !isArchived(t.archivedAfter))
           .sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime())
         setTermine(upcoming.slice(0, content.maxItems ?? 6))
       })

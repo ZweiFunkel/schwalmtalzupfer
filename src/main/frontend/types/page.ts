@@ -116,6 +116,7 @@ export interface Termin {
   cancelled?: boolean
   cancellationNote?: string  // wird als Absagegrund angezeigt
   meldungId?: string         // verknüpfte Meldung (zeigt Popup bei Klick auf "Weitere Infos")
+  archivedAfter?: string     // ab diesem Datum (dd.MM.yyyy) nicht mehr in Konzert-/Next-Sections
 }
 export interface TermineListContent {
   heading?: string

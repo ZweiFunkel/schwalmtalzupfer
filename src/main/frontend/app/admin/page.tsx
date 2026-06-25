@@ -134,9 +134,21 @@ function AssetPickerModal({ onSelect, onClose }: { onSelect: (url: string) => vo
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-gray-400">{label}</label>
+      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</label>
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none" />
+    </div>
+  )
+}
+
+function SectionHeader({ icon, title, desc }: { icon: string; title: string; desc?: string }) {
+  return (
+    <div className="flex items-center gap-3 pb-4 border-b border-white/8">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-xl shrink-0">{icon}</div>
+      <div>
+        <h2 className="text-base font-bold text-white leading-none">{title}</h2>
+        {desc && <p className="mt-0.5 text-xs text-gray-500">{desc}</p>}
+      </div>
     </div>
   )
 }
@@ -664,7 +676,7 @@ function ImageCaptionForm({ content, onChange }: { content: Record<string, unkno
 function TermineListForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
   interface ParkingItem { name?: string; mapUrl: string }
   interface TicketsItem { link?: string; priceAdults?: string; priceChildren?: string; info?: string }
-  interface TerminItem { title: string; date: string; time?: string; location?: string; mapUrl?: string; parking?: ParkingItem[]; note?: string; details?: string; tickets?: TicketsItem; kategorie: string; cancelled?: boolean; cancellationNote?: string; meldungId?: string }
+  interface TerminItem { title: string; date: string; time?: string; location?: string; mapUrl?: string; parking?: ParkingItem[]; note?: string; details?: string; tickets?: TicketsItem; kategorie: string; cancelled?: boolean; cancellationNote?: string; meldungId?: string; archivedAfter?: string }
   interface MeldungRef { id: string; title: string }
   const [meldungen, setMeldungen] = useState<MeldungRef[]>([])
   useEffect(() => {
@@ -764,6 +776,28 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
                   {KAT_ICONS[k]} {k}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Archivierung */}
+          <div className="rounded-lg border border-white/5 bg-slate-800/40 p-3 flex flex-col gap-1.5">
+            <label className="mb-0.5 block text-xs text-gray-400 font-medium">
+              Nicht mehr anzeigen ab
+              <span className="ml-1 font-normal text-gray-600">(optional – versteckt in Konzert- & Next-Ansicht, bleibt im Kalender)</span>
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                value={t.archivedAfter ?? ''}
+                onChange={e => update(i, { archivedAfter: e.target.value })}
+                placeholder="dd.MM.yyyy"
+                className="w-36 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white font-mono focus:border-slate-400 focus:outline-none"
+              />
+              {t.archivedAfter && (
+                <button type="button" onClick={() => update(i, { archivedAfter: undefined })}
+                  className="text-xs text-gray-500 hover:text-white transition">✕ löschen</button>
+              )}
+              <span className="text-xs text-gray-600">z.B. Tag nach dem Konzert</span>
             </div>
           </div>
 
@@ -1811,12 +1845,11 @@ function PageEditor({ page, onBack }: { page: PageMeta; onBack: () => void }) {
 
   return (
     <div>
-      <div className="mb-6 flex items-center gap-3">
-        <button onClick={onBack} className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-gray-400 hover:text-white transition">← Zurück</button>
-        <div>
-          <h2 className="text-xl font-bold text-white">{page.title}</h2>
-          <p className="text-xs text-gray-400 font-mono">/{page.slug}</p>
-        </div>
+      <div className="flex items-center gap-2 text-sm mb-6">
+        <button onClick={onBack} className="text-gray-500 hover:text-white transition">Admin</button>
+        <span className="text-gray-700">/</span>
+        <span className="text-white font-medium">{page.title}</span>
+        <span className="ml-auto text-xs font-mono text-gray-600">/{page.slug}</span>
       </div>
       <div className="flex flex-col gap-4 mb-6">
         {sections.length === 0 && <p className="text-sm text-gray-500">Keine Sektionen vorhanden.</p>}
@@ -2824,7 +2857,7 @@ function MeldungenEditor() {
               <div className="border-t border-white/10 p-4 flex flex-col gap-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs text-gray-400">Titel <span className="text-gray-600">(intern + im Popup)</span></label>
+                    <label className="mb-1 block text-xs text-gray-400">Titel <span className="text-gray-600">(nur intern – zur Unterscheidung)</span></label>
                     <input value={m.title} onChange={e => update(m.id, { title: e.target.value })}
                       placeholder="z.B. Sommerkonzert 2026 abgesagt"
                       className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
@@ -3006,13 +3039,7 @@ export default function AdminPage() {
     return 'pages'
   })
 
-  // Admin-Bereich immer im Dark-Mode anzeigen
-  useEffect(() => {
-    const html = document.documentElement
-    const wasDark = html.classList.contains('dark')
-    html.classList.add('dark')
-    return () => { if (!wasDark) html.classList.remove('dark') }
-  }, [])
+  // Dark mode is enforced by admin/layout.tsx — no useEffect needed here
   // For BOARD users, default to members tab (set after user loads)
   const [boardTabInit, setBoardTabInit] = useState(false)
   // Einladung
@@ -3170,68 +3197,89 @@ export default function AdminPage() {
 
   const TAB_DEFS = [
     ...(isAdmin(user) ? [
-      { key: 'pages'     as const, label: '📄 Seiten',        desc: 'CMS-Seiten & Sektionen' },
-      { key: 'meldungen' as const, label: '📣 Meldungen',     desc: 'Banner & Infos zu Terminen' },
-      { key: 'assets'    as const, label: '🗂 Assets',        desc: 'Bilder & Dateien (R2)' },
-      { key: 'settings'  as const, label: '⚙️ Einstellungen', desc: 'Logo, Noten, Navigation' },
+      { key: 'pages'     as const, icon: '📄', label: 'Seiten',        desc: 'CMS-Seiten & Sektionen' },
+      { key: 'meldungen' as const, icon: '📣', label: 'Meldungen',     desc: 'Banner & Infos zu Terminen' },
+      { key: 'assets'    as const, icon: '🗂', label: 'Assets',        desc: 'Bilder & Dateien (R2)' },
+      { key: 'settings'  as const, icon: '⚙️', label: 'Einstellungen', desc: 'Logo, Noten, Navigation' },
     ] : []),
-    { key: 'videos'  as const, label: '🎬 Videos',      desc: 'YouTube-Videos verwalten' },
-    { key: 'members' as const, label: '👥 Mitglieder', desc: 'Einladungen & Gruppen' },
+    { key: 'videos'  as const, icon: '🎬', label: 'Videos',     desc: 'YouTube-Videos verwalten' },
+    { key: 'members' as const, icon: '👥', label: 'Mitglieder', desc: 'Einladungen & Gruppen' },
   ]
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-      {/* ── Page header ─────────────────────────────────────────────────────── */}
-      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold text-white">
-            {isAdmin(user) ? 'Admin-Dashboard' : 'Vorstand-Dashboard'}
+    <div className="min-h-screen">
+      {/* ── Top bar ─────────────────────────────────────────────────────────── */}
+      <div className="border-b border-white/8 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex items-center justify-between h-14 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white shrink-0">
+              {(user.username || user.email || '?')[0].toUpperCase()}
+            </div>
+            <div className="hidden sm:block">
+              <p className="text-sm font-semibold text-white leading-none">{user.username || user.email}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">
+                {user.role === 'ROLE_ADMIN' ? 'Administrator' : user.role === 'ROLE_BOARD' ? 'Vorstand' : user.role}
+              </p>
+            </div>
+          </div>
+          <h1 className="text-sm font-bold text-white absolute left-1/2 -translate-x-1/2 hidden sm:block">
+            {isAdmin(user) ? '⚡ Admin' : '🏛 Vorstand'}
           </h1>
-          <p className="mt-1 text-sm text-gray-400">
-            Angemeldet als <span className="font-medium text-gray-200">{user.username || user.email}</span>
-            {' · '}
-            <span className="rounded-full bg-green-900/40 border border-green-500/20 px-2 py-0.5 text-xs text-green-400">
-              {user.role === 'ROLE_ADMIN' ? 'Administrator' : user.role === 'ROLE_BOARD' ? 'Vorstand' : user.role}
-            </span>
-          </p>
+          <a href="/" target="_blank"
+            className="text-xs text-gray-500 hover:text-white transition flex items-center gap-1">
+            Website ↗
+          </a>
         </div>
       </div>
 
-      {/* ── Tabs ────────────────────────────────────────────────────────────── */}
-      <div className="mb-6 flex gap-1 rounded-xl border border-white/10 bg-slate-900/60 p-1 flex-wrap">
-        {TAB_DEFS.map(t => (
-          <button key={t.key} onClick={() => switchTab(t.key)}
-            className={`flex-1 min-w-[110px] rounded-lg px-4 py-2.5 text-sm font-medium transition-all
-              ${tab === t.key
-                ? 'bg-slate-700 text-white shadow-sm'
-                : 'text-gray-400 hover:text-white hover:bg-slate-800/50'}`}>
-            <span>{t.label}</span>
-            <span className="hidden sm:block mt-0.5 text-xs font-normal opacity-60">{t.desc}</span>
-          </button>
-        ))}
+      {/* ── Tab navigation ────────────────────────────────────────────────── */}
+      <div className="border-b border-white/8 bg-slate-950 overflow-x-auto">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex">
+          {TAB_DEFS.map(t => (
+            <button key={t.key} onClick={() => switchTab(t.key)}
+              className={`relative flex items-center gap-2 px-4 py-3.5 text-sm font-medium transition-colors whitespace-nowrap
+                ${tab === t.key
+                  ? 'text-white'
+                  : 'text-gray-500 hover:text-gray-300'}`}>
+              <span>{t.icon}</span>
+              <span>{t.label}</span>
+              {tab === t.key && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {tab === 'assets' && <AssetBrowser />}
+      {/* ── Content ─────────────────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
+
+      {tab === 'assets' && (
+        <div className="space-y-6">
+          <SectionHeader icon="🗂" title="Assets" desc="Bilder & Dateien in R2 verwalten" />
+          <AssetBrowser />
+        </div>
+      )}
 
       {tab === 'meldungen' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 pb-1 border-b border-white/10">
-            <h2 className="text-lg font-bold text-white">📣 Meldungen & Info-Banner</h2>
-          </div>
+        <div className="space-y-6">
+          <SectionHeader icon="📣" title="Meldungen & Info-Banner" desc="Ankündigungen und Infos zu Terminen" />
           <MeldungenEditor />
         </div>
       )}
 
       {tab === 'settings' && <SiteSettingsEditor />}
 
-      {tab === 'videos' && <VideosManager />}
+      {tab === 'videos' && (
+        <div className="space-y-6">
+          <SectionHeader icon="🎬" title="Videos" desc="YouTube-Videos verwalten" />
+          <VideosManager />
+        </div>
+      )}
 
       {tab === 'members' && (
         <div className="space-y-6">
-          {/* Section heading */}
-          <div className="flex items-center gap-3 pb-1 border-b border-white/10">
-            <h2 className="text-lg font-bold text-white">👥 Mitgliederverwaltung</h2>
-          </div>
+          <SectionHeader icon="👥" title="Mitgliederverwaltung" desc="Einladungen versenden, Gruppen verwalten" />
 
           {/* Link zur Mitgliederverwaltung */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -3438,14 +3486,14 @@ export default function AdminPage() {
         selectedPage ? (
           <PageEditor page={selectedPage} onBack={() => { setSelectedPage(null); loadPages() }} />
         ) : (
-          <div>
+          <div className="space-y-6">
+            <SectionHeader icon="📄" title="Seiten" desc="CMS-Seiten verwalten und Inhalte bearbeiten" />
             {pageActionError && (
-              <div className="mb-4 rounded-xl border border-red-500/40 bg-red-900/20 px-4 py-3 text-sm text-red-400">
+              <div className="rounded-xl border border-red-500/40 bg-red-900/20 px-4 py-3 text-sm text-red-400">
                 ⚠ {pageActionError}
               </div>
             )}
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-lg font-bold text-white">📄 CMS-Seiten</h2>
+            <div className="flex items-center gap-3">
               <span className="rounded-full bg-slate-700 border border-white/10 px-2.5 py-0.5 text-xs text-gray-400">{pages.length} Seiten</span>
             </div>
             <div className="overflow-hidden rounded-xl border border-white/10 mb-6">
@@ -3543,6 +3591,8 @@ export default function AdminPage() {
           </div>
         )
       )}
+
+      </div>
     </div>
   )
 }

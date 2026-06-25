@@ -1,14 +1,34 @@
 'use client'
 import React, { useEffect, useState } from 'react'
-import { NextConcertContent, EventCardItem } from '@/types/page'
+import { NextConcertContent } from '@/types/page'
 import { getApiBase } from '@/lib/api'
+import { useMeldungen, getMeldungById } from '@/lib/useMeldungen'
+import { MeldungModal } from '@/components/AnnouncementBanner'
 
 const API_BASE = getApiBase()
+
+interface TerminRaw {
+  title: string
+  date: string
+  location?: string
+  note?: string
+  cancelled?: boolean
+  cancellationNote?: string
+  meldungId?: string
+  archivedAfter?: string
+}
 
 function parseDate(d: string): Date {
   const parts = d.split('.')
   if (parts.length === 3) return new Date(`${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`)
   return new Date(d)
+}
+
+function isArchived(archivedAfter?: string): boolean {
+  if (!archivedAfter) return false
+  const parts = archivedAfter.split('.')
+  if (parts.length !== 3) return false
+  return new Date(+parts[2], +parts[1] - 1, +parts[0]) < new Date()
 }
 
 function formatDate(d: string) {
@@ -67,7 +87,9 @@ function Digit({ value, label }: { value: number; label: string }) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function NextConcertSection({ content }: { content: NextConcertContent }) {
-  const [next, setNext] = useState<EventCardItem | null | undefined>(undefined)
+  const [next, setNext] = useState<TerminRaw | null | undefined>(undefined)
+  const [showMeldung, setShowMeldung] = useState(false)
+  const meldungen = useMeldungen()
 
   useEffect(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -75,31 +97,31 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
     if (content.autoFromTermine) {
       fetch(`${API_BASE}/api/termine/konzerte`)
         .then(r => r.ok ? r.json() : [])
-        .then((data: Array<Record<string, string>>) => {
+        .then((data: TerminRaw[]) => {
           const upcoming = data
-            .filter(t => parseDate(t.date) >= today)
+            .filter(t => parseDate(t.date) >= today && !isArchived(t.archivedAfter))
             .sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime())
-          const t = upcoming[0]
-          setNext(t ? { title: t.title, date: t.date, location: t.location ?? '', description: t.note } : null)
+          setNext(upcoming[0] ?? null)
         })
         .catch(() => setNext(null))
     } else {
-      const upcoming = (content.events ?? [])
-        .filter(e => parseDate(e.date) >= today)
-        .sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime())
+      const upcoming = (content.events ?? [] as TerminRaw[])
+        .filter((e: TerminRaw) => parseDate(e.date) >= today && !isArchived(e.archivedAfter))
+        .sort((a: TerminRaw, b: TerminRaw) => parseDate(a.date).getTime() - parseDate(b.date).getTime())
       setNext(upcoming[0] ?? null)
     }
   }, [content])
 
-  const cd = useCountdown(next?.date)
-  const isToday = cd !== null && cd.days === 0 && cd.hours === 0 && cd.minutes < 60
+  const cd = useCountdown(next && !next.cancelled ? next.date : undefined)
+  const isToday = cd !== null && cd?.days === 0 && cd?.hours === 0 && (cd?.minutes ?? 60) < 60
+  const linkedMeldung = next?.meldungId ? getMeldungById(meldungen, next.meldungId) : undefined
 
   return (
     <section className="relative overflow-hidden bg-gray-50 dark:bg-slate-950 py-20">
       {/* Ambient glow */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-green-500/10 blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-green-500/10 blur-3xl" />
+        <div className={`absolute -left-40 -top-40 h-80 w-80 rounded-full blur-3xl ${next?.cancelled ? 'bg-red-500/10' : 'bg-green-500/10'}`} />
+        <div className={`absolute -bottom-40 -right-40 h-80 w-80 rounded-full blur-3xl ${next?.cancelled ? 'bg-red-500/10' : 'bg-green-500/10'}`} />
       </div>
 
       <div className="relative mx-auto max-w-3xl px-6">
@@ -124,31 +146,51 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
 
         {/* Concert card */}
         {next && (
-          <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/80 backdrop-blur-sm shadow-lg dark:shadow-2xl">
-            {/* Green top stripe */}
-            <div className="h-1 w-full bg-gradient-to-r from-green-500 via-emerald-400 to-green-600" />
+          <div className={`overflow-hidden rounded-2xl border shadow-lg dark:shadow-2xl ${
+            next.cancelled
+              ? 'border-red-300/40 dark:border-red-800/40 bg-white dark:bg-slate-900/80 opacity-90'
+              : 'border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/80 backdrop-blur-sm'
+          }`}>
+            {/* Top stripe */}
+            <div className={`h-1 w-full ${next.cancelled ? 'bg-red-500' : 'bg-gradient-to-r from-green-500 via-emerald-400 to-green-600'}`} />
 
             <div className="p-8">
               {/* Header row */}
               <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{next.title}</h3>
-                  <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-3 flex-wrap mb-1">
+                    <h3 className={`text-2xl font-bold leading-tight ${
+                      next.cancelled ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
+                    }`}>{next.title}</h3>
+                    {next.cancelled && (
+                      <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-white shrink-0">
+                        Abgesagt
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
                     {next.location && (
                       <span className="flex items-center gap-1.5">📍 {next.location}</span>
                     )}
                   </div>
-                  {next.description && (
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{next.description}</p>
+                  {next.note && !next.cancelled && (
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{next.note}</p>
+                  )}
+                  {next.cancelled && next.cancellationNote && (
+                    <p className="mt-2 text-sm text-red-500 dark:text-red-400">{next.cancellationNote}</p>
                   )}
                 </div>
-                <div className="shrink-0 rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-2.5 text-sm font-semibold text-green-700 dark:text-green-400 whitespace-nowrap">
+                <div className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold whitespace-nowrap ${
+                  next.cancelled
+                    ? 'bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500'
+                    : 'bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400'
+                }`}>
                   📅 {formatDate(next.date)}
                 </div>
               </div>
 
-              {/* Countdown */}
-              {cd && !isToday && cd.days > 0 && (
+              {/* Countdown (nur wenn nicht abgesagt) */}
+              {!next.cancelled && cd && !isToday && cd.days > 0 && (
                 <div>
                   <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600">Noch</p>
                   <div className="flex items-end gap-3">
@@ -163,8 +205,8 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
                 </div>
               )}
 
-              {/* Today or imminent */}
-              {cd && (isToday || cd.days === 0) && (
+              {/* Today / imminent */}
+              {!next.cancelled && cd && (isToday || cd.days === 0) && (
                 <div className="flex items-center gap-3">
                   <span className="relative flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
@@ -175,10 +217,24 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
                   </span>
                 </div>
               )}
+
+              {/* Abgesagt: Meldungs-Button */}
+              {next.cancelled && linkedMeldung && (
+                <button
+                  onClick={() => setShowMeldung(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-red-100 dark:bg-red-900/30 border border-red-300/50 dark:border-red-700/50 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition"
+                >
+                  ℹ️ Weitere Infos
+                </button>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {showMeldung && linkedMeldung && (
+        <MeldungModal meldung={linkedMeldung} onClose={() => setShowMeldung(false)} />
+      )}
     </section>
   )
 }

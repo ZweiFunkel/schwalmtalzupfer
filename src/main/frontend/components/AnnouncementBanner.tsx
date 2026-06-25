@@ -74,12 +74,7 @@ export function MeldungModal({ meldung, onClose }: { meldung: Meldung; onClose: 
       >
         <div className={`flex items-start gap-3 rounded-t-2xl px-5 py-4 ${cfg.modalHeader}`}>
           <span className="text-2xl mt-0.5">{cfg.icon}</span>
-          <div className="flex-1 min-w-0">
-            {meldung.title && (
-              <p className="text-xs font-semibold text-white/70 uppercase tracking-wider mb-0.5">{meldung.title}</p>
-            )}
-            <p className="text-base font-semibold text-white leading-snug">{meldung.text}</p>
-          </div>
+          <p className="flex-1 text-base font-semibold text-white leading-snug">{meldung.text}</p>
           <button onClick={onClose}
             className="shrink-0 rounded-full p-1.5 text-white/60 hover:text-white hover:bg-white/15 transition mt-0.5">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

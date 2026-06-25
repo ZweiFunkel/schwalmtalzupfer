@@ -41,6 +41,13 @@ function parseDateDisplay(date: string): { day: string; month: string } {
   return { day: start, month: '' }
 }
 
+function isArchived(archivedAfter?: string): boolean {
+  if (!archivedAfter) return false
+  const parts = archivedAfter.split('.')
+  if (parts.length !== 3) return false
+  return new Date(+parts[2], +parts[1] - 1, +parts[0]) < new Date()
+}
+
 function isPast(date: string): boolean {
   // Use end date for ranges, start date for single dates
   const parts = date.split(/\s*[–-]\s*/)
@@ -196,6 +203,11 @@ export default function TermineListSection({ content }: { content: TermineListCo
                             {t.cancelled && (
                               <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                                 Abgesagt
+                              </span>
+                            )}
+                            {isArchived(t.archivedAfter) && !t.cancelled && (
+                              <span className="rounded-full bg-slate-400/20 border border-slate-400/20 px-2 py-0.5 text-[10px] font-medium text-gray-400 dark:text-gray-600">
+                                Archiviert
                               </span>
                             )}
                             <span className="text-xs text-gray-400 dark:text-gray-500">{cat.icon} {cat.label}</span>
