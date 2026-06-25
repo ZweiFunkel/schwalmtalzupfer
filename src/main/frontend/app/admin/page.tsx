@@ -664,7 +664,16 @@ function ImageCaptionForm({ content, onChange }: { content: Record<string, unkno
 function TermineListForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
   interface ParkingItem { name?: string; mapUrl: string }
   interface TicketsItem { link?: string; priceAdults?: string; priceChildren?: string; info?: string }
-  interface TerminItem { title: string; date: string; time?: string; location?: string; mapUrl?: string; parking?: ParkingItem[]; note?: string; details?: string; tickets?: TicketsItem; kategorie: string; cancelled?: boolean; cancellationNote?: string }
+  interface TerminItem { title: string; date: string; time?: string; location?: string; mapUrl?: string; parking?: ParkingItem[]; note?: string; details?: string; tickets?: TicketsItem; kategorie: string; cancelled?: boolean; cancellationNote?: string; meldungId?: string }
+  interface MeldungRef { id: string; title: string }
+  const [meldungen, setMeldungen] = useState<MeldungRef[]>([])
+  useEffect(() => {
+    fetch(`${API_BASE}/api/site/settings`)
+      .then(r => r.json())
+      .then((d: Record<string, string>) => {
+        if (d.meldungen) try { setMeldungen(JSON.parse(d.meldungen)) } catch { /* */ }
+      }).catch(() => {})
+  }, [])
   const termine: TerminItem[] = (content.termine as TerminItem[]) ?? []
   const KATEGORIEN = ['konzert', 'jugend', 'ausflug', 'sonstige']
   const KAT_ICONS: Record<string, string> = { konzert: '🎸', jugend: '🏕️', ausflug: '🚌', sonstige: '📅' }
@@ -765,15 +774,27 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
               <span className="text-sm font-medium text-red-400">Veranstaltung absagen</span>
             </label>
             {t.cancelled && (
-              <div>
-                <label className="mb-1 block text-xs text-gray-400">Absagegrund (optional)</label>
-                <input
-                  value={t.cancellationNote ?? ''}
-                  onChange={e => update(i, { cancellationNote: e.target.value })}
-                  placeholder="z.B. Aufgrund der Hitzewelle muss das Konzert leider entfallen."
-                  className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-red-400 focus:outline-none"
-                />
-              </div>
+              <>
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Absagegrund (optional)</label>
+                  <input
+                    value={t.cancellationNote ?? ''}
+                    onChange={e => update(i, { cancellationNote: e.target.value })}
+                    placeholder="z.B. Aufgrund der Hitzewelle muss das Konzert leider entfallen."
+                    className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-red-400 focus:outline-none"
+                  />
+                </div>
+                {meldungen.length > 0 && (
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">Verknüpfte Meldung <span className="text-gray-600">(öffnet Popup bei „Weitere Infos")</span></label>
+                    <select value={t.meldungId ?? ''} onChange={e => update(i, { meldungId: e.target.value || undefined })}
+                      className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-red-400 focus:outline-none">
+                      <option value="">— keine Meldung —</option>
+                      {meldungen.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
+                    </select>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -2684,111 +2705,188 @@ function VideosManager() {
   )
 }
 
-// ─── Site Settings Editor ─────────────────────────────────────────────────────
-// ─── Announcement Editor ──────────────────────────────────────────────────────
-function AnnouncementEditor() {
-  const [ann, setAnn] = useState({ id: '', text: '', body: '', link: '', linkLabel: '', style: 'info', active: false })
+// ─── Meldungen Editor ─────────────────────────────────────────────────────────
+interface MeldungItem { id: string; title: string; text: string; body: string; imageUrl?: string; style: 'info' | 'warning' | 'success'; activeForBanner: boolean }
+
+const MELDUNG_STYLE_COLORS: Record<string, { label: string; dot: string }> = {
+  info:    { label: 'Blau (Info)',   dot: 'bg-blue-500' },
+  warning: { label: 'Amber (Warnung)', dot: 'bg-amber-500' },
+  success: { label: 'Grün (Erfolg)', dot: 'bg-green-500' },
+}
+
+function MeldungenEditor() {
+  const [meldungen, setMeldungen] = useState<MeldungItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`${API_BASE}/api/site/settings`)
       .then(r => r.json())
       .then((data: Record<string, string>) => {
-        if (data.announcement) {
-          try { setAnn({ id: '', text: '', body: '', link: '', linkLabel: '', style: 'info', active: false, ...JSON.parse(data.announcement) }) } catch { /* ignore */ }
+        if (data.meldungen) {
+          try { setMeldungen(JSON.parse(data.meldungen)) } catch { /* ignore */ }
         }
       })
       .finally(() => setLoading(false))
   }, [])
 
-  const save = async () => {
+  const save = async (list: MeldungItem[]) => {
     setSaving(true)
-    const payload = { ...ann, id: ann.id || crypto.randomUUID() }
-    await fetch(`${API_BASE}/api/site/announcement`, {
+    await fetch(`${API_BASE}/api/site/meldungen`, {
       method: 'PUT', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ json: JSON.stringify(payload) }),
+      body: JSON.stringify({ json: JSON.stringify(list) }),
     })
-    setAnn(payload)
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
 
-  const newId = () => setAnn(a => ({ ...a, id: crypto.randomUUID() }))
+  const update = (id: string, patch: Partial<MeldungItem>) => {
+    setMeldungen(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m))
+  }
 
-  if (loading) return null
+  const addNew = () => {
+    const newM: MeldungItem = { id: crypto.randomUUID(), title: 'Neue Meldung', text: '', body: '', imageUrl: '', style: 'warning', activeForBanner: false }
+    setMeldungen(prev => [newM, ...prev])
+    setExpanded(newM.id)
+  }
+
+  const remove = (id: string) => {
+    if (!confirm('Meldung wirklich löschen?')) return
+    setMeldungen(prev => prev.filter(m => m.id !== id))
+  }
+
+  const toggleBanner = (id: string) => {
+    setMeldungen(prev => prev.map(m => ({ ...m, activeForBanner: m.id === id ? !m.activeForBanner : false })))
+  }
+
+  if (loading) return <p className="text-gray-400 text-sm py-4">Lade Meldungen…</p>
 
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
-      <div className="border-b border-white/10 px-5 py-4 flex items-center justify-between">
+    <div className="space-y-4">
+      {/* Header + Add */}
+      <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-bold text-white">📣 Info-Banner</h3>
-          <p className="mt-0.5 text-xs text-gray-400">Erscheint oben auf jeder Seite – Besucher können ihn dauerhaft schließen.</p>
+          <p className="text-xs text-gray-400">
+            Erstelle Info-Meldungen. Eine kann als Banner oben aktiviert werden – andere lassen sich mit abgesagten Terminen verknüpfen.
+          </p>
         </div>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <span className="text-xs text-gray-400">Aktiv</span>
-          <div
-            onClick={() => setAnn(a => ({ ...a, active: !a.active }))}
-            className={`relative h-5 w-9 rounded-full transition ${ann.active ? 'bg-green-600' : 'bg-slate-700'}`}>
-            <div className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${ann.active ? 'translate-x-4' : ''}`} />
-          </div>
-        </label>
+        <button onClick={addNew}
+          className="shrink-0 rounded-lg border border-dashed border-green-500/40 bg-green-900/10 px-3 py-1.5 text-xs text-green-400 hover:bg-green-900/20 transition">
+          + Neue Meldung
+        </button>
       </div>
-      <div className="p-5 flex flex-col gap-3">
-        <div>
-          <label className="mb-1 block text-xs text-gray-400">Kurztext <span className="text-gray-600">(wird im Banner angezeigt)</span></label>
-          <input value={ann.text} onChange={e => setAnn(a => ({ ...a, text: e.target.value }))} placeholder="z.B. Sommerkonzert 2026 fällt aus!"
-            className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
+
+      {meldungen.length === 0 && (
+        <div className="rounded-xl border border-dashed border-white/10 py-10 text-center">
+          <p className="text-sm text-gray-500">Noch keine Meldungen.</p>
+          <button onClick={addNew} className="mt-3 text-sm text-green-400 hover:text-green-300 transition">
+            + Erste Meldung erstellen
+          </button>
         </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-400">
-            Beitragstext <span className="text-gray-600">(optional – öffnet beim Klick ein Modal; ersetzt externen Link)</span>
-          </label>
-          <textarea
-            value={ann.body} onChange={e => setAnn(a => ({ ...a, body: e.target.value }))}
-            rows={4} placeholder="Ausführlichere Infos zur Meldung – z.B. Hintergründe, Details, nächste Schritte..."
-            className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white resize-y focus:border-green-500 focus:outline-none"
-          />
-        </div>
-        <div className="flex gap-2">
-          <div className="flex-[2]">
-            <label className="mb-1 block text-xs text-gray-400">Externer Link <span className="text-gray-600">(optional, z.B. Instagram)</span></label>
-            <input value={ann.link} onChange={e => setAnn(a => ({ ...a, link: e.target.value }))} placeholder="https://..."
-              className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white font-mono focus:border-green-500 focus:outline-none" />
-          </div>
-          <div className="flex-1">
-            <label className="mb-1 block text-xs text-gray-400">Link-Text</label>
-            <input value={ann.linkLabel} onChange={e => setAnn(a => ({ ...a, linkLabel: e.target.value }))} placeholder="Mehr erfahren"
-              className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
-          </div>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-400">Farbe</label>
-          <div className="flex gap-2">
-            {([['info', 'Blau'], ['warning', 'Amber'], ['success', 'Grün']] as const).map(([v, l]) => (
-              <button key={v} onClick={() => setAnn(a => ({ ...a, style: v }))}
-                className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${ann.style === v ? 'border-green-500/40 bg-green-900/30 text-green-400' : 'border-white/10 bg-slate-800 text-gray-400 hover:text-white'}`}>
-                {l}
+      )}
+
+      {meldungen.map(m => {
+        const isOpen = expanded === m.id
+        const colorDot = MELDUNG_STYLE_COLORS[m.style]?.dot ?? 'bg-gray-500'
+        return (
+          <div key={m.id} className={`rounded-xl border overflow-hidden transition ${
+            m.activeForBanner ? 'border-amber-500/30 bg-amber-900/10' : 'border-white/10 bg-slate-900'
+          }`}>
+            {/* Row header */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <button onClick={() => toggleBanner(m.id)} title="Als Banner aktivieren"
+                className={`shrink-0 flex h-5 w-9 rounded-full transition ${m.activeForBanner ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                <div className={`m-0.5 h-4 w-4 rounded-full bg-white transition-transform ${m.activeForBanner ? 'translate-x-4' : ''}`} />
               </button>
-            ))}
+              <span className={`h-2 w-2 rounded-full shrink-0 ${colorDot}`} />
+              <span className="flex-1 truncate text-sm font-medium text-white">
+                {m.title || <span className="text-gray-500 italic">Ohne Titel</span>}
+              </span>
+              {m.activeForBanner && (
+                <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-xs text-amber-400 font-semibold shrink-0">
+                  Banner aktiv
+                </span>
+              )}
+              <div className="flex gap-1.5 shrink-0">
+                <button onClick={() => setExpanded(isOpen ? null : m.id)}
+                  className="rounded px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition">
+                  {isOpen ? '▲ Einklappen' : '▼ Bearbeiten'}
+                </button>
+                <button onClick={() => remove(m.id)}
+                  className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">✕</button>
+              </div>
+            </div>
+
+            {/* Edit form */}
+            {isOpen && (
+              <div className="border-t border-white/10 p-4 flex flex-col gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">Titel <span className="text-gray-600">(intern + im Popup)</span></label>
+                    <input value={m.title} onChange={e => update(m.id, { title: e.target.value })}
+                      placeholder="z.B. Sommerkonzert 2026 abgesagt"
+                      className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">Farbe</label>
+                    <div className="flex gap-2 pt-0.5">
+                      {(Object.entries(MELDUNG_STYLE_COLORS) as [string, { label: string; dot: string }][]).map(([v, c]) => (
+                        <button key={v} onClick={() => update(m.id, { style: v as MeldungItem['style'] })}
+                          className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                            m.style === v ? 'border-green-500/40 bg-green-900/30 text-green-400' : 'border-white/10 bg-slate-800 text-gray-400 hover:text-white'
+                          }`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Kurztext <span className="text-gray-600">(im Banner + Popup-Header)</span></label>
+                  <input value={m.text} onChange={e => update(m.id, { text: e.target.value })}
+                    placeholder="z.B. Das Sommerkonzert 2026 fällt leider aus."
+                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Beitragstext <span className="text-gray-600">(optional – erscheint im Popup)</span></label>
+                  <textarea value={m.body} onChange={e => update(m.id, { body: e.target.value })}
+                    rows={4} placeholder="Ausführliche Infos, Hintergründe, Alternativen..."
+                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white resize-y focus:border-green-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Bild im Popup <span className="text-gray-600">(optional – erscheint über dem Text)</span></label>
+                  <ImageField label="" value={m.imageUrl ?? ''} onChange={v => update(m.id, { imageUrl: v })} />
+                </div>
+                <div className="flex items-center gap-2 pt-1 border-t border-white/5">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div onClick={() => toggleBanner(m.id)}
+                      className={`relative h-5 w-9 rounded-full transition ${m.activeForBanner ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                      <div className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${m.activeForBanner ? 'translate-x-4' : ''}`} />
+                    </div>
+                    <span className="text-xs text-gray-400">Als Banner aktivieren <span className="text-gray-600">(deaktiviert andere)</span></span>
+                  </label>
+                  <p className="ml-auto text-[10px] text-gray-600 font-mono truncate">ID: {m.id.slice(0, 8)}…</p>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-        <div className="flex items-center gap-2 pt-1">
-          <button onClick={save} disabled={saving}
-            className="rounded-lg bg-green-600 px-4 py-2 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-            {saving ? 'Speichert…' : saved ? '✓ Gespeichert!' : 'Speichern'}
-          </button>
-          <button onClick={newId} title="Neue ID vergeben – Banner erscheint erneut für alle Besucher"
-            className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-gray-400 hover:text-white transition">
-            🔄 Als neu markieren
-          </button>
-          <p className="text-[10px] text-gray-600 ml-auto font-mono truncate">ID: {ann.id || '—'}</p>
-        </div>
-      </div>
+        )
+      })}
+
+      {meldungen.length > 0 && (
+        <button onClick={() => save(meldungen)} disabled={saving}
+          className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
+          {saving ? 'Speichert…' : saved ? '✓ Gespeichert!' : '✓ Alle Meldungen speichern'}
+        </button>
+      )}
     </div>
   )
 }
+
+// ─── Site Settings Editor ─────────────────────────────────────────────────────
 
 function SiteSettingsEditor() {
   const [settings, setSettings] = useState<Record<string, string>>({})
@@ -2884,9 +2982,6 @@ function SiteSettingsEditor() {
         </div>
       </div>
 
-      {/* ── Announcement Banner ──────────────────────────────────────────── */}
-      <AnnouncementEditor />
-
       {/* ── Save button ──────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3">
         <button onClick={saveSettings} disabled={saving}
@@ -2903,13 +2998,21 @@ function SiteSettingsEditor() {
 export default function AdminPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [tab, setTab] = useState<'pages' | 'assets' | 'settings' | 'members' | 'videos'>(() => {
+  const [tab, setTab] = useState<'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('admin_tab')
-      if (saved === 'assets' || saved === 'settings' || saved === 'members' || saved === 'videos') return saved as any
+      if (['assets', 'meldungen', 'settings', 'members', 'videos'].includes(saved ?? '')) return saved as any
     }
     return 'pages'
   })
+
+  // Admin-Bereich immer im Dark-Mode anzeigen
+  useEffect(() => {
+    const html = document.documentElement
+    const wasDark = html.classList.contains('dark')
+    html.classList.add('dark')
+    return () => { if (!wasDark) html.classList.remove('dark') }
+  }, [])
   // For BOARD users, default to members tab (set after user loads)
   const [boardTabInit, setBoardTabInit] = useState(false)
   // Einladung
@@ -3003,7 +3106,7 @@ export default function AdminPage() {
     loadGruppen()
   }
 
-  const switchTab = (t: 'pages' | 'assets' | 'settings' | 'members' | 'videos') => {
+  const switchTab = (t: 'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos') => {
     setTab(t); setSelectedPage(null)
     if (typeof window !== 'undefined') localStorage.setItem('admin_tab', t)
   }
@@ -3067,11 +3170,12 @@ export default function AdminPage() {
 
   const TAB_DEFS = [
     ...(isAdmin(user) ? [
-      { key: 'pages'    as const, label: '📄 Seiten',       desc: 'CMS-Seiten & Sektionen' },
-      { key: 'assets'   as const, label: '🗂 R2 Assets',    desc: 'Bilder & Dateien' },
-      { key: 'settings' as const, label: '⚙️ Einstellungen', desc: 'Logo, Noten, Navigation' },
+      { key: 'pages'     as const, label: '📄 Seiten',        desc: 'CMS-Seiten & Sektionen' },
+      { key: 'meldungen' as const, label: '📣 Meldungen',     desc: 'Banner & Infos zu Terminen' },
+      { key: 'assets'    as const, label: '🗂 Assets',        desc: 'Bilder & Dateien (R2)' },
+      { key: 'settings'  as const, label: '⚙️ Einstellungen', desc: 'Logo, Noten, Navigation' },
     ] : []),
-    { key: 'videos'  as const, label: '🎬 Videos',      desc: 'Intern: YT-Videos verwalten' },
+    { key: 'videos'  as const, label: '🎬 Videos',      desc: 'YouTube-Videos verwalten' },
     { key: 'members' as const, label: '👥 Mitglieder', desc: 'Einladungen & Gruppen' },
   ]
 
@@ -3108,6 +3212,15 @@ export default function AdminPage() {
       </div>
 
       {tab === 'assets' && <AssetBrowser />}
+
+      {tab === 'meldungen' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 pb-1 border-b border-white/10">
+            <h2 className="text-lg font-bold text-white">📣 Meldungen & Info-Banner</h2>
+          </div>
+          <MeldungenEditor />
+        </div>
+      )}
 
       {tab === 'settings' && <SiteSettingsEditor />}
 

@@ -29,9 +29,19 @@ public class SiteController {
     @PutMapping("/announcement")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> saveAnnouncement(@RequestBody Map<String, Object> body) {
+        return saveSetting("announcement", body);
+    }
+
+    @PutMapping("/meldungen")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> saveMeldungen(@RequestBody Map<String, Object> body) {
+        return saveSetting("meldungen", body);
+    }
+
+    private ResponseEntity<Void> saveSetting(String key, Map<String, Object> body) {
         String json = body.get("json") instanceof String s ? s : "";
-        SiteSettings setting = siteSettingsRepository.findBySettingKey("announcement")
-                .orElse(SiteSettings.builder().id(System.currentTimeMillis()).settingKey("announcement").build());
+        SiteSettings setting = siteSettingsRepository.findBySettingKey(key)
+                .orElse(SiteSettings.builder().id(System.currentTimeMillis()).settingKey(key).build());
         setting.setSettingValue(json);
         siteSettingsRepository.save(setting);
         return ResponseEntity.ok().build();

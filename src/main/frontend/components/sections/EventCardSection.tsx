@@ -28,7 +28,7 @@ export default function EventCardSection({ content }: { content: EventCardConten
 
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="mb-12 text-center text-4xl font-bold text-gray-900 dark:text-white">
-          {content.heading ?? 'Konzerte & Veranstaltungen'}
+          {content.heading ?? 'Konzerte'}
         </h2>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {content.events.map((event, idx) => {

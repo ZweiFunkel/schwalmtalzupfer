@@ -1,6 +1,8 @@
 'use client'
 import React, { useState } from 'react'
 import { TermineListContent, Termin, TerminKategorie } from '@/types/page'
+import { useMeldungen, getMeldungById } from '@/lib/useMeldungen'
+import { MeldungModal } from '@/components/AnnouncementBanner'
 
 const KATEGORIE_CONFIG: Record<TerminKategorie, { label: string; icon: string }> = {
   konzert:  { label: 'Konzert',   icon: '🎸' },
@@ -101,6 +103,9 @@ function TicketBlock({ tickets }: { tickets: NonNullable<Termin['tickets']> }) {
 export default function TermineListSection({ content }: { content: TermineListContent }) {
   const [filter, setFilter] = useState<TerminKategorie | 'alle'>(readStoredFilter)
   const [showPast, setShowPast] = useState(false)
+  const [activeMeldungId, setActiveMeldungId] = useState<string | null>(null)
+  const meldungen = useMeldungen()
+  const activeMeldung = activeMeldungId ? getMeldungById(meldungen, activeMeldungId) : undefined
 
   const handleFilter = (f: TerminKategorie | 'alle') => {
     setFilter(f)
@@ -197,9 +202,17 @@ export default function TermineListSection({ content }: { content: TermineListCo
                           </div>
                         </div>
 
-                        {/* Absagegrund */}
+                        {/* Absagegrund + Weitere Infos */}
                         {t.cancelled && t.cancellationNote && (
                           <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">{t.cancellationNote}</p>
+                        )}
+                        {t.cancelled && t.meldungId && getMeldungById(meldungen, t.meldungId) && (
+                          <button
+                            onClick={() => setActiveMeldungId(t.meldungId!)}
+                            className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-900/30 border border-red-300/50 dark:border-red-700/50 px-2.5 py-1 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition"
+                          >
+                            ℹ️ Weitere Infos
+                          </button>
                         )}
 
                         {!t.cancelled && (
@@ -257,6 +270,10 @@ export default function TermineListSection({ content }: { content: TermineListCo
         )}
 
       </div>
+
+      {activeMeldung && (
+        <MeldungModal meldung={activeMeldung} onClose={() => setActiveMeldungId(null)} />
+      )}
     </section>
   )
 }

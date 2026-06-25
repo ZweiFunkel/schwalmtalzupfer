@@ -22,6 +22,7 @@ export interface EventCardItem {
   imageUrl?: string
   cancelled?: boolean
   cancellationNote?: string
+  meldungId?: string
 }
 
 export interface EventCardContent {
@@ -114,6 +115,7 @@ export interface Termin {
   kategorie: TerminKategorie
   cancelled?: boolean
   cancellationNote?: string  // wird als Absagegrund angezeigt
+  meldungId?: string         // verknüpfte Meldung (zeigt Popup bei Klick auf "Weitere Infos")
 }
 export interface TermineListContent {
   heading?: string
