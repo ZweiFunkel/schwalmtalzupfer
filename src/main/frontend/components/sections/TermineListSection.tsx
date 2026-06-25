@@ -168,54 +168,73 @@ export default function TermineListSection({ content }: { content: TermineListCo
                   const isRange = t.date.includes('–') || t.date.includes('-')
 
                   return (
-                    <div key={i} className="flex gap-4 items-stretch group">
+                    <div key={i} className={`flex gap-4 items-stretch group ${t.cancelled ? 'opacity-60' : ''}`}>
                       {/* Date */}
                       <div className="w-14 shrink-0 flex flex-col items-center justify-center text-center pt-1">
-                        <span className="text-2xl font-bold text-gray-800 dark:text-white leading-none">{day}</span>
+                        <span className={`text-2xl font-bold leading-none ${t.cancelled ? 'text-gray-400 dark:text-gray-600' : 'text-gray-800 dark:text-white'}`}>{day}</span>
                         <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mt-0.5">
                           {isRange ? '···' : month}
                         </span>
                       </div>
 
                       {/* Card */}
-                      <div className="flex-1 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-slate-900/60 px-4 py-3 transition group-hover:border-gray-200 dark:group-hover:border-white/15">
+                      <div className={`flex-1 rounded-xl border px-4 py-3 transition ${
+                        t.cancelled
+                          ? 'border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-950/20'
+                          : 'border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-slate-900/60 group-hover:border-gray-200 dark:group-hover:border-white/15'
+                      }`}>
                         <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white leading-snug">{t.title}</h3>
-                          <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">{cat.icon} {cat.label}</span>
-                        </div>
-
-                        {isRange && (
-                          <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{t.date}</p>
-                        )}
-
-                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-                          {t.time && <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">🕐 {t.time}</span>}
-                          {t.location && t.location !== '-' && (
-                            t.mapUrl
-                              ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition">📍 {t.location}</a>
-                              : <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">📍 {t.location}</span>
-                          )}
-                          {t.note && <span className="flex items-center gap-1 text-xs text-amber-500 dark:text-amber-400/80">ℹ️ {t.note}</span>}
-                        </div>
-
-                        {/* Multi-line details */}
-                        {t.details && (
-                          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 whitespace-pre-line leading-relaxed">{t.details}</p>
-                        )}
-
-                        {/* Tickets */}
-                        {t.tickets && <TicketBlock tickets={t.tickets} />}
-
-                        {/* Parking */}
-                        {t.parking && t.parking.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {t.parking.map((p, pi) => (
-                              <a key={pi} href={p.mapUrl} target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-white/10 px-2.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:border-green-400/50 hover:text-green-600 dark:hover:text-green-400 transition">
-                                🅿️ {p.name ?? `Parkplatz ${pi + 1}`}
-                              </a>
-                            ))}
+                          <h3 className={`text-sm font-semibold leading-snug ${t.cancelled ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
+                            {t.title}
+                          </h3>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {t.cancelled && (
+                              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                                Abgesagt
+                              </span>
+                            )}
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{cat.icon} {cat.label}</span>
                           </div>
+                        </div>
+
+                        {/* Absagegrund */}
+                        {t.cancelled && t.cancellationNote && (
+                          <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">{t.cancellationNote}</p>
+                        )}
+
+                        {!t.cancelled && (
+                          <>
+                            {isRange && (
+                              <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{t.date}</p>
+                            )}
+
+                            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
+                              {t.time && <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">🕐 {t.time}</span>}
+                              {t.location && t.location !== '-' && (
+                                t.mapUrl
+                                  ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition">📍 {t.location}</a>
+                                  : <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">📍 {t.location}</span>
+                              )}
+                              {t.note && <span className="flex items-center gap-1 text-xs text-amber-500 dark:text-amber-400/80">ℹ️ {t.note}</span>}
+                            </div>
+
+                            {t.details && (
+                              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 whitespace-pre-line leading-relaxed">{t.details}</p>
+                            )}
+
+                            {t.tickets && <TicketBlock tickets={t.tickets} />}
+
+                            {t.parking && t.parking.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {t.parking.map((p, pi) => (
+                                  <a key={pi} href={p.mapUrl} target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-white/10 px-2.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:border-green-400/50 hover:text-green-600 dark:hover:text-green-400 transition">
+                                    🅿️ {p.name ?? `Parkplatz ${pi + 1}`}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>

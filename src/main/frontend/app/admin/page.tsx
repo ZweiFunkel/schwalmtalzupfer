@@ -664,7 +664,7 @@ function ImageCaptionForm({ content, onChange }: { content: Record<string, unkno
 function TermineListForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
   interface ParkingItem { name?: string; mapUrl: string }
   interface TicketsItem { link?: string; priceAdults?: string; priceChildren?: string; info?: string }
-  interface TerminItem { title: string; date: string; time?: string; location?: string; mapUrl?: string; parking?: ParkingItem[]; note?: string; details?: string; tickets?: TicketsItem; kategorie: string }
+  interface TerminItem { title: string; date: string; time?: string; location?: string; mapUrl?: string; parking?: ParkingItem[]; note?: string; details?: string; tickets?: TicketsItem; kategorie: string; cancelled?: boolean; cancellationNote?: string }
   const termine: TerminItem[] = (content.termine as TerminItem[]) ?? []
   const KATEGORIEN = ['konzert', 'jugend', 'ausflug', 'sonstige']
   const KAT_ICONS: Record<string, string> = { konzert: '🎸', jugend: '🏕️', ausflug: '🚌', sonstige: '📅' }
@@ -691,9 +691,12 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
         <div className="w-24"><Field label="Jahr" value={String(content.year ?? '')} onChange={v => onChange({ ...content, year: v })} /></div>
       </div>
       {termine.map((t, i) => (
-        <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-2">
+        <div key={i} className={`rounded-lg border p-3 flex flex-col gap-2 ${t.cancelled ? 'border-red-500/30 bg-red-900/10' : 'border-white/10 bg-slate-900'}`}>
           <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-gray-300">Termin {i + 1} – {t.title}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-300">Termin {i + 1} – {t.title}</span>
+              {t.cancelled && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400 font-semibold">ABGESAGT</span>}
+            </div>
             <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕ entfernen</button>
           </div>
           <Field label="Bezeichnung" value={t.title} onChange={v => update(i, { title: v })} />
@@ -753,6 +756,25 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Absage */}
+          <div className={`rounded-lg border p-3 flex flex-col gap-2 ${t.cancelled ? 'border-red-500/20 bg-red-900/10' : 'border-white/5 bg-slate-800/40'}`}>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input type="checkbox" checked={t.cancelled ?? false} onChange={e => update(i, { cancelled: e.target.checked })} className="h-4 w-4 accent-red-500 rounded" />
+              <span className="text-sm font-medium text-red-400">Veranstaltung absagen</span>
+            </label>
+            {t.cancelled && (
+              <div>
+                <label className="mb-1 block text-xs text-gray-400">Absagegrund (optional)</label>
+                <input
+                  value={t.cancellationNote ?? ''}
+                  onChange={e => update(i, { cancellationNote: e.target.value })}
+                  placeholder="z.B. Aufgrund der Hitzewelle muss das Konzert leider entfallen."
+                  className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-red-400 focus:outline-none"
+                />
+              </div>
+            )}
           </div>
         </div>
       ))}

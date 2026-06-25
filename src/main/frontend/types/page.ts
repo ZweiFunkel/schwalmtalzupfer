@@ -112,6 +112,8 @@ export interface Termin {
   details?: string         // mehrzeilige Zusatzinfos (Markdown-ähnlich)
   tickets?: TerminTickets
   kategorie: TerminKategorie
+  cancelled?: boolean
+  cancellationNote?: string  // wird als Absagegrund angezeigt
 }
 export interface TermineListContent {
   heading?: string

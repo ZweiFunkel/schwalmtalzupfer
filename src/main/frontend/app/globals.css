@@ -110,6 +110,12 @@ html:not(.dark) .bg-slate-900\/50 { background-color: rgba(241,245,249,0.8) !imp
 html:not(.dark) .bg-slate-900.py-1 { background-color: #ffffff !important; }
 
 /* Text */
+/* Announcement banner sits on a solid colored bg — keep white text there */
+html:not(.dark) .announcement-banner .text-white,
+html:not(.dark) .announcement-banner .text-blue-100,
+html:not(.dark) .announcement-banner .text-amber-100,
+html:not(.dark) .announcement-banner .text-green-100 { color: #ffffff !important; }
+html:not(.dark) .announcement-modal  .text-white { color: #ffffff !important; }
 html:not(.dark) .text-white   { color: #0f172a !important; }
 html:not(.dark) .text-gray-100 { color: #1e293b !important; }
 html:not(.dark) .text-gray-200 { color: #334155 !important; }
