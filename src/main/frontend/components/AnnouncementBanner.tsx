@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useRef, useState } from 'react'
 import { getApiBase } from '@/lib/api'
-import { Meldung } from '@/lib/useMeldungen'
+import { Meldung, isMeldungScheduledNow } from '@/lib/useMeldungen'
 
 const API_BASE = getApiBase()
 const STORAGE_KEY = 'dismissed_announcements'
@@ -123,8 +123,16 @@ export default function AnnouncementBanner() {
         if (settings.meldungen) {
           try {
             const list: Meldung[] = JSON.parse(settings.meldungen)
-            const active = list.find(m => m.activeForBanner)
-            if (active && !getDismissed().includes(active.id)) {
+            // Scheduled Meldungen haben Vorrang – nimm die mit dem spätesten validFrom
+            const scheduled = list
+              .filter(m => isMeldungScheduledNow(m) && !getDismissed().includes(m.id))
+              .sort((a, b) => {
+                const da = a.validFrom ? a.validFrom.split('.').reverse().join('') : '0'
+                const db = b.validFrom ? b.validFrom.split('.').reverse().join('') : '0'
+                return db.localeCompare(da)
+              })
+            const active = scheduled[0] ?? list.find(m => m.activeForBanner && !m.validFrom && !m.validUntil && !getDismissed().includes(m.id))
+            if (active) {
               setAnn(active)
               timerRef.current = setTimeout(() => setMounted(true), 20)
               return

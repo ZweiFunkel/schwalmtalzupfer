@@ -12,6 +12,22 @@ export interface Meldung {
   imageUrl?: string
   style?: 'info' | 'warning' | 'success'
   activeForBanner: boolean
+  validFrom?: string   // dd.MM.yyyy – Anfang des Zeitfensters (inkl.)
+  validUntil?: string  // dd.MM.yyyy – Ende des Zeitfensters (inkl.)
+}
+
+function parseDMY(s: string): Date {
+  const p = s.split('.')
+  return new Date(+p[2], +p[1] - 1, +p[0])
+}
+
+/** Gibt true zurück, wenn die Meldung heute aufgrund ihres Zeitfensters aktiv ist. */
+export function isMeldungScheduledNow(m: Meldung): boolean {
+  if (!m.validFrom && !m.validUntil) return false
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  if (m.validFrom && parseDMY(m.validFrom) > today) return false
+  if (m.validUntil && parseDMY(m.validUntil) < today) return false
+  return true
 }
 
 let cache: Meldung[] | null = null
