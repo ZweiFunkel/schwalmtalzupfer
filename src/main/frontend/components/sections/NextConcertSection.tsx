@@ -35,13 +35,13 @@ function isArchived(archivedAfter?: string): boolean {
 
 function formatDate(d: string) {
   try {
-    const parts = d.split('.')
-    if (parts.length === 3) {
-      const month = new Date(`${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`)
-        .toLocaleString('de-DE', { month: 'long' })
-      return `${parseInt(parts[0])}. ${month} ${parts[2]}`
+    const start = d.replace(/(–|-)[\s\S]*/g, '').trim()
+    const p = start.split('.')
+    if (p.length === 3) {
+      const month = new Date(+p[2], +p[1] - 1, +p[0]).toLocaleString('de-DE', { month: 'long' })
+      return `${parseInt(p[0])}. ${month} ${p[2]}`
     }
-    return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })
+    return d
   } catch { return d }
 }
 
