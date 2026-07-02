@@ -127,12 +127,11 @@ export default function TermineListSection({ content }: { content: TermineListCo
   }
 
   const termine: Termin[] = content.termine ?? []
-  const visible = termine.filter(t =>
-    (showPast || !isPast(t.date)) &&
-    (filter === 'alle' || t.kategorie === filter)
-  )
-  const pastCount = termine.filter(t => isPast(t.date) && (filter === 'alle' || t.kategorie === filter)).length
-  const groups = groupByMonth(visible)
+  const filtered = termine.filter(t => filter === 'alle' || t.kategorie === filter)
+  const upcoming = filtered.filter(t => !isPast(t.date))
+  const past     = filtered.filter(t =>  isPast(t.date))
+  const groups     = groupByMonth(upcoming)
+  const pastGroups = groupByMonth(past)
 
   return (
     <section className="bg-white dark:bg-slate-950 py-24">
@@ -295,15 +294,68 @@ export default function TermineListSection({ content }: { content: TermineListCo
           )})}
         </div>
 
-        {/* Toggle past termine */}
-        {pastCount > 0 && (
-          <button
-            onClick={() => setShowPast(v => !v)}
-            className="mt-10 flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
-          >
-            <span className={`transition-transform ${showPast ? 'rotate-90' : ''}`}>▸</span>
-            {showPast ? 'Vergangene ausblenden' : `${pastCount} vergangene${pastCount === 1 ? 'n' : ''} Termin${pastCount === 1 ? '' : 'e'} anzeigen`}
-          </button>
+        {/* Past termine — always below upcoming, never interleaved */}
+        {past.length > 0 && (
+          <div className="mt-10">
+            <button
+              onClick={() => setShowPast(v => !v)}
+              className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+            >
+              <span className={`transition-transform ${showPast ? 'rotate-90' : ''}`}>▸</span>
+              {showPast ? 'Vergangene ausblenden' : `${past.length} vergangene${past.length === 1 ? 'n' : ''} Termin${past.length === 1 ? '' : 'e'} anzeigen`}
+            </button>
+
+            {showPast && (
+              <div className="mt-8 space-y-10 opacity-60">
+                {pastGroups.map((group, gi) => {
+                  const prevGroup = pastGroups[gi - 1]
+                  const currentYear = new Date().getFullYear()
+                  const showYearBanner = group.year !== currentYear && group.year !== prevGroup?.year
+                  const monthLabel = group.month === -1 ? 'Weitere' : MONTH_NAMES[group.month]
+                  return (
+                    <div key={group.yearMonth}>
+                      {showYearBanner && (
+                        <div className="mb-8 -mx-1 flex items-center gap-4">
+                          <div className="flex items-center gap-2 rounded-xl border border-gray-300/40 dark:border-white/10 bg-gray-100 dark:bg-white/5 px-4 py-2">
+                            <span className="text-base font-black text-gray-400 dark:text-gray-600 tabular-nums">{group.year}</span>
+                          </div>
+                          <span className="flex-1 h-px bg-gray-200 dark:bg-white/5" />
+                        </div>
+                      )}
+                      <div className="mb-5 flex items-center gap-4">
+                        <span className="w-20 text-xs font-bold uppercase tracking-widest text-gray-300 dark:text-gray-700">{monthLabel}</span>
+                        <span className="flex-1 h-px bg-gray-100 dark:bg-white/5" />
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        {group.items.map((t, i) => {
+                          const cat = KATEGORIE_CONFIG[t.kategorie] ?? KATEGORIE_CONFIG.sonstige
+                          const { day, month } = parseDateDisplay(t.date)
+                          const isRange = t.date.includes('–') || t.date.includes('-')
+                          return (
+                            <div key={i} className="flex gap-4 items-stretch">
+                              <div className="w-14 shrink-0 flex flex-col items-center justify-center text-center pt-1">
+                                <span className="text-2xl font-bold leading-none text-gray-400 dark:text-gray-700">{day}</span>
+                                <span className="text-[10px] font-medium text-gray-400 dark:text-gray-700 uppercase tracking-wide mt-0.5">
+                                  {isRange ? '···' : month}
+                                </span>
+                              </div>
+                              <div className="flex-1 rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-slate-900/30 px-4 py-3">
+                                <div className="flex items-center justify-between gap-3">
+                                  <h3 className="text-sm font-semibold leading-snug text-gray-400 dark:text-gray-600">{t.title}</h3>
+                                  <span className="text-xs text-gray-300 dark:text-gray-700 shrink-0">{cat.icon} {cat.label}</span>
+                                </div>
+                                {isRange && <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-700">{t.date}</p>}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         )}
 
       </div>
