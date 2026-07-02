@@ -332,19 +332,57 @@ export default function TermineListSection({ content }: { content: TermineListCo
                           const { day, month } = parseDateDisplay(t.date)
                           const isRange = t.date.includes('–') || t.date.includes('-')
                           return (
-                            <div key={i} className="flex gap-4 items-stretch">
+                            <div key={i} className={`flex gap-4 items-stretch ${t.cancelled ? 'opacity-75' : ''}`}>
                               <div className="w-14 shrink-0 flex flex-col items-center justify-center text-center pt-1">
-                                <span className="text-2xl font-bold leading-none text-gray-400 dark:text-gray-700">{day}</span>
-                                <span className="text-[10px] font-medium text-gray-400 dark:text-gray-700 uppercase tracking-wide mt-0.5">
+                                <span className="text-2xl font-bold leading-none text-gray-400 dark:text-gray-600">{day}</span>
+                                <span className="text-[10px] font-medium text-gray-400 dark:text-gray-600 uppercase tracking-wide mt-0.5">
                                   {isRange ? '···' : month}
                                 </span>
                               </div>
-                              <div className="flex-1 rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-slate-900/30 px-4 py-3">
+                              <div className={`flex-1 rounded-xl border px-4 py-3 ${
+                                t.cancelled
+                                  ? 'border-red-200/50 dark:border-red-900/30 bg-red-50/30 dark:bg-red-950/10'
+                                  : 'border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-slate-900/30'
+                              }`}>
                                 <div className="flex items-center justify-between gap-3">
-                                  <h3 className="text-sm font-semibold leading-snug text-gray-400 dark:text-gray-600">{t.title}</h3>
-                                  <span className="text-xs text-gray-300 dark:text-gray-700 shrink-0">{cat.icon} {cat.label}</span>
+                                  <h3 className={`text-sm font-semibold leading-snug ${t.cancelled ? 'line-through text-gray-400 dark:text-gray-600' : 'text-gray-500 dark:text-gray-500'}`}>{t.title}</h3>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {t.cancelled && (
+                                      <span className="rounded-full bg-red-400/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                                        Abgesagt
+                                      </span>
+                                    )}
+                                    <span className="text-xs text-gray-300 dark:text-gray-700">{cat.icon} {cat.label}</span>
+                                  </div>
                                 </div>
-                                {isRange && <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-700">{t.date}</p>}
+
+                                {t.cancelled && t.cancellationNote && (
+                                  <p className="mt-1.5 text-xs text-red-400 dark:text-red-500">{t.cancellationNote}</p>
+                                )}
+
+                                {!t.cancelled && (
+                                  <>
+                                    {isRange && (
+                                      <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-600">{t.date}</p>
+                                    )}
+                                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
+                                      {t.time && t.time.split('\n').map((line, li) => line.trim() && (
+                                        <span key={li} className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-600">
+                                          {li === 0 ? '🕐' : <span className="w-4 shrink-0" />} {line.trim()}
+                                        </span>
+                                      ))}
+                                      {t.location && t.location !== '-' && (
+                                        t.mapUrl
+                                          ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-400/70 hover:text-blue-400 transition">📍 {t.location}</a>
+                                          : <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-600">📍 {t.location}</span>
+                                      )}
+                                      {t.note && <span className="flex items-center gap-1 text-xs text-amber-400/60 dark:text-amber-500/50">ℹ️ {t.note}</span>}
+                                    </div>
+                                    {t.details && (
+                                      <p className="mt-2 text-xs text-gray-400 dark:text-gray-600 whitespace-pre-line leading-relaxed">{t.details}</p>
+                                    )}
+                                  </>
+                                )}
                               </div>
                             </div>
                           )
