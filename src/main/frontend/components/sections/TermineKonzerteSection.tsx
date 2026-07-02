@@ -14,27 +14,21 @@ function isArchived(archivedAfter?: string): boolean {
   return new Date(+parts[2], +parts[1] - 1, +parts[0]) < new Date()
 }
 
+/** Parses dd.MM.yyyy or ranges like "dd.MM.yyyy – dd.MM.yyyy" — always uses start date */
 function parseDate(d: string): Date {
-  const parts = d.split('.')
-  if (parts.length === 3) {
-    return new Date(`${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`)
-  }
-  const start = d.split(/\s*[–-]\s*/)[0].trim()
-  const sp = start.split('.')
-  if (sp.length >= 2) {
-    const year = new Date().getFullYear()
-    return new Date(`${year}-${sp[1].padStart(2, '0')}-${sp[0].padStart(2, '0')}`)
-  }
+  const start = d.replace(/(–|-)[\s\S]*/g, '').trim()
+  const p = start.split('.')
+  if (p.length === 3) return new Date(+p[2], +p[1] - 1, +p[0])
   return new Date(d)
 }
 
 function formatDate(d: string) {
   try {
-    const parts = d.split('.')
-    if (parts.length === 3) {
-      const month = new Date(`${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`)
-        .toLocaleString('de-DE', { month: 'long' })
-      return `${parseInt(parts[0])}. ${month} ${parts[2]}`
+    const start = d.replace(/(–|-)[\s\S]*/g, '').trim()
+    const p = start.split('.')
+    if (p.length === 3) {
+      const month = new Date(+p[2], +p[1] - 1, +p[0]).toLocaleString('de-DE', { month: 'long' })
+      return `${parseInt(p[0])}. ${month} ${p[2]}`
     }
     return d
   } catch { return d }

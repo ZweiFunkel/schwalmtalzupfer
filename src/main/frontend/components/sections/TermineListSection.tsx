@@ -172,11 +172,25 @@ export default function TermineListSection({ content }: { content: TermineListCo
         )}
 
         {/* List */}
-        <div className="space-y-12">
-          {groups.map(group => (
+        <div className="space-y-10">
+          {groups.map((group, gi) => {
+            const currentYear = new Date().getFullYear()
+            const prevGroup = groups[gi - 1]
+            const showYearBanner = group.year !== currentYear && group.year !== prevGroup?.year
+            const monthLabel = group.month === -1 ? 'Weitere' : MONTH_NAMES[group.month]
+            return (
             <div key={group.yearMonth}>
+              {/* Year separator — only shown when year changes and differs from current */}
+              {showYearBanner && (
+                <div className="mb-8 -mx-1 flex items-center gap-4">
+                  <div className="flex items-center gap-2 rounded-xl border border-green-500/25 bg-green-500/8 px-4 py-2">
+                    <span className="text-lg font-black text-green-500/80 tabular-nums">{group.year}</span>
+                  </div>
+                  <span className="flex-1 h-px bg-green-500/15" />
+                </div>
+              )}
               <div className="mb-5 flex items-center gap-4">
-                <span className="w-20 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{group.label}</span>
+                <span className="w-20 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{monthLabel}</span>
                 <span className="flex-1 h-px bg-gray-100 dark:bg-white/8" />
               </div>
 
@@ -278,7 +292,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
                 })}
               </div>
             </div>
-          ))}
+          )})}
         </div>
 
         {/* Toggle past termine */}

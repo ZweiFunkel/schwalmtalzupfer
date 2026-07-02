@@ -18,9 +18,11 @@ interface TerminRaw {
   archivedAfter?: string
 }
 
+/** Parses dd.MM.yyyy or ranges like "dd.MM.yyyy – dd.MM.yyyy" — always uses start date */
 function parseDate(d: string): Date {
-  const parts = d.split('.')
-  if (parts.length === 3) return new Date(`${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`)
+  const start = d.replace(/(–|-)[\s\S]*/g, '').trim()
+  const p = start.split('.')
+  if (p.length === 3) return new Date(+p[2], +p[1] - 1, +p[0])
   return new Date(d)
 }
 
