@@ -678,7 +678,11 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
   interface TicketsItem { link?: string; priceAdults?: string; priceChildren?: string; info?: string }
   interface TerminItem { title: string; date: string; time?: string; location?: string; mapUrl?: string; parking?: ParkingItem[]; note?: string; details?: string; tickets?: TicketsItem; kategorie: string; cancelled?: boolean; cancellationNote?: string; meldungId?: string; archivedAfter?: string }
   interface MeldungRef { id: string; title: string }
+
   const [meldungen, setMeldungen] = useState<MeldungRef[]>([])
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
+  const [showArchive, setShowArchive] = useState(false)
+
   useEffect(() => {
     fetch(`${API_BASE}/api/site/settings`)
       .then(r => r.json())
@@ -686,17 +690,48 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
         if (d.meldungen) try { setMeldungen(JSON.parse(d.meldungen)) } catch { /* */ }
       }).catch(() => {})
   }, [])
+
   const termine: TerminItem[] = (content.termine as TerminItem[]) ?? []
   const KATEGORIEN = ['konzert', 'jugend', 'ausflug', 'sonstige']
   const KAT_ICONS: Record<string, string> = { konzert: '🎸', jugend: '🏕️', ausflug: '🚌', sonstige: '📅' }
+
+  // Von/Bis helpers — keep date as single string for backend compat
+  const splitDate = (date: string) => {
+    const parts = date.split(/\s*[–-]\s*/)
+    return { dateFrom: parts[0]?.trim() ?? '', dateTo: parts[1]?.trim() || '' }
+  }
+  const joinDate = (from: string, to: string) => to.trim() ? `${from} – ${to}` : from
+
+  // Archive check: past if end date (or only date) is before today
+  const isTerminPast = (t: TerminItem) => {
+    const { dateFrom, dateTo } = splitDate(t.date)
+    const d = dateTo || dateFrom
+    const p = d.split('.')
+    if (p.length !== 3 || !p[2]) return false
+    const dt = new Date(+p[2], +p[1] - 1, +p[0])
+    dt.setHours(23, 59, 59, 0)
+    return dt < new Date()
+  }
 
   const update = (i: number, patch: Partial<TerminItem>) =>
     onChange({ ...content, termine: termine.map((t, idx) => idx === i ? { ...t, ...patch } : t) })
   const updateTickets = (i: number, patch: Partial<TicketsItem>) => {
     const t = termine[i]; update(i, { tickets: { ...(t.tickets ?? {}), ...patch } })
   }
-  const add = () => onChange({ ...content, termine: [...termine, { title: 'Neuer Termin', date: '01.01.2026', location: '', kategorie: 'sonstige' }] })
-  const remove = (i: number) => onChange({ ...content, termine: termine.filter((_, idx) => idx !== i) })
+  const addNew = () => {
+    const newTermin: TerminItem = { title: 'Neuer Termin', date: '', location: '', kategorie: 'sonstige' }
+    onChange({ ...content, termine: [newTermin, ...termine] })
+    setExpanded(new Set([0]))
+  }
+  const remove = (i: number) => {
+    if (!confirm('Termin wirklich löschen?')) return
+    onChange({ ...content, termine: termine.filter((_, idx) => idx !== i) })
+    setExpanded(prev => {
+      const s = new Set<number>()
+      prev.forEach(v => { if (v < i) s.add(v); else if (v > i) s.add(v - 1) })
+      return s
+    })
+  }
   const addParking = (i: number) => { const t = termine[i]; update(i, { parking: [...(t.parking ?? []), { name: '', mapUrl: '' }] }) }
   const updateParking = (ti: number, pi: number, patch: Partial<ParkingItem>) => {
     const t = termine[ti]; update(ti, { parking: (t.parking ?? []).map((p, idx) => idx === pi ? { ...p, ...patch } : p) })
@@ -704,138 +739,209 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
   const removeParking = (ti: number, pi: number) => {
     const t = termine[ti]; update(ti, { parking: (t.parking ?? []).filter((_, idx) => idx !== pi) })
   }
+  const toggleExpanded = (i: number) =>
+    setExpanded(prev => { const s = new Set(prev); if (s.has(i)) s.delete(i); else s.add(i); return s })
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-3">
-        <div className="flex-1"><Field label="Überschrift" value={String(content.heading ?? 'Termine')} onChange={v => onChange({ ...content, heading: v })} /></div>
-        <div className="w-24"><Field label="Jahr" value={String(content.year ?? '')} onChange={v => onChange({ ...content, year: v })} /></div>
-      </div>
-      {termine.map((t, i) => (
-        <div key={i} className={`rounded-lg border p-3 flex flex-col gap-2 ${t.cancelled ? 'border-red-500/30 bg-red-900/10' : 'border-white/10 bg-slate-900'}`}>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-300">Termin {i + 1} – {t.title}</span>
-              {t.cancelled && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400 font-semibold">ABGESAGT</span>}
-            </div>
-            <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕ entfernen</button>
+  const activeTermine  = termine.map((t, i) => ({ t, i })).filter(({ t }) => !isTerminPast(t))
+  const archiveTermine = termine.map((t, i) => ({ t, i })).filter(({ t }) => isTerminPast(t))
+
+  const renderTermin = (t: TerminItem, i: number) => {
+    const isOpen = expanded.has(i)
+    const past = isTerminPast(t)
+    const { dateFrom, dateTo } = splitDate(t.date)
+
+    return (
+      <div key={i} className={`rounded-xl border overflow-hidden transition ${
+        t.cancelled ? 'border-red-500/30 bg-red-900/10' : past ? 'border-white/8 bg-slate-900/60 opacity-70' : 'border-white/10 bg-slate-900'
+      }`}>
+        {/* Header row — always visible */}
+        <div className="flex items-center gap-3 px-3 py-2.5 cursor-pointer select-none" onClick={() => toggleExpanded(i)}>
+          <span className="text-base shrink-0">{KAT_ICONS[t.kategorie] ?? '📅'}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white truncate">{t.title || <span className="italic text-gray-500">Ohne Titel</span>}</p>
+            {t.date && <p className="text-[11px] text-gray-500 font-mono mt-0.5">{t.date}</p>}
           </div>
-          <Field label="Bezeichnung" value={t.title} onChange={v => update(i, { title: v })} />
-          <div className="flex gap-2">
-            <div className="flex-1"><Field label="Datum" value={t.date} onChange={v => update(i, { date: v })} placeholder="28.06.2026 oder 10.07. – 12.07.2026" /></div>
-            <div className="w-28"><Field label="Uhrzeit" value={t.time ?? ''} onChange={v => update(i, { time: v })} /></div>
-          </div>
-          <Field label="Ort" value={t.location ?? ''} onChange={v => update(i, { location: v })} />
-          <Field label="📍 Google-Maps-Link" value={t.mapUrl ?? ''} onChange={v => update(i, { mapUrl: v })} placeholder="https://maps.google.com/?q=..." />
-
-          {/* Parkplätze */}
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <label className="text-xs text-gray-400">🅿️ Parkplätze</label>
-              <button onClick={() => addParking(i)} className="text-xs text-green-400 hover:text-green-300 transition">+ hinzufügen</button>
-            </div>
-            {(t.parking ?? []).map((p, pi) => (
-              <div key={pi} className="flex gap-2 mb-1 items-center">
-                <input value={p.name ?? ''} onChange={e => updateParking(i, pi, { name: e.target.value })} placeholder="Name"
-                  className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none" />
-                <input value={p.mapUrl} onChange={e => updateParking(i, pi, { mapUrl: e.target.value })} placeholder="Maps-Link"
-                  className="flex-[2] rounded-lg border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white font-mono placeholder-gray-600 focus:border-green-500 focus:outline-none" />
-                <button onClick={() => removeParking(i, pi)} className="text-xs text-red-400 hover:text-red-300 px-1">✕</button>
-              </div>
-            ))}
-          </div>
-
-          {/* Kurze Notiz */}
-          <Field label="Kurze Notiz (1 Zeile)" value={t.note ?? ''} onChange={v => update(i, { note: v })} placeholder="z.B. Eintritt frei!" />
-
-          {/* Mehrzeilige Details */}
-          <div>
-            <label className="mb-1 block text-xs text-gray-400">Weitere Infos (mehrzeilig)</label>
-            <textarea value={t.details ?? ''} onChange={e => update(i, { details: e.target.value })} rows={3} placeholder="Zusätzliche Infos, Hinweise, Programmablauf..."
-              className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
-          </div>
-
-          {/* Tickets */}
-          <div className="rounded-lg border border-white/8 bg-slate-800/50 p-3 flex flex-col gap-2">
-            <p className="text-xs font-semibold text-gray-300 mb-1">🎟️ Ticket-Infos (optional)</p>
-            <div className="flex gap-2">
-              <div className="flex-1"><Field label="Preis Erwachsene" value={t.tickets?.priceAdults ?? ''} onChange={v => updateTickets(i, { priceAdults: v })} placeholder="12 €" /></div>
-              <div className="flex-1"><Field label="Preis Kinder" value={t.tickets?.priceChildren ?? ''} onChange={v => updateTickets(i, { priceChildren: v })} placeholder="5 € / frei bis 12 J." /></div>
-            </div>
-            <Field label="Ticket-Hinweis" value={t.tickets?.info ?? ''} onChange={v => updateTickets(i, { info: v })} placeholder="z.B. Kasse ab 18 Uhr, Einlass 19 Uhr" />
-            <Field label="Ticket-Link" value={t.tickets?.link ?? ''} onChange={v => updateTickets(i, { link: v })} placeholder="https://..." />
-          </div>
-
-          {/* Kategorie */}
-          <div>
-            <label className="mb-1 block text-xs text-gray-400">Kategorie</label>
-            <div className="flex gap-2 flex-wrap">
-              {KATEGORIEN.map(k => (
-                <button key={k} type="button" onClick={() => update(i, { kategorie: k })}
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${t.kategorie === k ? 'bg-green-900/40 border-green-500/40 text-green-400' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'}`}>
-                  {KAT_ICONS[k]} {k}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Archivierung */}
-          <div className="rounded-lg border border-white/5 bg-slate-800/40 p-3 flex flex-col gap-1.5">
-            <label className="mb-0.5 block text-xs text-gray-400 font-medium">
-              Nicht mehr anzeigen ab
-              <span className="ml-1 font-normal text-gray-600">(optional – versteckt in Konzert- & Next-Ansicht, bleibt im Kalender)</span>
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="text"
-                value={t.archivedAfter ?? ''}
-                onChange={e => update(i, { archivedAfter: e.target.value })}
-                placeholder="dd.MM.yyyy"
-                className="w-36 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white font-mono focus:border-slate-400 focus:outline-none"
-              />
-              {t.archivedAfter && (
-                <button type="button" onClick={() => update(i, { archivedAfter: undefined })}
-                  className="text-xs text-gray-500 hover:text-white transition">✕ löschen</button>
-              )}
-              <span className="text-xs text-gray-600">z.B. Tag nach dem Konzert</span>
-            </div>
-          </div>
-
-          {/* Absage */}
-          <div className={`rounded-lg border p-3 flex flex-col gap-2 ${t.cancelled ? 'border-red-500/20 bg-red-900/10' : 'border-white/5 bg-slate-800/40'}`}>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input type="checkbox" checked={t.cancelled ?? false} onChange={e => update(i, { cancelled: e.target.checked })} className="h-4 w-4 accent-red-500 rounded" />
-              <span className="text-sm font-medium text-red-400">Veranstaltung absagen</span>
-            </label>
-            {t.cancelled && (
-              <>
-                <div>
-                  <label className="mb-1 block text-xs text-gray-400">Absagegrund (optional)</label>
-                  <input
-                    value={t.cancellationNote ?? ''}
-                    onChange={e => update(i, { cancellationNote: e.target.value })}
-                    placeholder="z.B. Aufgrund der Hitzewelle muss das Konzert leider entfallen."
-                    className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-red-400 focus:outline-none"
-                  />
-                </div>
-                {meldungen.length > 0 && (
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-400">Verknüpfte Meldung <span className="text-gray-600">(öffnet Popup bei „Weitere Infos")</span></label>
-                    <select value={t.meldungId ?? ''} onChange={e => update(i, { meldungId: e.target.value || undefined })}
-                      className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-red-400 focus:outline-none">
-                      <option value="">— keine Meldung —</option>
-                      {meldungen.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
-                    </select>
-                  </div>
-                )}
-              </>
-            )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {t.cancelled && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] text-red-400 font-bold uppercase">Abgesagt</span>}
+            {past && !t.cancelled && <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-gray-600">Vergangen</span>}
+            <span className="text-gray-600 text-xs">{isOpen ? '▲' : '▼'}</span>
           </div>
         </div>
-      ))}
-      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + Termin hinzufügen
+
+        {/* Edit form */}
+        {isOpen && (
+          <div className="border-t border-white/8 p-3 flex flex-col gap-3">
+            <Field label="Bezeichnung" value={t.title} onChange={v => update(i, { title: v })} />
+
+            {/* Von / Bis */}
+            <div className="rounded-lg border border-white/8 bg-slate-800/50 p-3 flex flex-col gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">📅 Datum</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Von <span className="text-gray-600">(Pflichtfeld)</span></label>
+                  <input value={dateFrom} onChange={e => update(i, { date: joinDate(e.target.value, dateTo) })}
+                    placeholder="dd.MM.yyyy"
+                    className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white font-mono placeholder-gray-600 focus:border-green-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Bis <span className="text-gray-600">(optional – für mehrtätige Events)</span></label>
+                  <input value={dateTo} onChange={e => update(i, { date: joinDate(dateFrom, e.target.value) })}
+                    placeholder="dd.MM.yyyy"
+                    className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white font-mono placeholder-gray-600 focus:border-green-500 focus:outline-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Uhrzeit(en) */}
+            <div>
+              <label className="mb-1 block text-xs text-gray-400">
+                🕐 Uhrzeit(en)
+                <span className="ml-1 text-gray-600">(optional – mehrere Zeilen für mehrere Tage/Zeiten möglich)</span>
+              </label>
+              <textarea value={t.time ?? ''} onChange={e => update(i, { time: e.target.value })} rows={2}
+                placeholder={'19:00\noder: Fr: 17:00\nSa: 10:00 – 17:00\nSo: 11:00'}
+                className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
+            </div>
+
+            <Field label="Ort" value={t.location ?? ''} onChange={v => update(i, { location: v })} />
+            <Field label="📍 Google-Maps-Link" value={t.mapUrl ?? ''} onChange={v => update(i, { mapUrl: v })} placeholder="https://maps.google.com/?q=..." />
+
+            {/* Parkplätze */}
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-xs text-gray-400">🅿️ Parkplätze</label>
+                <button onClick={() => addParking(i)} className="text-xs text-green-400 hover:text-green-300 transition">+ hinzufügen</button>
+              </div>
+              {(t.parking ?? []).map((p, pi) => (
+                <div key={pi} className="flex gap-2 mb-1 items-center">
+                  <input value={p.name ?? ''} onChange={e => updateParking(i, pi, { name: e.target.value })} placeholder="Name"
+                    className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none" />
+                  <input value={p.mapUrl} onChange={e => updateParking(i, pi, { mapUrl: e.target.value })} placeholder="Maps-Link"
+                    className="flex-[2] rounded-lg border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white font-mono placeholder-gray-600 focus:border-green-500 focus:outline-none" />
+                  <button onClick={() => removeParking(i, pi)} className="text-xs text-red-400 hover:text-red-300 px-1">✕</button>
+                </div>
+              ))}
+            </div>
+
+            <Field label="Kurze Notiz (1 Zeile)" value={t.note ?? ''} onChange={v => update(i, { note: v })} placeholder="z.B. Eintritt frei!" />
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-400">Weitere Infos (mehrzeilig)</label>
+              <textarea value={t.details ?? ''} onChange={e => update(i, { details: e.target.value })} rows={3} placeholder="Zusätzliche Infos, Hinweise, Programmablauf..."
+                className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
+            </div>
+
+            {/* Tickets */}
+            <div className="rounded-lg border border-white/8 bg-slate-800/50 p-3 flex flex-col gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">🎟️ Ticket-Infos (optional)</p>
+              <div className="flex gap-2">
+                <div className="flex-1"><Field label="Preis Erwachsene" value={t.tickets?.priceAdults ?? ''} onChange={v => updateTickets(i, { priceAdults: v })} placeholder="12 €" /></div>
+                <div className="flex-1"><Field label="Preis Kinder" value={t.tickets?.priceChildren ?? ''} onChange={v => updateTickets(i, { priceChildren: v })} placeholder="5 € / frei bis 12 J." /></div>
+              </div>
+              <Field label="Ticket-Hinweis" value={t.tickets?.info ?? ''} onChange={v => updateTickets(i, { info: v })} placeholder="z.B. Kasse ab 18 Uhr, Einlass 19 Uhr" />
+              <Field label="Ticket-Link" value={t.tickets?.link ?? ''} onChange={v => updateTickets(i, { link: v })} placeholder="https://..." />
+            </div>
+
+            {/* Kategorie */}
+            <div>
+              <label className="mb-1 block text-xs text-gray-400">Kategorie</label>
+              <div className="flex gap-2 flex-wrap">
+                {KATEGORIEN.map(k => (
+                  <button key={k} type="button" onClick={() => update(i, { kategorie: k })}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${t.kategorie === k ? 'bg-green-900/40 border-green-500/40 text-green-400' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'}`}>
+                    {KAT_ICONS[k]} {k}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Archivierung */}
+            <div className="rounded-lg border border-white/5 bg-slate-800/40 p-3 flex flex-col gap-1.5">
+              <label className="mb-0.5 block text-xs text-gray-400 font-medium">
+                Nicht mehr anzeigen ab
+                <span className="ml-1 font-normal text-gray-600">(optional – versteckt in Konzert- & Next-Ansicht, bleibt im Kalender)</span>
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input type="text" value={t.archivedAfter ?? ''} onChange={e => update(i, { archivedAfter: e.target.value })}
+                  placeholder="dd.MM.yyyy"
+                  className="w-36 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white font-mono focus:border-slate-400 focus:outline-none" />
+                {t.archivedAfter && (
+                  <button type="button" onClick={() => update(i, { archivedAfter: undefined })}
+                    className="text-xs text-gray-500 hover:text-white transition">✕ löschen</button>
+                )}
+                <span className="text-xs text-gray-600">z.B. Tag nach dem Konzert</span>
+              </div>
+            </div>
+
+            {/* Absage */}
+            <div className={`rounded-lg border p-3 flex flex-col gap-2 ${t.cancelled ? 'border-red-500/20 bg-red-900/10' : 'border-white/5 bg-slate-800/40'}`}>
+              <label className="flex cursor-pointer items-center gap-2">
+                <input type="checkbox" checked={t.cancelled ?? false} onChange={e => update(i, { cancelled: e.target.checked })} className="h-4 w-4 accent-red-500 rounded" />
+                <span className="text-sm font-medium text-red-400">Veranstaltung absagen</span>
+              </label>
+              {t.cancelled && (
+                <>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">Absagegrund (optional)</label>
+                    <input value={t.cancellationNote ?? ''} onChange={e => update(i, { cancellationNote: e.target.value })}
+                      placeholder="z.B. Aufgrund der Hitzewelle muss das Konzert leider entfallen."
+                      className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-red-400 focus:outline-none" />
+                  </div>
+                  {meldungen.length > 0 && (
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-400">Verknüpfte Meldung <span className="text-gray-600">(öffnet Popup bei „Weitere Infos")</span></label>
+                      <select value={t.meldungId ?? ''} onChange={e => update(i, { meldungId: e.target.value || undefined })}
+                        className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-red-400 focus:outline-none">
+                        <option value="">— keine Meldung —</option>
+                        {meldungen.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <button onClick={() => remove(i)}
+              className="self-start rounded-lg border border-red-900/50 bg-red-950/40 px-3 py-1.5 text-xs text-red-400 hover:bg-red-900/50 transition">
+              🗑 Termin löschen
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Field label="Überschrift" value={String(content.heading ?? 'Termine')} onChange={v => onChange({ ...content, heading: v })} />
+
+      {/* Add at top */}
+      <button type="button" onClick={addNew}
+        className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-green-500/40 bg-green-900/10 py-2.5 text-sm text-green-400 hover:bg-green-900/20 hover:border-green-500/70 transition">
+        + Neuer Termin
       </button>
+
+      {/* Active / upcoming termine */}
+      {activeTermine.length === 0 && archiveTermine.length === 0 && (
+        <p className="text-center text-sm text-gray-600 py-4">Noch keine Termine. Oben einen neuen anlegen.</p>
+      )}
+      {activeTermine.map(({ t, i }) => renderTermin(t, i))}
+
+      {/* Archive */}
+      {archiveTermine.length > 0 && (
+        <div className="mt-2">
+          <button onClick={() => setShowArchive(v => !v)}
+            className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-slate-900/50 px-4 py-2.5 text-left text-xs text-gray-500 hover:text-gray-300 transition">
+            <span className={`transition-transform ${showArchive ? 'rotate-90' : ''}`}>▸</span>
+            Archiv – {archiveTermine.length} vergangene{archiveTermine.length === 1 ? 'r' : ''} Termin{archiveTermine.length === 1 ? '' : 'e'}
+          </button>
+          {showArchive && (
+            <div className="mt-2 flex flex-col gap-2">
+              {archiveTermine.map(({ t, i }) => renderTermin(t, i))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

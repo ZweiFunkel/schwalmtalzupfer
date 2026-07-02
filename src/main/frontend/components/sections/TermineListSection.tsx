@@ -25,10 +25,12 @@ function readStoredFilter(): TerminKategorie | 'alle' {
   return 'alle'
 }
 
-function getMonthIndex(date: string): number {
-  const m = date.match(/(\d{1,2})\.(\d{1,2})\./)
-  if (!m) return -1
-  return parseInt(m[2], 10) - 1
+function getYearMonth(date: string): { year: number; month: number } {
+  const full = date.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/)
+  if (full) return { month: parseInt(full[2], 10) - 1, year: parseInt(full[3], 10) }
+  const short = date.match(/(\d{1,2})\.(\d{1,2})\./)
+  if (short) return { month: parseInt(short[2], 10) - 1, year: new Date().getFullYear() }
+  return { month: -1, year: new Date().getFullYear() }
 }
 
 function parseDateDisplay(date: string): { day: string; month: string } {
@@ -60,18 +62,23 @@ function isPast(date: string): boolean {
   return false
 }
 
-interface TerminGroup { month: number; label: string; items: Termin[] }
+interface TerminGroup { yearMonth: number; year: number; month: number; label: string; items: Termin[] }
 
 function groupByMonth(termine: Termin[]): TerminGroup[] {
-  const map = new Map<number, Termin[]>()
+  const currentYear = new Date().getFullYear()
+  const map = new Map<number, { year: number; month: number; items: Termin[] }>()
   for (const t of termine) {
-    const key = getMonthIndex(t.date)
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(t)
+    const { year, month } = getYearMonth(t.date)
+    const key = year * 100 + month
+    if (!map.has(key)) map.set(key, { year, month, items: [] })
+    map.get(key)!.items.push(t)
   }
   return Array.from(map.entries())
     .sort(([a], [b]) => a - b)
-    .map(([key, items]) => ({ month: key, label: key === -1 ? 'Weitere' : MONTH_NAMES[key], items }))
+    .map(([key, { year, month, items }]) => ({
+      yearMonth: key, year, month, items,
+      label: month === -1 ? 'Weitere' : year !== currentYear ? `${MONTH_NAMES[month]} ${year}` : MONTH_NAMES[month],
+    }))
 }
 
 // ─── Ticket-Block ─────────────────────────────────────────────────────────────
@@ -138,7 +145,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
             <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Kalender</span>
           </div>
           <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
-            {content.heading ?? 'Termine'}{content.year ? ` ${content.year}` : ''}
+            {content.heading ?? 'Termine'}
           </h2>
         </div>
 
@@ -167,7 +174,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
         {/* List */}
         <div className="space-y-12">
           {groups.map(group => (
-            <div key={group.month}>
+            <div key={group.yearMonth}>
               <div className="mb-5 flex items-center gap-4">
                 <span className="w-20 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{group.label}</span>
                 <span className="flex-1 h-px bg-gray-100 dark:bg-white/8" />
@@ -234,7 +241,11 @@ export default function TermineListSection({ content }: { content: TermineListCo
                             )}
 
                             <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-                              {t.time && <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">🕐 {t.time}</span>}
+                              {t.time && t.time.split('\n').map((line, li) => line.trim() && (
+                                <span key={li} className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                                  {li === 0 ? '🕐' : <span className="w-4 shrink-0" />} {line.trim()}
+                                </span>
+                              ))}
                               {t.location && t.location !== '-' && (
                                 t.mapUrl
                                   ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition">📍 {t.location}</a>
