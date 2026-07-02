@@ -1,5 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { terminAnchor } from '@/components/sections/TermineListSection'
 import { NextConcertContent } from '@/types/page'
 import { getApiBase } from '@/lib/api'
 import { useMeldungen, getMeldungById } from '@/lib/useMeldungen'
@@ -233,6 +235,19 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
           </div>
         )}
       </div>
+
+      {next && (
+        <div className="relative mt-4 mx-auto max-w-3xl px-6 flex items-center gap-4">
+          <Link href={`/termine#${terminAnchor(next.date, next.title)}`}
+            className="text-xs font-semibold text-green-600 dark:text-green-400 hover:text-green-500 transition">
+            Zum Termineintrag →
+          </Link>
+          <span className="text-gray-300 dark:text-gray-700">·</span>
+          <Link href="/termine" className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+            Alle Termine
+          </Link>
+        </div>
+      )}
 
       {showMeldung && linkedMeldung && (
         <MeldungModal meldung={linkedMeldung} onClose={() => setShowMeldung(false)} />

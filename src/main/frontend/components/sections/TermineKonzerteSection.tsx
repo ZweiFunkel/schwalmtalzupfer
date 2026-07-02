@@ -1,5 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { terminAnchor } from '@/components/sections/TermineListSection'
 import { getApiBase } from '@/lib/api'
 import { TermineKonzerteContent, Termin } from '@/types/page'
 import { useMeldungen, getMeldungById } from '@/lib/useMeldungen'
@@ -158,6 +160,10 @@ export default function TermineKonzerteSection({ content }: { content: TermineKo
 
                     <div className="mt-auto pt-4 flex items-center gap-3">
                       {!cancelled && <DaysUntil date={t.date} />}
+                      <Link href={`/termine#${terminAnchor(t.date, t.title)}`}
+                        className="ml-auto text-xs text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition">
+                        Details →
+                      </Link>
                       {cancelled && linkedMeldung && (
                         <button
                           onClick={() => setActiveMeldungId(t.meldungId!)}

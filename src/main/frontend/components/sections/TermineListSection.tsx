@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { TermineListContent, Termin, TerminKategorie } from '@/types/page'
 import { useMeldungen, getMeldungById } from '@/lib/useMeldungen'
 import { MeldungModal } from '@/components/AnnouncementBanner'
@@ -48,6 +48,12 @@ function isArchived(archivedAfter?: string): boolean {
   const parts = archivedAfter.split('.')
   if (parts.length !== 3) return false
   return new Date(+parts[2], +parts[1] - 1, +parts[0]) < new Date()
+}
+
+export function terminAnchor(date: string, title: string): string {
+  const slug = (date.split(/[.\s–-]/)[0] + '-' + date.match(/(\d{4})/)?.[1] + '-' + title)
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  return slug
 }
 
 function isPast(date: string): boolean {
@@ -118,6 +124,25 @@ export default function TermineListSection({ content }: { content: TermineListCo
   const [filter, setFilter] = useState<TerminKategorie | 'alle'>(readStoredFilter)
   const [showPast, setShowPast] = useState(false)
   const [activeMeldungId, setActiveMeldungId] = useState<string | null>(null)
+  const scrolledRef = useRef(false)
+
+  useEffect(() => {
+    if (scrolledRef.current) return
+    const hash = window.location.hash.slice(1)
+    if (!hash) return
+    const tryScroll = () => {
+      const el = document.getElementById(hash)
+      if (el) {
+        scrolledRef.current = true
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.classList.add('ring-2', 'ring-green-500/60', 'ring-offset-2', 'ring-offset-slate-950')
+        setTimeout(() => el.classList.remove('ring-2', 'ring-green-500/60', 'ring-offset-2', 'ring-offset-slate-950'), 2000)
+      }
+    }
+    tryScroll()
+    const t = setTimeout(tryScroll, 300)
+    return () => clearTimeout(t)
+  }, [])
   const meldungen = useMeldungen()
   const activeMeldung = activeMeldungId ? getMeldungById(meldungen, activeMeldungId) : undefined
 
@@ -200,7 +225,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
                   const isRange = t.date.includes('–') || t.date.includes('-')
 
                   return (
-                    <div key={i} className={`flex gap-4 items-stretch group ${t.cancelled ? 'opacity-60' : ''}`}>
+                    <div key={i} id={terminAnchor(t.date, t.title)} className={`flex gap-4 items-stretch group transition-all duration-500 ${t.cancelled ? 'opacity-60' : ''}`}>
                       {/* Date */}
                       <div className="w-14 shrink-0 flex flex-col items-center justify-center text-center pt-1">
                         <span className={`text-2xl font-bold leading-none ${t.cancelled ? 'text-gray-400 dark:text-gray-600' : 'text-gray-800 dark:text-white'}`}>{day}</span>
