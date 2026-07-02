@@ -384,6 +384,14 @@ export default function TermineListSection({ content }: { content: TermineListCo
                                 {t.cancelled && t.cancellationNote && (
                                   <p className="mt-1.5 text-xs text-red-400 dark:text-red-500">{t.cancellationNote}</p>
                                 )}
+                                {t.cancelled && t.meldungId && getMeldungById(meldungen, t.meldungId) && (
+                                  <button
+                                    onClick={() => setActiveMeldungId(t.meldungId!)}
+                                    className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-red-100/50 dark:bg-red-900/20 border border-red-300/40 dark:border-red-700/40 px-2.5 py-1 text-xs font-semibold text-red-500 dark:text-red-500 hover:bg-red-200/50 dark:hover:bg-red-900/40 transition"
+                                  >
+                                    ℹ️ Weitere Infos
+                                  </button>
+                                )}
 
                                 {!t.cancelled && (
                                   <>
