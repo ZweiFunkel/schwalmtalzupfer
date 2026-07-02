@@ -737,13 +737,20 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
     if (needsUpdate) Promise.resolve().then(() => onChange({ ...content, termine: sorted }))
   }
 
+  // update: patches + re-sorts (for non-date fields where jumping is irrelevant)
   const update = (key: string, patch: Partial<TerminItem>) => {
     const updated = termine.map(t => t._key === key ? { ...t, ...patch } : t)
     onChange({ ...content, termine: sortedTermine(updated) })
   }
-  const updateByDateBlur = (key: string, patch: Partial<TerminItem>) => {
-    // Same as update — re-sorts after date blur
-    update(key, patch)
+  // updateNoSort: patches without re-sorting — used for date inputs while typing
+  // to prevent the card from jumping/scrolling on each keystroke
+  const updateNoSort = (key: string, patch: Partial<TerminItem>) => {
+    const updated = termine.map(t => t._key === key ? { ...t, ...patch } : t)
+    onChange({ ...content, termine: updated })
+  }
+  // Call on date input blur to re-sort after user finishes typing
+  const sortNow = () => {
+    onChange({ ...content, termine: sortedTermine(termine) })
   }
   const updateTickets = (key: string, patch: Partial<TicketsItem>) => {
     const t = termine.find(t => t._key === key)!
@@ -811,14 +818,16 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
                 <div>
                   <label className="mb-1 block text-xs text-gray-400">Von <span className="text-gray-600">(Pflichtfeld)</span></label>
                   <input value={dateFrom}
-                    onChange={e => { const v = e.target.value; update(key, { date: joinDate(v, dateTo) }) }}
+                    onChange={e => updateNoSort(key, { date: joinDate(e.target.value, dateTo) })}
+                    onBlur={sortNow}
                     placeholder="dd.MM.yyyy"
                     className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white font-mono placeholder-gray-600 focus:border-green-500 focus:outline-none" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-gray-400">Bis <span className="text-gray-600">(optional)</span></label>
                   <input value={dateTo}
-                    onChange={e => { const v = e.target.value; update(key, { date: joinDate(dateFrom, v) }) }}
+                    onChange={e => updateNoSort(key, { date: joinDate(dateFrom, e.target.value) })}
+                    onBlur={sortNow}
                     placeholder="dd.MM.yyyy"
                     className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white font-mono placeholder-gray-600 focus:border-green-500 focus:outline-none" />
                 </div>
