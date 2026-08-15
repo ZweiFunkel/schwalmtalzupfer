@@ -25,6 +25,7 @@ interface Member {
     bisUhrzeit: string
     location?: { id: string; name: string; adresse: string }
   } | null
+  vertrag: { status: 'ACTIVE' | 'PAST_DUE' | 'CANCELLED'; startDate: string; amountCents: number } | null
 }
 
 interface HistoryEntry {
@@ -149,6 +150,24 @@ function MemberDetailContent() {
         {member.eintrittsdatum && <div><p className="text-gray-400">Eintrittsdatum</p><p className="text-white">{member.eintrittsdatum}</p></div>}
         {member.austrittsdatum && <div><p className="text-gray-400">Austrittsdatum</p><p className="text-white">{member.austrittsdatum}</p></div>}
       </div>
+
+      {/* Mitgliedsvertrag (read-only, nie Kartendaten) */}
+      {member.vertrag && (
+        <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6 grid grid-cols-3 gap-4 text-sm">
+          <div>
+            <p className="text-gray-400">Vertragsstatus</p>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${
+              member.vertrag.status === 'ACTIVE' ? 'bg-green-900/40 text-green-400' :
+              member.vertrag.status === 'PAST_DUE' ? 'bg-yellow-900/40 text-yellow-300' :
+              'bg-red-900/40 text-red-400'
+            }`}>
+              {{ ACTIVE: 'Aktiv', PAST_DUE: 'Zahlung ausstehend', CANCELLED: 'Gekündigt' }[member.vertrag.status]}
+            </span>
+          </div>
+          <div><p className="text-gray-400">Beitrag</p><p className="text-white">{(member.vertrag.amountCents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} / Monat</p></div>
+          <div><p className="text-gray-400">Vertrag seit</p><p className="text-white">{member.vertrag.startDate}</p></div>
+        </div>
+      )}
 
       {/* Gruppe zuweisen */}
       <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6">

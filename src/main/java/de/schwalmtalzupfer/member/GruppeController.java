@@ -1,5 +1,7 @@
 package de.schwalmtalzupfer.member;
 
+import de.schwalmtalzupfer.pricing.PriceGroup;
+import de.schwalmtalzupfer.pricing.PriceGroupRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +17,7 @@ public class GruppeController {
 
     private final GitarrengruppeRepository gitarrengruppeRepository;
     private final LocationRepository locationRepository;
+    private final PriceGroupRepository priceGroupRepository;
 
     @GetMapping("/gruppen")
     @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
@@ -27,12 +30,26 @@ public class GruppeController {
     public ResponseEntity<?> createGruppe(@RequestBody CreateGruppeRequest req) {
         Location location = locationRepository.findById(UUID.fromString(req.locationId()))
                 .orElseThrow(() -> new IllegalArgumentException("Location nicht gefunden"));
+        PriceGroup priceGroup = priceGroupRepository.findById(UUID.fromString(req.priceGroupId()))
+                .orElseThrow(() -> new IllegalArgumentException("Preisgruppe nicht gefunden"));
         Gitarrengruppe g = Gitarrengruppe.builder()
                 .location(location)
                 .vonUhrzeit(LocalTime.parse(req.vonUhrzeit()))
                 .bisUhrzeit(LocalTime.parse(req.bisUhrzeit()))
                 .wochentag(req.wochentag())
+                .priceGroup(priceGroup)
                 .build();
+        return ResponseEntity.ok(toDto(gitarrengruppeRepository.save(g)));
+    }
+
+    @PatchMapping("/gruppen/{id}/preisgruppe")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updatePreisgruppe(@PathVariable UUID id, @RequestBody UpdatePreisgruppeRequest req) {
+        Gitarrengruppe g = gitarrengruppeRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Gruppe nicht gefunden"));
+        PriceGroup priceGroup = priceGroupRepository.findById(UUID.fromString(req.priceGroupId()))
+                .orElseThrow(() -> new IllegalArgumentException("Preisgruppe nicht gefunden"));
+        g.setPriceGroup(priceGroup);
         return ResponseEntity.ok(toDto(gitarrengruppeRepository.save(g)));
     }
 
@@ -72,6 +89,9 @@ public class GruppeController {
         if (g.getLocation() != null) {
             map.put("location", locationToDto(g.getLocation()));
         }
+        if (g.getPriceGroup() != null) {
+            map.put("priceGroup", Map.of("id", g.getPriceGroup().getId().toString(), "name", g.getPriceGroup().getName()));
+        }
         return map;
     }
 
@@ -83,7 +103,8 @@ public class GruppeController {
         );
     }
 
-    public record CreateGruppeRequest(String locationId, String vonUhrzeit, String bisUhrzeit, String wochentag) {}
+    public record CreateGruppeRequest(String locationId, String vonUhrzeit, String bisUhrzeit, String wochentag, String priceGroupId) {}
     public record CreateLocationRequest(String name, String adresse) {}
+    public record UpdatePreisgruppeRequest(String priceGroupId) {}
 }
 

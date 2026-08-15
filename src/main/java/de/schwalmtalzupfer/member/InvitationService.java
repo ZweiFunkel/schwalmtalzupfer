@@ -1,5 +1,6 @@
 package de.schwalmtalzupfer.member;
 
+import de.schwalmtalzupfer.pricing.PriceGroupRate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -80,6 +82,58 @@ public class InvitationService {
     }
 
     /**
+     * Erstellt eine Einladung aus einem angenommenen Beitrittsantrag: Mail enthält
+     * Unterrichtstag/-zeit/-ort und aktuellen Beitrag, Token ist mit Gruppe+Preis verknüpft
+     * (siehe RegistrationService, der bei Annahme der Einladung Stripe-Kunde+Abo anlegt).
+     */
+    @Transactional
+    public String inviteFromApplication(String email, Gitarrengruppe gruppe, PriceGroupRate rate) {
+        if (memberRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("E-Mail bereits registriert: " + email);
+        }
+
+        String token = UUID.randomUUID().toString();
+        InvitationToken invitation = InvitationToken.builder()
+                .token(token)
+                .email(email)
+                .rolle(MemberRole.MEMBER)
+                .expiresAt(LocalDateTime.now().plusHours(tokenValidityHours))
+                .gitarrengruppe(gruppe)
+                .priceGroupRate(rate)
+                .build();
+        tokenRepository.save(invitation);
+
+        String preis = String.format(Locale.GERMANY, "%.2f €/Monat", rate.getAmountCents() / 100.0);
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(fromAddress);
+            helper.setTo(email);
+            helper.setSubject("Dein Beitritt zum Schwalmtaler Zupfer");
+            helper.setText("Hallo,\n\nschön, dass du beim Schwalmtaler Zupfer mitmachen möchtest! Der Vorstand hat deinen "
+                    + "Beitrittsantrag angenommen und dich folgender Unterrichtsgruppe zugewiesen:\n\n"
+                    + "Wochentag: " + gruppe.getWochentag() + "\n"
+                    + "Uhrzeit: " + gruppe.getVonUhrzeit() + " – " + gruppe.getBisUhrzeit() + " Uhr\n"
+                    + (gruppe.getLocation() != null ? "Ort: " + gruppe.getLocation().getName() + "\n" : "")
+                    + "Beitrag: " + preis + "\n\n"
+                    + "Um deine Mitgliedschaft abzuschließen, registriere dich und hinterlege eine Zahlungsart unter folgendem Link "
+                    + "(gültig für " + tokenValidityHours + " Stunden):\n\n"
+                    + baseUrl + "/register?token=" + token + "\n\nViele Grüße", false);
+            mailSender.send(mimeMessage);
+            log.info("Beitritts-Einladung an {} verschickt (Gruppe: {}).", email, gruppe.getId());
+        } catch (MessagingException e) {
+            log.warn("E-Mail-Versand fehlgeschlagen: {}", e.getMessage(), e);
+        }
+        return token;
+    }
+
+    /** Liest ein Token, ohne es zu verändern - für Detail-Anzeige/Zahlungssetup vor dem eigentlichen Accept. */
+    public InvitationToken peekToken(String token) {
+        return tokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Ungültiges Token"));
+    }
+
+    /**
      * Akzeptiert eine Einladung und legt den Member an.
      */
     @Transactional
@@ -105,6 +159,7 @@ public class InvitationService {
                 .username(username != null && !username.isBlank() ? username : null)
                 .iban(iban)
                 .role(invitation.getRolle())
+                .gitarrengruppe(invitation.getGitarrengruppe())
                 .build();
         memberRepository.save(member);
 

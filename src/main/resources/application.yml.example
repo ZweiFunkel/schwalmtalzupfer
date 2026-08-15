@@ -41,6 +41,14 @@ app:
     allowed-origins: ${APP_CORS_ORIGINS:https://schwalmtalzupfer.de,https://159.195.70.118.nip.io,http://localhost:3000,https://localhost:3000}
   security:
     aes-key: ${APP_SECURITY_AES_KEY:dein-32-zeichen-schluessel-hier!}
+  jwt:
+    # Mind. 32 Zeichen (HS256) - für die native App (mobiler Login, kein Session-Cookie)
+    secret: ${APP_JWT_SECRET:bitte-mindestens-32-zeichen-langes-geheimnis-hier}
+    expiration-ms: ${APP_JWT_EXPIRATION_MS:2592000000} # 30 Tage
+  stripe:
+    secret-key: ${STRIPE_SECRET_KEY:sk_test_...}
+    publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_...}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_...}
   r2:
     endpoint: ${R2_ENDPOINT:https://<ACCOUNT_ID>.r2.cloudflarestorage.com}
     access-key: ${R2_ACCESS_KEY:your-r2-access-key}

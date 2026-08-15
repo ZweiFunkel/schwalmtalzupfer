@@ -61,4 +61,12 @@ public class Member {
     @Column(nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    /**
+     * Gesetzt, sobald für dieses Mitglied ein Stripe-Kunde existiert - unabhängig davon, ob
+     * das Abo (MembershipContract) schon erfolgreich angelegt wurde. Ermöglicht, eine fehlgeschlagene
+     * Zahlungseinrichtung nachträglich abzuschließen, ohne einen neuen Stripe-Kunden anzulegen.
+     */
+    @Column(name = "stripe_customer_id")
+    private String stripeCustomerId;
 }

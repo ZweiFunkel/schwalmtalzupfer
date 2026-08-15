@@ -3223,10 +3223,10 @@ function SiteSettingsEditor() {
 export default function AdminPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [tab, setTab] = useState<'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos'>(() => {
+  const [tab, setTab] = useState<'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos' | 'preisgruppen' | 'antraege'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('admin_tab')
-      if (['assets', 'meldungen', 'settings', 'members', 'videos'].includes(saved ?? '')) return saved as any
+      if (['assets', 'meldungen', 'settings', 'members', 'videos', 'preisgruppen', 'antraege'].includes(saved ?? '')) return saved as any
     }
     return 'pages'
   })
@@ -3271,13 +3271,27 @@ export default function AdminPage() {
   const [pageActionError, setPageActionError] = useState<string | null>(null)
 
   // Gruppen & Locations
-  interface Gruppe { id: string; wochentag: string; vonUhrzeit: string; bisUhrzeit: string; location?: { id: string; name: string; adresse: string } }
+  interface Gruppe { id: string; wochentag: string; vonUhrzeit: string; bisUhrzeit: string; location?: { id: string; name: string; adresse: string }; priceGroup?: { id: string; name: string } }
   interface Loc { id: string; name: string; adresse: string }
   const [gruppen, setGruppen] = useState<Gruppe[]>([])
   const [locations, setLocations] = useState<Loc[]>([])
   const [gruppenMsg, setGruppenMsg] = useState('')
-  const [newGruppe, setNewGruppe] = useState({ locationId: '', vonUhrzeit: '', bisUhrzeit: '', wochentag: '' })
+  const [newGruppe, setNewGruppe] = useState({ locationId: '', vonUhrzeit: '', bisUhrzeit: '', wochentag: '', priceGroupId: '' })
   const [newLocation, setNewLocation] = useState({ name: '', adresse: '' })
+
+  // Preisgruppen
+  interface PriceRate { id: string; amountCents: number; validFrom: string; createdAt: string }
+  interface PriceGroup { id: string; name: string; description: string | null; currentRate?: PriceRate }
+  const [priceGroups, setPriceGroups] = useState<PriceGroup[]>([])
+  const [priceGroupsMsg, setPriceGroupsMsg] = useState('')
+  const [newPriceGroup, setNewPriceGroup] = useState({ name: '', description: '' })
+  const [rateHistory, setRateHistory] = useState<Record<string, PriceRate[]>>({})
+  const [newRate, setNewRate] = useState<Record<string, { amountEuro: string; validFrom: string }>>({})
+
+  const loadPriceGroups = useCallback(async () => {
+    const res = await fetch(`${API_BASE}/api/pricing/groups`, { credentials: 'include' })
+    if (res.ok) setPriceGroups(await res.json())
+  }, [])
 
   const loadGruppen = useCallback(async () => {
     const [gr, lo] = await Promise.all([
@@ -3286,21 +3300,137 @@ export default function AdminPage() {
     ])
     if (gr.ok) setGruppen(await gr.json())
     if (lo.ok) setLocations(await lo.json())
-  }, [])
+    loadPriceGroups()
+  }, [loadPriceGroups])
 
   useEffect(() => { if (tab === 'members') loadGruppen() }, [tab, loadGruppen])
+  useEffect(() => { if (tab === 'preisgruppen') loadPriceGroups() }, [tab, loadPriceGroups])
 
   const createGruppe = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newGruppe.locationId || !newGruppe.vonUhrzeit || !newGruppe.bisUhrzeit || !newGruppe.wochentag) return
+    if (!newGruppe.locationId || !newGruppe.vonUhrzeit || !newGruppe.bisUhrzeit || !newGruppe.wochentag || !newGruppe.priceGroupId) return
     const res = await fetch(`${API_BASE}/api/gruppen`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newGruppe),
     })
-    if (res.ok) { setNewGruppe({ locationId: '', vonUhrzeit: '', bisUhrzeit: '', wochentag: '' }); loadGruppen() }
+    if (res.ok) { setNewGruppe({ locationId: '', vonUhrzeit: '', bisUhrzeit: '', wochentag: '', priceGroupId: '' }); loadGruppen() }
     else { const d = await res.json().catch(() => ({})); setGruppenMsg(d.error ?? 'Fehler beim Erstellen') }
   }
+
+  const updateGruppePreisgruppe = async (gruppeId: string, priceGroupId: string) => {
+    const res = await fetch(`${API_BASE}/api/gruppen/${gruppeId}/preisgruppe`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priceGroupId }),
+    })
+    if (res.ok) loadGruppen()
+  }
+
+  const createPriceGroup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newPriceGroup.name.trim()) return
+    const res = await fetch(`${API_BASE}/api/pricing/groups`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newPriceGroup),
+    })
+    if (res.ok) { setNewPriceGroup({ name: '', description: '' }); loadPriceGroups() }
+    else { const d = await res.json().catch(() => ({})); setPriceGroupsMsg(d.error ?? 'Fehler beim Erstellen') }
+  }
+
+  const deletePriceGroup = async (id: string) => {
+    if (!confirm('Preisgruppe wirklich löschen?')) return
+    const res = await fetch(`${API_BASE}/api/pricing/groups/${id}`, { method: 'DELETE', credentials: 'include' })
+    if (res.ok) loadPriceGroups()
+    else { const d = await res.json().catch(() => ({})); setPriceGroupsMsg(d.error ?? 'Löschen fehlgeschlagen') }
+  }
+
+  const fetchRates = async (groupId: string): Promise<PriceRate[]> => {
+    const res = await fetch(`${API_BASE}/api/pricing/groups/${groupId}/rates`, { credentials: 'include' })
+    return res.ok ? res.json() : []
+  }
+
+  const toggleRateHistory = async (groupId: string) => {
+    if (rateHistory[groupId]) {
+      setRateHistory(prev => { const next = { ...prev }; delete next[groupId]; return next })
+      return
+    }
+    const rates = await fetchRates(groupId)
+    setRateHistory(prev => ({ ...prev, [groupId]: rates }))
+  }
+
+  const addRate = async (groupId: string) => {
+    const draft = newRate[groupId]
+    if (!draft || !draft.amountEuro || !draft.validFrom) return
+    const amountCents = Math.round(parseFloat(draft.amountEuro.replace(',', '.')) * 100)
+    if (!Number.isFinite(amountCents) || amountCents <= 0) return
+    const res = await fetch(`${API_BASE}/api/pricing/groups/${groupId}/rates`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amountCents, validFrom: draft.validFrom }),
+    })
+    if (res.ok) {
+      setNewRate(prev => ({ ...prev, [groupId]: { amountEuro: '', validFrom: '' } }))
+      loadPriceGroups()
+      if (rateHistory[groupId]) {
+        const rates = await fetchRates(groupId)
+        setRateHistory(prev => ({ ...prev, [groupId]: rates }))
+      }
+    }
+  }
+
+  const formatEuro = (cents: number) => (cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
+
+  // Beitrittsanträge
+  interface Antrag {
+    id: string
+    antragstellerVorname: string
+    antragstellerNachname: string
+    email: string
+    telefon: string | null
+    fuerKind: boolean
+    kindVorname: string | null
+    kindNachname: string | null
+    alterJahre: number | null
+    gitarrenErfahrung: string | null
+    status: 'NEU' | 'IN_KONTAKT' | 'ANGENOMMEN' | 'ABGELEHNT'
+    boardNotiz: string | null
+    createdAt: string
+    gitarrengruppe?: { id: string; wochentag: string; vonUhrzeit: string; bisUhrzeit: string }
+  }
+  const [antraege, setAntraege] = useState<Antrag[]>([])
+  const [antragStatusFilter, setAntragStatusFilter] = useState<'ALLE' | Antrag['status']>('ALLE')
+  const [antragNotizDraft, setAntragNotizDraft] = useState<Record<string, string>>({})
+  const [antragGruppeDraft, setAntragGruppeDraft] = useState<Record<string, string>>({})
+
+  const loadAntraege = useCallback(async () => {
+    const query = antragStatusFilter !== 'ALLE' ? `?status=${antragStatusFilter}` : ''
+    const res = await fetch(`${API_BASE}/api/beitritt${query}`, { credentials: 'include' })
+    if (res.ok) setAntraege(await res.json())
+  }, [antragStatusFilter])
+
+  useEffect(() => { if (tab === 'antraege') { loadAntraege(); loadGruppen() } }, [tab, loadAntraege, loadGruppen])
+
+  const patchAntrag = async (id: string, body: Record<string, unknown>) => {
+    const res = await fetch(`${API_BASE}/api/beitritt/${id}`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (res.ok) loadAntraege()
+    return res
+  }
+
+  const annehmenAntrag = async (id: string) => {
+    if (!confirm('Antrag annehmen und Einladung mit Unterrichtsdetails & Preis verschicken?')) return
+    const res = await fetch(`${API_BASE}/api/beitritt/${id}/annehmen`, { method: 'POST', credentials: 'include' })
+    if (res.ok) loadAntraege()
+    else { const d = await res.json().catch(() => ({})); alert(d.error ?? 'Annahme fehlgeschlagen') }
+  }
+
+  const antragStatusLabel = (s: Antrag['status']) =>
+    ({ NEU: 'Neu', IN_KONTAKT: 'In Kontakt', ANGENOMMEN: 'Angenommen', ABGELEHNT: 'Abgelehnt' }[s])
 
   const deleteGruppe = async (id: string) => {
     if (!confirm('Gruppe wirklich löschen?')) return
@@ -3325,7 +3455,7 @@ export default function AdminPage() {
     loadGruppen()
   }
 
-  const switchTab = (t: 'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos') => {
+  const switchTab = (t: 'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos' | 'preisgruppen' | 'antraege') => {
     setTab(t); setSelectedPage(null)
     if (typeof window !== 'undefined') localStorage.setItem('admin_tab', t)
   }
@@ -3393,9 +3523,11 @@ export default function AdminPage() {
       { key: 'meldungen' as const, icon: '📣', label: 'Meldungen',     desc: 'Banner & Infos zu Terminen' },
       { key: 'assets'    as const, icon: '🗂', label: 'Assets',        desc: 'Bilder & Dateien (R2)' },
       { key: 'settings'  as const, icon: '⚙️', label: 'Einstellungen', desc: 'Logo, Noten, Navigation' },
+      { key: 'preisgruppen' as const, icon: '💶', label: 'Preisgruppen', desc: 'Beiträge & Preishistorie' },
     ] : []),
     { key: 'videos'  as const, icon: '🎬', label: 'Videos',     desc: 'YouTube-Videos verwalten' },
     { key: 'members' as const, icon: '👥', label: 'Mitglieder', desc: 'Einladungen & Gruppen' },
+    { key: 'antraege' as const, icon: '📝', label: 'Beitrittsanträge', desc: 'Anträge prüfen & zuweisen' },
   ]
 
   return (
@@ -3543,6 +3675,7 @@ export default function AdminPage() {
                         <th className="px-4 py-2.5 text-left font-medium">Wochentag</th>
                         <th className="px-4 py-2.5 text-left font-medium">Zeit</th>
                         <th className="px-4 py-2.5 text-left font-medium">Location</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Preisgruppe</th>
                         <th className="px-4 py-2.5 w-16"></th>
                       </tr>
                     </thead>
@@ -3552,6 +3685,12 @@ export default function AdminPage() {
                           <td className="px-4 py-2.5 text-white font-medium">{g.wochentag}</td>
                           <td className="px-4 py-2.5 text-gray-300">{g.vonUhrzeit} – {g.bisUhrzeit} Uhr</td>
                           <td className="px-4 py-2.5 text-gray-300">{g.location?.name ?? <span className="text-gray-600 italic">–</span>}</td>
+                          <td className="px-4 py-2.5">
+                            <select value={g.priceGroup?.id ?? ''} onChange={e => updateGruppePreisgruppe(g.id, e.target.value)}
+                              className="rounded-lg border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white focus:border-green-500 focus:outline-none">
+                              {priceGroups.map(pg => <option key={pg.id} value={pg.id}>{pg.name}</option>)}
+                            </select>
+                          </td>
                           <td className="px-4 py-2.5">
                             <button onClick={() => deleteGruppe(g.id)}
                               className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">
@@ -3598,6 +3737,14 @@ export default function AdminPage() {
                       className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none">
                       <option value="">– wählen –</option>
                       {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">Preisgruppe</label>
+                    <select value={newGruppe.priceGroupId} onChange={e => setNewGruppe(p => ({ ...p, priceGroupId: e.target.value }))}
+                      className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none">
+                      <option value="">– wählen –</option>
+                      {priceGroups.map(pg => <option key={pg.id} value={pg.id}>{pg.name}</option>)}
                     </select>
                   </div>
                   <button type="submit"
@@ -3671,6 +3818,217 @@ export default function AdminPage() {
             </div>
           </div>
 
+        </div>
+      )}
+
+      {tab === 'preisgruppen' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
+            <div className="border-b border-white/10 px-6 py-4">
+              <h3 className="font-semibold text-white">💶 Preisgruppen</h3>
+              <p className="mt-1 text-xs text-gray-500">Beiträge pro Gruppen-Kategorie, historisiert nach "gültig ab"</p>
+            </div>
+            <div className="p-6">
+              {priceGroupsMsg && (
+                <p className="mb-4 rounded-lg bg-red-900/30 px-3 py-2 text-sm text-red-400">{priceGroupsMsg}</p>
+              )}
+              {priceGroups.length > 0 ? (
+                <div className="mb-5 space-y-3">
+                  {priceGroups.map(pg => (
+                    <div key={pg.id} className="rounded-lg border border-white/10 bg-slate-800/40 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-white">{pg.name}</p>
+                          {pg.description && <p className="text-xs text-gray-500">{pg.description}</p>}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold text-green-400">
+                            {pg.currentRate ? `${formatEuro(pg.currentRate.amountCents)} / Monat` : 'kein Preis hinterlegt'}
+                          </span>
+                          <button onClick={() => toggleRateHistory(pg.id)}
+                            className="rounded px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition">
+                            {rateHistory[pg.id] ? 'Historie ausblenden' : 'Historie'}
+                          </button>
+                          <button onClick={() => deletePriceGroup(pg.id)}
+                            className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">
+                            Löschen
+                          </button>
+                        </div>
+                      </div>
+
+                      {rateHistory[pg.id] && (
+                        <div className="mt-3 overflow-hidden rounded-lg border border-white/10">
+                          <table className="w-full text-xs">
+                            <thead className="bg-slate-800 text-gray-400">
+                              <tr>
+                                <th className="px-3 py-2 text-left font-medium">Gültig ab</th>
+                                <th className="px-3 py-2 text-left font-medium">Betrag</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                              {rateHistory[pg.id].length === 0 ? (
+                                <tr><td colSpan={2} className="px-3 py-2 text-gray-500 italic">Noch keine Preise hinterlegt.</td></tr>
+                              ) : rateHistory[pg.id].map(r => (
+                                <tr key={r.id} className="bg-slate-900">
+                                  <td className="px-3 py-2 text-gray-300">{r.validFrom}</td>
+                                  <td className="px-3 py-2 text-gray-300">{formatEuro(r.amountCents)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap items-end gap-3">
+                        <div>
+                          <label className="mb-1 block text-xs text-gray-400">Neuer Preis (€/Monat)</label>
+                          <input value={newRate[pg.id]?.amountEuro ?? ''} placeholder="z.B. 15,00"
+                            onChange={e => setNewRate(prev => ({ ...prev, [pg.id]: { amountEuro: e.target.value, validFrom: prev[pg.id]?.validFrom ?? '' } }))}
+                            className="w-28 rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs text-gray-400">Gültig ab</label>
+                          <input type="date" value={newRate[pg.id]?.validFrom ?? ''}
+                            onChange={e => setNewRate(prev => ({ ...prev, [pg.id]: { amountEuro: prev[pg.id]?.amountEuro ?? '', validFrom: e.target.value } }))}
+                            className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
+                        </div>
+                        <button onClick={() => addRate(pg.id)}
+                          className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">
+                          + Preis hinzufügen
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mb-5 rounded-lg border border-dashed border-white/10 px-4 py-3 text-sm text-gray-500 text-center">
+                  Noch keine Preisgruppen angelegt.
+                </p>
+              )}
+
+              <div className="rounded-lg border border-white/10 bg-slate-800/40 p-4">
+                <p className="mb-3 text-xs font-semibold text-gray-300">+ Neue Preisgruppe anlegen</p>
+                <form onSubmit={createPriceGroup} className="flex flex-wrap gap-3 items-end">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">Name *</label>
+                    <input value={newPriceGroup.name} onChange={e => setNewPriceGroup(p => ({ ...p, name: e.target.value }))}
+                      placeholder="z.B. Orchester" required
+                      className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">Beschreibung (optional)</label>
+                    <input value={newPriceGroup.description} onChange={e => setNewPriceGroup(p => ({ ...p, description: e.target.value }))}
+                      placeholder="z.B. für Mitglieder im Orchester"
+                      className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
+                  </div>
+                  <button type="submit"
+                    className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">
+                    + Anlegen
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'antraege' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+              <div>
+                <h3 className="font-semibold text-white">📝 Beitrittsanträge</h3>
+                <p className="mt-1 text-xs text-gray-500">Anträge prüfen, Gruppe zuweisen, annehmen oder ablehnen</p>
+              </div>
+              <select value={antragStatusFilter} onChange={e => setAntragStatusFilter(e.target.value as any)}
+                className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none">
+                <option value="ALLE">Alle</option>
+                <option value="NEU">Neu</option>
+                <option value="IN_KONTAKT">In Kontakt</option>
+                <option value="ANGENOMMEN">Angenommen</option>
+                <option value="ABGELEHNT">Abgelehnt</option>
+              </select>
+            </div>
+            <div className="p-6">
+              {antraege.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-white/10 px-4 py-3 text-sm text-gray-500 text-center">
+                  Keine Anträge in dieser Ansicht.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {antraege.map(a => (
+                    <div key={a.id} className="rounded-lg border border-white/10 bg-slate-800/40 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-white">
+                            {a.antragstellerVorname} {a.antragstellerNachname}
+                            {a.fuerKind && <span className="ml-2 text-xs text-gray-400">für Kind: {a.kindVorname} {a.kindNachname}</span>}
+                          </p>
+                          <p className="text-xs text-gray-500">{a.email}{a.telefon ? ` · ${a.telefon}` : ''}</p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {a.alterJahre ? `${a.alterJahre} Jahre · ` : ''}
+                            {a.gitarrenErfahrung || 'keine Angaben zur Erfahrung'}
+                          </p>
+                        </div>
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          a.status === 'NEU' ? 'bg-blue-900/40 text-blue-300' :
+                          a.status === 'IN_KONTAKT' ? 'bg-yellow-900/40 text-yellow-300' :
+                          a.status === 'ANGENOMMEN' ? 'bg-green-900/40 text-green-300' :
+                          'bg-red-900/40 text-red-300'
+                        }`}>
+                          {antragStatusLabel(a.status)}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-end gap-3">
+                        <div>
+                          <label className="mb-1 block text-xs text-gray-400">Unterrichtsgruppe zuweisen</label>
+                          <select
+                            value={antragGruppeDraft[a.id] ?? a.gitarrengruppe?.id ?? ''}
+                            onChange={e => {
+                              setAntragGruppeDraft(prev => ({ ...prev, [a.id]: e.target.value }))
+                              if (e.target.value) patchAntrag(a.id, { gitarrengruppeId: e.target.value })
+                            }}
+                            className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none">
+                            <option value="">– wählen –</option>
+                            {gruppen.map(g => (
+                              <option key={g.id} value={g.id}>{g.wochentag} {g.vonUhrzeit}–{g.bisUhrzeit}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="min-w-[220px] flex-1">
+                          <label className="mb-1 block text-xs text-gray-400">Vorstands-Notiz</label>
+                          <input
+                            value={antragNotizDraft[a.id] ?? a.boardNotiz ?? ''}
+                            onChange={e => setAntragNotizDraft(prev => ({ ...prev, [a.id]: e.target.value }))}
+                            onBlur={e => patchAntrag(a.id, { boardNotiz: e.target.value })}
+                            className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
+                        </div>
+                        {a.status === 'NEU' && (
+                          <button onClick={() => patchAntrag(a.id, { status: 'IN_KONTAKT' })}
+                            className="rounded-lg bg-yellow-700/60 px-3 py-2 text-xs font-semibold text-yellow-200 hover:bg-yellow-700 transition">
+                            Kontakt aufgenommen
+                          </button>
+                        )}
+                        {a.status !== 'ABGELEHNT' && a.status !== 'ANGENOMMEN' && (a.gitarrengruppe || antragGruppeDraft[a.id]) && (
+                          <button onClick={() => annehmenAntrag(a.id)}
+                            className="rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white hover:bg-green-500 transition">
+                            Annehmen
+                          </button>
+                        )}
+                        {a.status !== 'ABGELEHNT' && a.status !== 'ANGENOMMEN' && (
+                          <button onClick={() => { if (confirm('Antrag wirklich ablehnen?')) patchAntrag(a.id, { status: 'ABGELEHNT' }) }}
+                            className="rounded-lg bg-red-900/40 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-900/70 transition">
+                            Ablehnen
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

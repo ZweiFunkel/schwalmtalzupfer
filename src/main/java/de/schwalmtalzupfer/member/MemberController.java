@@ -1,5 +1,7 @@
 package de.schwalmtalzupfer.member;
 
+import de.schwalmtalzupfer.payment.MembershipContract;
+import de.schwalmtalzupfer.payment.MembershipContractRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +18,7 @@ public class MemberController {
     private final MemberRepository memberRepository;
     private final GitarrengruppeRepository gitarrengruppeRepository;
     private final UserHistoryRepository userHistoryRepository;
+    private final MembershipContractRepository membershipContractRepository;
 
     /** Eigenes Profil lesen */
     @GetMapping("/me")
@@ -114,8 +117,24 @@ public class MemberController {
     @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
     public ResponseEntity<?> getMember(@PathVariable UUID id) {
         return memberRepository.findById(id)
-                .map(m -> ResponseEntity.ok(toDto(m)))
+                .map(m -> {
+                    Map<String, Object> dto = toDto(m);
+                    membershipContractRepository.findByMemberId(id).ifPresentOrElse(
+                            c -> dto.put("vertrag", contractDto(c)),
+                            () -> dto.put("vertrag", null)
+                    );
+                    return ResponseEntity.ok(dto);
+                })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Read-only Vertragsübersicht für Vorstand/Admin - nie Kartendaten, nur Status/Betrag. */
+    private Map<String, Object> contractDto(MembershipContract c) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("status", c.getStatus().name());
+        map.put("startDate", c.getStartDate().toString());
+        map.put("amountCents", c.getPriceGroupRate().getAmountCents());
+        return map;
     }
 
     /** UserHistory eines Mitglieds (nur BOARD/ADMIN) */

@@ -1,5 +1,6 @@
 package de.schwalmtalzupfer.member;
 
+import de.schwalmtalzupfer.pricing.PriceGroup;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,5 +32,9 @@ public class Gitarrengruppe {
 
     @Column(nullable = false)
     private String wochentag;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "price_group_id", nullable = false)
+    private PriceGroup priceGroup;
 }
 

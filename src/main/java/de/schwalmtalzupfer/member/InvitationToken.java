@@ -1,5 +1,6 @@
 package de.schwalmtalzupfer.member;
 
+import de.schwalmtalzupfer.pricing.PriceGroupRate;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -40,4 +41,13 @@ public class InvitationToken {
     @Column(nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    /** Nur gesetzt, wenn die Einladung aus einem angenommenen Beitrittsantrag stammt. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gitarrengruppe_id")
+    private Gitarrengruppe gitarrengruppe;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "price_group_rate_id")
+    private PriceGroupRate priceGroupRate;
 }

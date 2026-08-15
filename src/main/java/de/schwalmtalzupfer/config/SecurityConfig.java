@@ -1,5 +1,6 @@
 package de.schwalmtalzupfer.config;
 
+import de.schwalmtalzupfer.auth.JwtAuthFilter;
 import de.schwalmtalzupfer.member.Member;
 import de.schwalmtalzupfer.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +8,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,6 +22,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -55,7 +59,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter, PublicEndpointRateLimitFilter publicEndpointRateLimitFilter) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
@@ -76,10 +80,17 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/termine/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/galerie/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/beitritt").permitAll()
+                .requestMatchers("/api/beitritt/**").hasAnyRole("BOARD", "ADMIN")
                 .requestMatchers("/api/invitation/accept").permitAll()
+                .requestMatchers("/api/invitation/details").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/payment/registration-intent").permitAll()
+                .requestMatchers("/api/payment/**").authenticated()
+                .requestMatchers("/api/stripe/webhook").permitAll()
                 .requestMatchers("/api/invitation/invite").hasAnyRole("BOARD", "ADMIN")
                 .requestMatchers("/api/gruppen/**").hasAnyRole("BOARD", "ADMIN")
                 .requestMatchers("/api/locations/**").hasAnyRole("BOARD", "ADMIN")
+                .requestMatchers("/api/pricing/**").hasAnyRole("BOARD", "ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/member/**").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
@@ -109,9 +120,16 @@ public class SecurityConfig {
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-            );
+            )
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(publicEndpointRateLimitFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 
     @Bean
