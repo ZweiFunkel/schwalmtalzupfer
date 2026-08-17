@@ -14,8 +14,12 @@
 - Parsing immer Range-Suffix zuerst strippen: `d.replace(/(–|-)[\s\S]*/g, '').trim()`
 
 ### Dark Mode (Admin)
-- `admin/layout.tsx` wrапpt alles in `<div className="dark">` → kein useEffect-Flash
-- Tailwind `dark:` greift auf jedem Vorfahren mit `class="dark"` (nicht nur `<html>`)
+- `admin/layout.tsx` wrappt alles in `<div className="dark">` UND setzt per `useEffect` zusätzlich
+  `dark` auf `<html>` (vorherigen Zustand beim Verlassen wiederherstellen)
+- Grund: `globals.css` hat `html:not(.dark) ...`-Overrides für den öffentlichen Light/Dark-Toggle,
+  die nur auf `<html>` matchen, nicht auf das verschachtelte `<div className="dark">` – ohne den
+  `useEffect`-Fix sah der Admin-Bereich falsch aus, wenn die öffentliche Seite auf Hell stand
+- Tailwind `dark:` greift trotzdem auf jedem Vorfahren mit `class="dark"` (nicht nur `<html>`)
 
 ### TypeScript-Target
 - `s`-Regex-Flag NICHT verfügbar → immer `[\s\S]*` statt `.` mit `s`-Flag

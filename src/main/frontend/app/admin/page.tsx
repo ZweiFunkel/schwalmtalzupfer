@@ -4,6 +4,7 @@ import { getApiBase } from '@/lib/api'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth, isAdmin, isBoard } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
+import KalenderTab from './components/KalenderTab'
 
 const API_BASE = getApiBase()
 
@@ -11,6 +12,27 @@ interface AssetFile { key: string; size: number; lastModified: string; url: stri
 interface AssetListResponse { folders: string[]; files: AssetFile[]; prefix: string }
 interface SectionResponse { id: string; type: string; position: number; content: Record<string, unknown> }
 interface PageMeta { id: string; slug: string; title: string; published?: boolean; sections: SectionResponse[] }
+
+// ─── Section-Typen: verständliche Namen statt technischer Codes ────────────────
+// Reihenfolge bestimmt auch die Sortierung im "Sektion hinzufügen"-Dropdown.
+const SECTION_TYPE_INFO: Record<string, { label: string; icon: string; hint: string }> = {
+  HERO:              { label: 'Hero-Banner',              icon: '🖼️', hint: 'Großes Titelbild mit Überschrift & Button' },
+  EVENT_CARD:        { label: 'Event-Karten',              icon: '🎫', hint: 'Liste einzelner Veranstaltungs-Karten' },
+  TEXT_BLOCK:        { label: 'Textblock',                 icon: '📝', hint: 'Freier Text (Markdown)' },
+  PERSON_GRID:       { label: 'Personen-Übersicht',        icon: '👤', hint: 'Kachel-Raster mit Personen' },
+  NEXT_CONCERT:      { label: 'Nächstes Konzert',          icon: '🎵', hint: 'Countdown/Hinweis auf den nächsten Auftritt' },
+  BAND_GRID:         { label: 'Band-Mitglieder',           icon: '🎸', hint: 'Kachel-Raster der Band-Besetzung' },
+  CHOIR_LIST:        { label: 'Chor-Liste',                icon: '🎶', hint: 'Chorleitung & Stimmgruppen' },
+  IMAGE_CAPTION:     { label: 'Bild mit Bildunterschrift',  icon: '🖼️', hint: 'Einzelnes Bild inkl. Beschriftung' },
+  TERMINE_LIST:      { label: 'Terminliste',                icon: '📅', hint: 'Volle Terminverwaltung (wie /termine)' },
+  ACTIVITY_GRID:     { label: 'Aktivitäten & Ausflüge',    icon: '🚌', hint: 'Kachel-Raster für Ausflüge/Jugendfahrten' },
+  SPONSOR_GRID:      { label: 'Sponsoren',                  icon: '🤝', hint: 'Logo-Raster der Sponsoren' },
+  TERMINE_KONZERTE:  { label: 'Konzerttermine',             icon: '🎪', hint: 'Kompakte Konzertliste (wie /konzerte)' },
+  INTERN_CHANGELOG:  { label: 'Änderungsprotokoll',         icon: '🆕', hint: 'Was ist neu? (nur intern sichtbar)' },
+}
+function sectionTypeInfo(type: string) {
+  return SECTION_TYPE_INFO[type] ?? { label: type, icon: '📦', hint: 'Unbekannter Sektionstyp' }
+}
 
 function formatBytes(b: number) {
   if (b < 1024) return `${b} B`
@@ -1418,7 +1440,13 @@ function SectionEditor({ section, pageSlug, onSaved, onDeleted }: {
   return (
     <div className="rounded-xl border border-white/10 bg-slate-800/60 p-4">
       <div className="mb-3 flex items-center justify-between flex-wrap gap-2">
-        <span className="rounded bg-green-900/40 px-2 py-0.5 text-xs font-mono font-bold text-green-400">{section.type}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="flex items-center gap-1.5 rounded-lg border border-green-500/20 bg-green-900/30 px-2.5 py-1 text-xs font-semibold text-green-400 whitespace-nowrap">
+            <span>{sectionTypeInfo(section.type).icon}</span>
+            {sectionTypeInfo(section.type).label}
+          </span>
+          <span className="hidden sm:inline text-xs text-gray-500 truncate">{sectionTypeInfo(section.type).hint}</span>
+        </div>
         <div className="flex gap-2 flex-wrap">
           <button type="button" onClick={toggleExpert}
             className={`rounded px-2 py-1 text-xs transition ${expertMode ? 'bg-yellow-800/40 text-yellow-400' : 'bg-slate-700 text-gray-400 hover:text-white'}`}>
@@ -1991,9 +2019,10 @@ function PageEditor({ page, onBack }: { page: PageMeta; onBack: () => void }) {
   return (
     <div>
       <div className="flex items-center gap-2 text-sm mb-6">
-        <button onClick={onBack} className="text-gray-500 hover:text-white transition">Admin</button>
-        <span className="text-gray-700">/</span>
+        <button onClick={onBack} className="text-gray-500 hover:text-white transition">📄 Seiten</button>
+        <span className="text-gray-600">/</span>
         <span className="text-white font-medium">{page.title}</span>
+        <span className="rounded-full bg-slate-800 border border-white/10 px-2 py-0.5 text-[10px] text-gray-500">wird bearbeitet</span>
         <span className="ml-auto text-xs font-mono text-gray-600">/{page.slug}</span>
       </div>
       <div className="flex flex-col gap-4 mb-6">
@@ -2003,12 +2032,15 @@ function PageEditor({ page, onBack }: { page: PageMeta; onBack: () => void }) {
       <div className="flex gap-3 items-center border-t border-white/10 pt-5">
         <select value={addType} onChange={e => setAddType(e.target.value)}
           className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none">
-          {['HERO', 'EVENT_CARD', 'TEXT_BLOCK', 'PERSON_GRID', 'NEXT_CONCERT', 'BAND_GRID', 'CHOIR_LIST', 'IMAGE_CAPTION', 'TERMINE_LIST', 'ACTIVITY_GRID', 'SPONSOR_GRID', 'TERMINE_KONZERTE', 'INTERN_CHANGELOG'].map(t => <option key={t} value={t}>{t}</option>)}
+          {Object.keys(SECTION_TYPE_INFO).map(t => (
+            <option key={t} value={t}>{sectionTypeInfo(t).icon} {sectionTypeInfo(t).label}</option>
+          ))}
         </select>
         <button type="button" onClick={addSection} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">
           + Sektion hinzufügen
         </button>
       </div>
+      <p className="mt-1.5 text-xs text-gray-500">{sectionTypeInfo(addType).hint}</p>
     </div>
   )
 }
@@ -3223,10 +3255,10 @@ function SiteSettingsEditor() {
 export default function AdminPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [tab, setTab] = useState<'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos' | 'preisgruppen' | 'antraege'>(() => {
+  const [tab, setTab] = useState<'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos' | 'preisgruppen' | 'antraege' | 'kalender'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('admin_tab')
-      if (['assets', 'meldungen', 'settings', 'members', 'videos', 'preisgruppen', 'antraege'].includes(saved ?? '')) return saved as any
+      if (['assets', 'meldungen', 'settings', 'members', 'videos', 'preisgruppen', 'antraege', 'kalender'].includes(saved ?? '')) return saved as any
     }
     return 'pages'
   })
@@ -3462,7 +3494,7 @@ export default function AdminPage() {
     loadGruppen()
   }
 
-  const switchTab = (t: 'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos' | 'preisgruppen' | 'antraege') => {
+  const switchTab = (t: 'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos' | 'preisgruppen' | 'antraege' | 'kalender') => {
     setTab(t); setSelectedPage(null)
     if (typeof window !== 'undefined') localStorage.setItem('admin_tab', t)
   }
@@ -3532,6 +3564,7 @@ export default function AdminPage() {
       { key: 'settings'  as const, icon: '⚙️', label: 'Einstellungen', desc: 'Logo, Noten, Navigation' },
       { key: 'preisgruppen' as const, icon: '💶', label: 'Preisgruppen', desc: 'Beiträge & Preishistorie' },
     ] : []),
+    { key: 'kalender' as const, icon: '🗓️', label: 'Kalender',   desc: 'Termine, Unterricht & Ferien' },
     { key: 'videos'  as const, icon: '🎬', label: 'Videos',     desc: 'YouTube-Videos verwalten' },
     { key: 'members' as const, icon: '👥', label: 'Mitglieder', desc: 'Einladungen & Gruppen' },
     { key: 'antraege' as const, icon: '📝', label: 'Beitrittsanträge', desc: 'Anträge prüfen & zuweisen' },
@@ -3600,6 +3633,13 @@ export default function AdminPage() {
       )}
 
       {tab === 'settings' && <SiteSettingsEditor />}
+
+      {tab === 'kalender' && (
+        <div className="space-y-6">
+          <SectionHeader icon="🗓️" title="Kalender" desc="Termine, Unterricht & Ferien verwalten" />
+          <KalenderTab />
+        </div>
+      )}
 
       {tab === 'videos' && (
         <div className="space-y-6">

@@ -7,6 +7,13 @@
   --secondary: #1d4ed8;    /* Musikschul-Blau */
   --bg-dark: #0f172a;
   --bg-card: rgba(255, 255, 255, 0.07);
+  color-scheme: light;
+}
+
+/* Lässt Browser-eigene UI (Select-Popups, Checkboxen, Datum-/Zeit-Picker,
+   Scrollbars) im jeweils aktiven Theme rendern, statt immer im OS-Standard. */
+html.dark {
+  color-scheme: dark;
 }
 
 html {
