@@ -122,11 +122,15 @@ jobs:
           files: mobile-app/android/app/build/outputs/apk/release/app-release.apk
 
       - name: Neue Version ans Backend melden (In-App-Update-Hinweis)
-        if: env.MYAPP_UPLOAD_STORE_FILE != '' && secrets.DEPLOY_TOKEN != ''
+        if: env.MYAPP_UPLOAD_STORE_FILE != ''
         continue-on-error: true
         env:
           DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
         run: |
+          if [ -z "$DEPLOY_TOKEN" ]; then
+            echo "::notice::DEPLOY_TOKEN nicht gesetzt – Update-Hinweis ans Backend wird übersprungen."
+            exit 0
+          fi
           curl -sf -X POST "https://www.schwalmtalzupfer.de/api/app/android/publish" \
             -H "X-Deploy-Token: $DEPLOY_TOKEN" \
             -F "versionCode=${{ github.run_number }}" \
