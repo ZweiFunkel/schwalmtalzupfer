@@ -1,6 +1,5 @@
 package de.schwalmtalzupfer.appupdate;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.schwalmtalzupfer.config.SiteSettings;
 import de.schwalmtalzupfer.config.SiteSettingsRepository;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,8 +18,6 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Nimmt neue Android-Release-Builds von der CI (GitHub Actions) entgegen und liefert sie
@@ -40,7 +37,6 @@ public class AppUpdateController {
 
     private final SiteSettingsRepository siteSettingsRepository;
     private final S3Client s3Client;
-    private final ObjectMapper objectMapper;
 
     @Value("${app.r2.bucket}")
     private String bucket;
@@ -89,11 +85,7 @@ public class AppUpdateController {
                         .build(),
                 software.amazon.awssdk.core.sync.RequestBody.fromInputStream(apk.getInputStream(), apk.getSize()));
 
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("versionCode", versionCode);
-        payload.put("versionName", versionName);
-        payload.put("releaseNotes", releaseNotes);
-        String json = objectMapper.writeValueAsString(payload);
+        String json = toJson(versionCode, versionName, releaseNotes);
 
         SiteSettings setting = siteSettingsRepository.findBySettingKey(SETTINGS_KEY)
                 .orElse(SiteSettings.builder().id(System.currentTimeMillis()).settingKey(SETTINGS_KEY).build());
@@ -108,5 +100,31 @@ public class AppUpdateController {
         return MessageDigest.isEqual(
                 expected.getBytes(StandardCharsets.UTF_8),
                 actual.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String toJson(int versionCode, String versionName, String releaseNotes) {
+        return "{\"versionCode\":" + versionCode
+                + ",\"versionName\":\"" + escapeJson(versionName) + "\""
+                + ",\"releaseNotes\":\"" + escapeJson(releaseNotes) + "\"}";
+    }
+
+    private String escapeJson(String value) {
+        if (value == null) return "";
+        StringBuilder sb = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '"' -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < 0x20) sb.append(String.format("\\u%04x", (int) c));
+                    else sb.append(c);
+                }
+            }
+        }
+        return sb.toString();
     }
 }
