@@ -135,8 +135,8 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> {
-            Member member = memberRepository.findByEmail(username)
-                    .or(() -> memberRepository.findByUsername(username))
+            Member member = memberRepository.findByEmailIgnoreCase(username)
+                    .or(() -> memberRepository.findByUsernameIgnoreCase(username))
                     .orElseThrow(() -> new UsernameNotFoundException("Benutzer nicht gefunden: " + username));
             String role = "ROLE_" + member.getRole().name();
             // Use username if available, otherwise email
