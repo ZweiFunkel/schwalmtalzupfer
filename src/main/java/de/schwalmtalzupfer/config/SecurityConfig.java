@@ -78,6 +78,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/pages/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/termine/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/kalender/termine").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/kalender/ics").permitAll()
+                .requestMatchers("/api/kalender/benachrichtigungen").authenticated()
+                .requestMatchers("/api/kalender/**").hasAnyRole("BOARD", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/galerie/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/beitritt").permitAll()
