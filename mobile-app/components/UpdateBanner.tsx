@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Application from 'expo-application';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from '../lib/api';
-import { colors, font, radius, spacing } from '../lib/theme';
+import { font, radius, spacing, type ColorTokens } from '../lib/theme';
+import { useAppTheme } from '../lib/ThemeContext';
 
 interface AndroidAppVersion {
   versionCode?: number;
@@ -18,6 +19,8 @@ interface AndroidAppVersion {
 // läuft, muss dieser Banner durch die Play In-App-Update-API ersetzt werden – ein
 // selbstgehosteter Update-Download ist dann laut Play-Richtlinien nicht mehr erlaubt.
 export default function UpdateBanner() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [info, setInfo] = useState<AndroidAppVersion | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -59,7 +62,8 @@ export default function UpdateBanner() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorTokens) {
+  return StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -71,4 +75,5 @@ const styles = StyleSheet.create({
   text: { flex: 1, color: '#fff', fontFamily: font.medium, fontSize: 13 },
   action: { backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.sm },
   actionText: { color: '#fff', fontFamily: font.semiBold, fontSize: 12 },
-});
+  });
+}

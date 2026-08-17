@@ -1,11 +1,14 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchTermine, Termin } from '../../lib/termine';
-import { colors, font, radius, spacing, columnsForWidth } from '../../lib/theme';
+import { font, radius, spacing, columnsForWidth, type ColorTokens } from '../../lib/theme';
+import { useAppTheme } from '../../lib/ThemeContext';
 
 export default function TermineScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { width } = useWindowDimensions();
   const columns = columnsForWidth(width);
 
@@ -85,7 +88,8 @@ export default function TermineScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorTokens) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceMuted },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: spacing.md },
@@ -109,4 +113,5 @@ const styles = StyleSheet.create({
   cancelled: { fontSize: 13, color: colors.danger, fontFamily: font.semiBold },
   empty: { textAlign: 'center', color: colors.textFaint, fontFamily: font.regular, marginTop: spacing.xl },
   error: { color: colors.danger, padding: spacing.md, textAlign: 'center', fontFamily: font.medium },
-});
+  });
+}

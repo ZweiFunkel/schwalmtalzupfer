@@ -1,11 +1,22 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView, Linking, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as ExpoLinking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchMe, logout, MemberProfile } from '../../lib/auth';
 import { fetchPaymentStatus, createBillingPortalSession, retrySubscription, PaymentStatus } from '../../lib/payment';
-import { colors, font, radius, spacing } from '../../lib/theme';
+import { font, radius, spacing, type ColorTokens } from '../../lib/theme';
+import { useAppTheme } from '../../lib/ThemeContext';
+
+function paymentStatusColor(colors: ColorTokens): Record<PaymentStatus['status'], string> {
+  return {
+    ACTIVE: colors.primary700,
+    PAST_DUE: '#a16207',
+    CANCELLED: colors.danger,
+    SETUP_AUSSTEHEND: '#a16207',
+    KEIN_VERTRAG: colors.textFaint,
+  };
+}
 
 const PAYMENT_STATUS_LABEL: Record<PaymentStatus['status'], string> = {
   ACTIVE: 'Aktiv',
@@ -15,14 +26,6 @@ const PAYMENT_STATUS_LABEL: Record<PaymentStatus['status'], string> = {
   KEIN_VERTRAG: 'Kein Vertrag hinterlegt',
 };
 
-const PAYMENT_STATUS_COLOR: Record<PaymentStatus['status'], string> = {
-  ACTIVE: colors.primary700,
-  PAST_DUE: '#a16207',
-  CANCELLED: colors.danger,
-  SETUP_AUSSTEHEND: '#a16207',
-  KEIN_VERTRAG: colors.textFaint,
-};
-
 function initialsOf(profile: MemberProfile): string {
   const a = profile.vorname?.[0] ?? '';
   const b = profile.nachname?.[0] ?? '';
@@ -30,6 +33,9 @@ function initialsOf(profile: MemberProfile): string {
 }
 
 export default function ProfilScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const PAYMENT_STATUS_COLOR = useMemo(() => paymentStatusColor(colors), [colors]);
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
@@ -168,6 +174,12 @@ export default function ProfilScreen() {
         </View>
       )}
 
+      <Pressable style={styles.settingsRow} onPress={() => router.push('/settings')}>
+        <Ionicons name="settings-outline" size={20} color={colors.textMuted} />
+        <Text style={styles.settingsRowText}>Einstellungen</Text>
+        <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
+      </Pressable>
+
       <Pressable style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={18} color="#fff" />
         <Text style={styles.buttonText}>Abmelden</Text>
@@ -176,7 +188,8 @@ export default function ProfilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorTokens) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceMuted },
   content: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
@@ -203,4 +216,11 @@ const styles = StyleSheet.create({
   portalButton: { marginTop: spacing.sm, backgroundColor: colors.primary50, borderRadius: radius.md, padding: 12, alignItems: 'center' },
   portalButtonText: { color: colors.primary700, fontFamily: font.semiBold, fontSize: 14 },
   hint: { fontFamily: font.regular, fontSize: 12, color: colors.textFaint, marginTop: spacing.sm, textAlign: 'center' },
-});
+  settingsRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+    borderWidth: 1, borderColor: colors.border, marginTop: spacing.lg,
+  },
+  settingsRowText: { flex: 1, fontFamily: font.medium, fontSize: 15, color: colors.text },
+  });
+}

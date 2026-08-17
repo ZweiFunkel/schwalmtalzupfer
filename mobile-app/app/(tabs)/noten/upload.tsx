@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Alert, FlatList } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { uploadNote, folderNameFromPrefix } from '../../../lib/noten';
-import { colors, font, radius, spacing } from '../../../lib/theme';
+import { font, radius, spacing, type ColorTokens } from '../../../lib/theme';
+import { useAppTheme } from '../../../lib/ThemeContext';
 
 interface PickedFile {
   uri: string;
@@ -13,6 +14,8 @@ interface PickedFile {
 }
 
 export default function NotenUpload() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { prefix } = useLocalSearchParams<{ prefix?: string }>();
   const targetLabel = prefix ? folderNameFromPrefix(prefix) : 'Hauptordner';
 
@@ -100,7 +103,8 @@ export default function NotenUpload() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorTokens) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, padding: spacing.md },
   hint: { color: colors.textMuted, fontFamily: font.medium, fontSize: 13, marginBottom: spacing.md },
   pickBtn: {
@@ -135,4 +139,5 @@ const styles = StyleSheet.create({
   },
   uploadBtnDisabled: { opacity: 0.5 },
   uploadBtnText: { color: '#fff', fontFamily: font.semiBold, fontSize: 15 },
-});
+  });
+}

@@ -23,21 +23,28 @@ import {
 } from '../../../lib/noten';
 import { getCachedUri, listCachedNoten, downloadMany } from '../../../lib/notenCache';
 import { fetchMe } from '../../../lib/auth';
-import { colors, font, radius, spacing, columnsForWidth } from '../../../lib/theme';
+import { getNotenDefaultSubpath, joinPrefix } from '../../../lib/settings';
+import { font, radius, spacing, columnsForWidth, type ColorTokens } from '../../../lib/theme';
+import { useAppTheme } from '../../../lib/ThemeContext';
 
 type Row =
   | { kind: 'folder'; prefix: string; name: string }
   | { kind: 'file'; key: string; name: string; cached: boolean };
 
 export default function NotenBrowser() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { prefix: prefixParam } = useLocalSearchParams<{ prefix?: string }>();
   const { width } = useWindowDimensions();
   const columns = columnsForWidth(width);
 
-  // Der konfigurierte Noten-Root-Ordner (Admin > noten_prefix) wird nur an der Wurzel
-  // angewendet — Unterordner kommen bereits als vollständige Präfixe von browseNoten().
+  // Der konfigurierte Noten-Root-Ordner (Admin > noten_prefix) plus der persönliche
+  // Standard-Unterordner (Profil > Einstellungen) gelten nur an der Wurzel — Unterordner
+  // kommen bereits als vollständige Präfixe von browseNoten().
   const [rootPrefix, setRootPrefix] = useState<string | null>(null);
-  const prefix = prefixParam ?? rootPrefix ?? '';
+  const [defaultSubpath, setDefaultSubpath] = useState('');
+  const effectiveRoot = rootPrefix !== null ? joinPrefix(rootPrefix, defaultSubpath) : null;
+  const prefix = prefixParam ?? effectiveRoot ?? '';
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,15 +138,27 @@ export default function NotenBrowser() {
   // sonst würde kurz der gesamte Bucket statt des eingerichteten Ordners aufblitzen.
   const readyToLoad = prefixParam !== undefined || rootPrefix !== null;
 
+  // Bei jedem Fokussieren des Tabs den persönlichen Standard-Unterordner neu lesen
+  // (könnte sich zwischenzeitlich in den Einstellungen geändert haben).
   useFocusEffect(
     useCallback(() => {
-      if (!readyToLoad) return;
-      setLoading(true);
+      let cancelled = false;
       setSelectionMode(false);
       setSelected(new Set());
-      load();
-    }, [load, readyToLoad])
+      if (prefixParam === undefined) {
+        getNotenDefaultSubpath()
+          .then(sub => { if (!cancelled) setDefaultSubpath(sub); })
+          .catch(() => {});
+      }
+      return () => { cancelled = true; };
+    }, [prefixParam])
   );
+
+  useEffect(() => {
+    if (!readyToLoad) return;
+    setLoading(true);
+    load();
+  }, [readyToLoad, load]);
 
   const emptyLabel = useMemo(
     () => (isSearching ? 'Keine Noten gefunden.' : offline ? 'Keine Noten heruntergeladen.' : 'Keine Noten in diesem Ordner.'),
@@ -376,7 +395,8 @@ export default function NotenBrowser() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorTokens) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   searchBar: {
@@ -437,4 +457,5 @@ const styles = StyleSheet.create({
   cardText: { flex: 1, fontFamily: font.medium, fontSize: 15, color: colors.text },
   empty: { textAlign: 'center', color: colors.textFaint, fontFamily: font.regular, marginTop: spacing.xl },
   error: { color: colors.danger, fontFamily: font.medium, padding: spacing.md, textAlign: 'center' },
-});
+  });
+}

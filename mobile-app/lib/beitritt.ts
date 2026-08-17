@@ -63,3 +63,8 @@ export async function updateAntrag(
     throw new Error(body?.error ?? 'Aktualisierung fehlgeschlagen');
   }
 }
+
+export async function deleteAntrag(id: string): Promise<void> {
+  const res = await apiFetch(`/api/beitritt/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Antrag konnte nicht gelöscht werden');
+}

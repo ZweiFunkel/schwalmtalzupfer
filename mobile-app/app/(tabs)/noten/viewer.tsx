@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Pdf from 'react-native-pdf';
@@ -6,13 +6,16 @@ import * as Sharing from 'expo-sharing';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ensureNoteAvailable } from '../../../lib/notenCache';
-import { colors, font, radius, spacing } from '../../../lib/theme';
+import { font, radius, spacing, type ColorTokens } from '../../../lib/theme';
+import { useAppTheme } from '../../../lib/ThemeContext';
 
 function isPdf(name?: string, key?: string): boolean {
   return /\.pdf$/i.test(name ?? '') || /\.pdf$/i.test(key ?? '');
 }
 
 export default function NoteViewer() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { key, name } = useLocalSearchParams<{ key: string; name?: string }>();
   const navigation = useNavigation();
   const pdf = isPdf(name, key);
@@ -38,7 +41,7 @@ export default function NoteViewer() {
           </Pressable>
         ) : null,
     });
-  }, [name, navigation, localUri, share]);
+  }, [name, navigation, localUri, share, colors]);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,7 +92,8 @@ export default function NoteViewer() {
   return <WebView source={{ uri: localUri }} originWhitelist={['*']} style={styles.webview} />;
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorTokens) {
+  return StyleSheet.create({
   pdf: { flex: 1, backgroundColor: colors.surfaceMuted },
   webview: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
@@ -97,4 +101,5 @@ const styles = StyleSheet.create({
   hint: { color: colors.textFaint, textAlign: 'center', marginTop: spacing.xs, fontFamily: font.regular, fontSize: 13 },
   retry: { marginTop: spacing.md, backgroundColor: colors.primary600, paddingVertical: 12, paddingHorizontal: 24, borderRadius: radius.md },
   retryText: { color: '#fff', fontFamily: font.semiBold, fontSize: 15 },
-});
+  });
+}

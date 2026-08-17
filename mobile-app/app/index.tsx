@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { getToken } from '../lib/auth';
-import { colors } from '../lib/theme';
+import { useAppTheme } from '../lib/ThemeContext';
 
 export default function Index() {
+  const { colors } = useAppTheme();
   const [loading, setLoading] = useState(true);
   const [hasToken, setHasToken] = useState(false);
 

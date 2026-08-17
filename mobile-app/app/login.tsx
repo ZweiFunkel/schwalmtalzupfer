@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { login } from '../lib/auth';
-import { colors, font, radius, spacing } from '../lib/theme';
+import { font, radius, spacing, type ColorTokens } from '../lib/theme';
+import { useAppTheme } from '../lib/ThemeContext';
 
 export default function LoginScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +78,8 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorTokens) {
+  return StyleSheet.create({
   screen: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surfaceMuted, padding: spacing.lg },
   card: {
     width: '100%',
@@ -106,4 +110,5 @@ const styles = StyleSheet.create({
   error: { color: colors.danger, marginBottom: spacing.sm, fontFamily: font.medium, textAlign: 'center' },
   linkButton: { marginTop: spacing.md, alignItems: 'center' },
   linkText: { color: colors.primary700, fontFamily: font.medium, fontSize: 14 },
-});
+  });
+}

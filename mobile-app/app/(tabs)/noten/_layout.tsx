@@ -1,7 +1,9 @@
 import { Stack } from 'expo-router';
-import { colors, font } from '../../../lib/theme';
+import { font } from '../../../lib/theme';
+import { useAppTheme } from '../../../lib/ThemeContext';
 
 export default function NotenLayout() {
+  const { colors } = useAppTheme();
   return (
     <Stack
       screenOptions={{
@@ -10,6 +12,7 @@ export default function NotenLayout() {
         headerStyle: { backgroundColor: colors.surface },
         headerShadowVisible: false,
         headerTintColor: colors.primary600,
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Noten' }} />

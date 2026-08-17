@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,10 @@ import {
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchAntraege, updateAntrag, MembershipApplication } from '../../lib/beitritt';
+import { fetchAntraege, updateAntrag, deleteAntrag, MembershipApplication } from '../../lib/beitritt';
 import { fetchGruppen, Gruppe } from '../../lib/gruppen';
-import { colors, font, radius, spacing } from '../../lib/theme';
+import { font, radius, spacing, type ColorTokens } from '../../lib/theme';
+import { useAppTheme } from '../../lib/ThemeContext';
 
 const STATUS_FILTERS: Array<{ key: 'ALLE' | MembershipApplication['status']; label: string }> = [
   { key: 'ALLE', label: 'Alle' },
@@ -32,14 +33,19 @@ const STATUS_LABEL: Record<MembershipApplication['status'], string> = {
   ABGELEHNT: 'Abgelehnt',
 };
 
-const STATUS_COLOR: Record<MembershipApplication['status'], string> = {
-  NEU: '#1d4ed8',
-  IN_KONTAKT: '#a16207',
-  ANGENOMMEN: colors.primary700,
-  ABGELEHNT: colors.danger,
-};
+function statusColor(colors: ColorTokens): Record<MembershipApplication['status'], string> {
+  return {
+    NEU: '#1d4ed8',
+    IN_KONTAKT: '#a16207',
+    ANGENOMMEN: colors.primary700,
+    ABGELEHNT: colors.danger,
+  };
+}
 
 export default function AntraegeScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const STATUS_COLOR = useMemo(() => statusColor(colors), [colors]);
   const [antraege, setAntraege] = useState<MembershipApplication[]>([]);
   const [gruppen, setGruppen] = useState<Gruppe[]>([]);
   const [filter, setFilter] = useState<'ALLE' | MembershipApplication['status']>('ALLE');
@@ -99,6 +105,24 @@ export default function AntraegeScreen() {
     Alert.alert('Antrag ablehnen?', 'Diese Aktion kann nicht rückgängig gemacht werden.', [
       { text: 'Abbrechen', style: 'cancel' },
       { text: 'Ablehnen', style: 'destructive', onPress: () => setStatus(id, 'ABGELEHNT') },
+    ]);
+  }
+
+  function confirmDelete(id: string) {
+    Alert.alert('Antrag löschen?', 'Das kann nicht rückgängig gemacht werden.', [
+      { text: 'Abbrechen', style: 'cancel' },
+      {
+        text: 'Löschen',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteAntrag(id);
+            load();
+          } catch (e) {
+            Alert.alert('Fehler', e instanceof Error ? e.message : 'Löschen fehlgeschlagen');
+          }
+        },
+      },
     ]);
   }
 
@@ -183,6 +207,9 @@ export default function AntraegeScreen() {
                     <Text style={styles.actionButtonRedText}>Ablehnen</Text>
                   </Pressable>
                 )}
+                <Pressable style={styles.actionButtonOutline} onPress={() => confirmDelete(item.id)}>
+                  <Text style={styles.actionButtonOutlineText}>Löschen</Text>
+                </Pressable>
               </View>
             </View>
           )}
@@ -211,7 +238,8 @@ export default function AntraegeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorTokens) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceMuted },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   filterRow: { padding: spacing.md, gap: spacing.sm },
@@ -235,6 +263,8 @@ const styles = StyleSheet.create({
   actionButtonYellowText: { color: '#92400e', fontFamily: font.semiBold, fontSize: 12 },
   actionButtonRed: { backgroundColor: colors.dangerMuted, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: radius.sm },
   actionButtonRedText: { color: colors.danger, fontFamily: font.semiBold, fontSize: 12 },
+  actionButtonOutline: { borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: radius.sm },
+  actionButtonOutlineText: { color: colors.textMuted, fontFamily: font.semiBold, fontSize: 12 },
   empty: { textAlign: 'center', color: colors.textFaint, fontFamily: font.regular, marginTop: spacing.xl, padding: spacing.md },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalSheet: { backgroundColor: colors.surface, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg, maxHeight: '60%' },
@@ -242,4 +272,5 @@ const styles = StyleSheet.create({
   modalRow: { paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
   modalRowText: { fontFamily: font.medium, fontSize: 15, color: colors.text },
   modalRowSub: { fontFamily: font.regular, fontSize: 13, color: colors.textMuted },
-});
+  });
+}

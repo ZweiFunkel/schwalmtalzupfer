@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, ScrollView, Switch } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { submitBeitrittsantrag } from '../lib/beitritt';
-import { colors, font, radius, spacing } from '../lib/theme';
+import { font, radius, spacing, type ColorTokens } from '../lib/theme';
+import { useAppTheme } from '../lib/ThemeContext';
 
 export default function BeitrittScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [antragstellerVorname, setAntragstellerVorname] = useState('');
   const [antragstellerNachname, setAntragstellerNachname] = useState('');
   const [email, setEmail] = useState('');
@@ -130,7 +133,8 @@ export default function BeitrittScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorTokens) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.background },
@@ -153,4 +157,5 @@ const styles = StyleSheet.create({
   successIcon: { fontSize: 40, color: colors.primary600, marginBottom: spacing.sm },
   successTitle: { fontSize: 20, fontFamily: font.bold, color: colors.text, marginBottom: 4 },
   hint: { fontSize: 14, fontFamily: font.regular, color: colors.textMuted, textAlign: 'center', marginBottom: spacing.lg },
-});
+  });
+}

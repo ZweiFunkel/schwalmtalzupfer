@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, font } from '../../lib/theme';
+import { font } from '../../lib/theme';
+import { useAppTheme } from '../../lib/ThemeContext';
 import { fetchMe } from '../../lib/auth';
 import UpdateBanner from '../../components/UpdateBanner';
 
 export default function TabsLayout() {
+  const { colors } = useAppTheme();
   const [isBoard, setIsBoard] = useState(false);
 
   useEffect(() => {
@@ -16,7 +18,7 @@ export default function TabsLayout() {
   }, []);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <UpdateBanner />
       <Tabs
         screenOptions={{

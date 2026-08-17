@@ -1,5 +1,22 @@
-// Farbtokens 1:1 aus dem Web-Frontend (tailwind.config.js -> theme.extend.colors.primary)
-export const colors = {
+// Farbtokens 1:1 aus dem Web-Frontend (tailwind.config.js -> theme.extend.colors.primary),
+// jeweils für Hell- und Dunkelmodus. Siehe ThemeContext.tsx für die dynamische Auswahl.
+export interface ColorTokens {
+  primary50: string;
+  primary500: string;
+  primary600: string;
+  primary700: string;
+  background: string;
+  surface: string;
+  surfaceMuted: string;
+  border: string;
+  text: string;
+  textMuted: string;
+  textFaint: string;
+  danger: string;
+  dangerMuted: string;
+}
+
+export const lightColors: ColorTokens = {
   primary50: '#f0fdf4',
   primary500: '#22c55e',
   primary600: '#16a34a',
@@ -17,6 +34,29 @@ export const colors = {
   danger: '#dc2626',
   dangerMuted: '#fef2f2',
 };
+
+export const darkColors: ColorTokens = {
+  primary50: '#0f2a1a',
+  primary500: '#22c55e',
+  primary600: '#22c55e',
+  primary700: '#4ade80',
+
+  background: '#0b0f0d',
+  surface: '#161b18',
+  surfaceMuted: '#1e2421',
+  border: '#2b3230',
+
+  text: '#f3f4f2',
+  textMuted: '#a3a8a4',
+  textFaint: '#767c78',
+
+  danger: '#f87171',
+  dangerMuted: '#3a1414',
+};
+
+// Statischer Fallback für Stellen außerhalb von Komponenten (z.B. Konstanten-Objekte).
+// Innerhalb von Komponenten immer useAppTheme().colors verwenden, sonst kein Dark Mode.
+export const colors = lightColors;
 
 export const font = {
   regular: 'Inter_400Regular',
