@@ -48,3 +48,34 @@ export async function getNotenRootPrefix(): Promise<string> {
   const data: Record<string, string> = await res.json();
   return data.noten_prefix ?? '';
 }
+
+export interface UploadFile {
+  uri: string;
+  name: string;
+  mimeType?: string;
+}
+
+export interface UploadResult {
+  total: number;
+  added: number;
+  skipped: number;
+  errors: number;
+  addedFiles: string[];
+  skippedFiles: string[];
+  errorFiles: string[];
+}
+
+/** Nur für BOARD/ADMIN - selber Endpoint wie im Web-Admin. */
+export async function uploadNote(prefix: string, file: UploadFile): Promise<UploadResult> {
+  const form = new FormData();
+  form.append('files', {
+    uri: file.uri,
+    name: file.name,
+    type: file.mimeType ?? 'application/octet-stream',
+  } as unknown as Blob);
+  form.append('prefix', prefix);
+
+  const res = await apiFetch('/api/noten/upload', { method: 'POST', body: form });
+  if (!res.ok) throw new Error('Upload fehlgeschlagen');
+  return res.json();
+}

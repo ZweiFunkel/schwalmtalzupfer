@@ -14,6 +14,7 @@ export default function NotenLayout() {
     >
       <Stack.Screen name="index" options={{ title: 'Noten' }} />
       <Stack.Screen name="viewer" options={{ title: 'Note' }} />
+      <Stack.Screen name="upload" options={{ title: 'Noten hochladen', presentation: 'modal' }} />
     </Stack>
   );
 }

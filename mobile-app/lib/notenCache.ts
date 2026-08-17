@@ -1,7 +1,7 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getToken } from './auth';
-import { downloadUrlForKey } from './noten';
+import { downloadUrlForKey, noteNameFromKey } from './noten';
 
 const CACHE_INDEX_KEY = 'noten_cache_index_v1';
 const notenDir = new Directory(Paths.document, 'noten');
@@ -49,4 +49,46 @@ export async function ensureNoteAvailable(key: string): Promise<string> {
   const cached = await getCachedUri(key);
   if (cached) return cached;
   return downloadNote(key);
+}
+
+export interface CachedNote {
+  key: string;
+  name: string;
+  uri: string;
+}
+
+/**
+ * Alle lokal verfügbaren Noten - Grundlage für den Offline-Modus (kein Login/Internet nötig).
+ */
+export async function listCachedNoten(): Promise<CachedNote[]> {
+  const index = await readIndex();
+  const entries = await Promise.all(
+    Object.entries(index).map(async ([key, uri]) => {
+      const exists = new File(uri).exists;
+      return exists ? { key, name: noteNameFromKey(key), uri } : null;
+    })
+  );
+  return entries.filter((e): e is CachedNote => e !== null);
+}
+
+/**
+ * Lädt mehrere Noten herunter (bereits gecachte werden übersprungen).
+ * onProgress wird nach jeder Datei aufgerufen, auch bei Fehlern einzelner Dateien.
+ */
+export async function downloadMany(
+  keys: string[],
+  onProgress?: (done: number, total: number) => void
+): Promise<{ succeeded: string[]; failed: string[] }> {
+  const succeeded: string[] = [];
+  const failed: string[] = [];
+  for (let i = 0; i < keys.length; i++) {
+    try {
+      await ensureNoteAvailable(keys[i]);
+      succeeded.push(keys[i]);
+    } catch {
+      failed.push(keys[i]);
+    }
+    onProgress?.(i + 1, keys.length);
+  }
+  return { succeeded, failed };
 }
