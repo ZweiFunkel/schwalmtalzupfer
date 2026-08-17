@@ -3429,6 +3429,13 @@ export default function AdminPage() {
     else { const d = await res.json().catch(() => ({})); alert(d.error ?? 'Annahme fehlgeschlagen') }
   }
 
+  const deleteAntrag = async (id: string) => {
+    if (!confirm('Antrag wirklich löschen? Das kann nicht rückgängig gemacht werden.')) return
+    const res = await fetch(`${API_BASE}/api/beitritt/${id}`, { method: 'DELETE', credentials: 'include' })
+    if (res.ok) loadAntraege()
+    else alert('Löschen fehlgeschlagen')
+  }
+
   const antragStatusLabel = (s: Antrag['status']) =>
     ({ NEU: 'Neu', IN_KONTAKT: 'In Kontakt', ANGENOMMEN: 'Angenommen', ABGELEHNT: 'Abgelehnt' }[s])
 
@@ -4022,6 +4029,10 @@ export default function AdminPage() {
                             Ablehnen
                           </button>
                         )}
+                        <button onClick={() => deleteAntrag(a.id)}
+                          className="rounded-lg border border-red-900/40 px-3 py-2 text-xs font-semibold text-red-400/80 hover:bg-red-900/40 hover:text-red-400 transition">
+                          Löschen
+                        </button>
                       </div>
                     </div>
                   ))}

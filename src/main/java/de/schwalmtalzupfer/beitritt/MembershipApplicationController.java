@@ -129,6 +129,16 @@ public class MembershipApplicationController {
         return ResponseEntity.ok(toDto(applicationRepository.save(application)));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
+    public ResponseEntity<?> delete(@PathVariable UUID id) {
+        if (!applicationRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        applicationRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
     private Map<String, Object> toDto(MembershipApplication a) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", a.getId().toString());
