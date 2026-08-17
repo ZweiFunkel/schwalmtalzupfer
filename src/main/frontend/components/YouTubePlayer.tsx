@@ -8,219 +8,185 @@ declare global {
   }
 }
 
+// ─── YouTube IFrame API onError-Codes ────────────────────────────────────────
+// 2   = Ungültiger Parameter (z.B. falsche Video-ID)
+// 5   = HTML5-Player-Fehler
+// 100 = Video nicht gefunden, gelöscht oder privat
+// 101 / 150 = Einbettung vom Rechteinhaber gesperrt ("embedding disabled")
+function isEmbedDisabledCode(code: number): boolean {
+  return code === 101 || code === 150
+}
+
+function errorMessage(code: number): string {
+  switch (code) {
+    case 2:
+      return 'Ungültige Video-ID.'
+    case 5:
+      return 'Der Player konnte das Video nicht abspielen (HTML5-Fehler).'
+    case 100:
+      return 'Dieses Video wurde nicht gefunden, gelöscht oder ist privat.'
+    case 101:
+    case 150:
+      return 'Der Rechteinhaber hat die Einbettung dieses Videos auf anderen Webseiten gesperrt.'
+    default:
+      return 'Das Video konnte nicht geladen werden.'
+  }
+}
+
 interface YouTubePlayerProps {
   videoId: string
+  /** Titel für den Fallback-Hinweis, wenn die Einbettung gesperrt ist */
+  title?: string
+  /** Thumbnail für den Fallback-Hinweis (gedimmter Hintergrund) */
+  thumbnailUrl?: string | null
   onReady?: (player: any) => void
   onStateChange?: (event: any) => void
+  /** Wird aufgerufen, sobald das Video zu Ende gespielt wurde (z.B. für Playlist-Autoplay) */
+  onEnded?: () => void
   autoplay?: boolean
   className?: string
 }
 
-export default function YouTubePlayer({ 
-  videoId, 
-  onReady, 
-  onStateChange, 
+/**
+ * Wrapper um die YouTube-IFrame-Player-API.
+ *
+ * Nutzt bewusst die native YouTube-Bedienoberfläche (controls: 1) statt eines
+ * selbstgebauten Scrubbers – dadurch bekommen Nutzer:innen automatisch
+ * Tastatursteuerung, Untertitel, Qualitätswahl und Vollbild "geschenkt".
+ *
+ * Der Mehrwert dieser Komponente gegenüber einem rohen <iframe>: Über die
+ * onError-Events der JS-API lässt sich erkennen, wenn ein Video vom
+ * Rechteinhaber für die Einbettung gesperrt wurde (Codes 101/150). Ein rohes
+ * <iframe src="..."> feuert dafür NICHT das DOM-onerror-Event – YouTube
+ * rendert stattdessen nur eine hässliche Fehlermeldung innerhalb des Frames.
+ * Hier fangen wir diesen Fall ab und zeigen stattdessen einen eigenen,
+ * themenfähigen Hinweis mit Link zu YouTube.
+ */
+export default function YouTubePlayer({
+  videoId,
+  title,
+  thumbnailUrl,
+  onReady,
+  onStateChange,
+  onEnded,
   autoplay = false,
-  className = ''
+  className = '',
 }: YouTubePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [volume, setVolume] = useState(100)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [showControls, setShowControls] = useState(true)
-  const hideControlsTimeout = useRef<NodeJS.Timeout>()
+  const elementIdRef = useRef(`yt-player-${Math.random().toString(36).slice(2, 11)}`)
+  const [error, setError] = useState<{ code: number; message: string } | null>(null)
 
+  // Hinweis: Diese Komponente initialisiert den Player nur EINMAL pro Mount.
+  // Zum Wechseln des Videos (z.B. beim Weiterklicken in einer Playlist) muss
+  // der Aufrufer `key={videoId}` setzen, damit React sauber neu montiert –
+  // die YT-API ersetzt beim Erstellen das Container-Element durch ein
+  // <iframe>, ein erneutes `new YT.Player()` auf derselben (dann nicht mehr
+  // existierenden) Element-ID würde sonst fehlschlagen.
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!videoId || videoId.trim() === '') return
 
-    const initPlayer = () => {
+    let cancelled = false
+    let poll: ReturnType<typeof setTimeout> | null = null
+    setError(null)
+
+    function initPlayer() {
+      if (cancelled) return
       if (!window.YT || !window.YT.Player) {
-        setTimeout(initPlayer, 100)
+        poll = setTimeout(initPlayer, 100)
         return
       }
-
-      if (!videoId || videoId.trim() === '' || videoId.length !== 11) {
-        console.error('Invalid video ID:', videoId)
-        return
-      }
-
-      const playerId = `yt-player-${Math.random().toString(36).substr(2, 9)}`
-      containerRef.current!.id = playerId
+      if (!containerRef.current) return
 
       try {
-        playerRef.current = new window.YT.Player(playerId, {
+        playerRef.current = new window.YT.Player(elementIdRef.current, {
           videoId,
-          // Privacy-enhanced mode: weniger Tracking und bessere Kompatibilität
-          // mit HTTP-Seiten und strengen Browser-Einstellungen.
+          // Privacy-enhanced mode: weniger Tracking, bessere Kompatibilität
+          // mit Brave/Firefox-Schutz und strengen Cookie-Einstellungen.
           host: 'https://www.youtube-nocookie.com',
           playerVars: {
             autoplay: autoplay ? 1 : 0,
-            controls: 0,
-            modestbranding: 1,
+            controls: 1,
             rel: 0,
-            showinfo: 0,
+            modestbranding: 1,
             iv_load_policy: 3,
-            disablekb: 1,
             origin: typeof window !== 'undefined' ? window.location.origin : '',
           },
           events: {
             onReady: (event: any) => {
-              setDuration(event.target.getDuration())
               if (onReady) onReady(event.target)
             },
             onStateChange: (event: any) => {
-              setIsPlaying(event.data === window.YT.PlayerState.PLAYING)
               if (onStateChange) onStateChange(event)
+              if (window.YT?.PlayerState && event.data === window.YT.PlayerState.ENDED && onEnded) {
+                onEnded()
+              }
+            },
+            onError: (event: any) => {
+              const code = typeof event?.data === 'number' ? event.data : -1
+              console.error(`YouTube-Player-Fehler (Code ${code}) für Video ${videoId}`)
+              setError({ code, message: errorMessage(code) })
             },
           },
         })
-      } catch (error) {
-        console.error('Error creating YouTube player:', error)
+      } catch (e) {
+        console.error('Fehler beim Erstellen des YouTube-Players:', e)
       }
-
-      // Update progress
-      const interval = setInterval(() => {
-        if (playerRef.current && playerRef.current.getCurrentTime) {
-          setCurrentTime(playerRef.current.getCurrentTime())
-        }
-      }, 100)
-
-      return () => clearInterval(interval)
     }
 
     initPlayer()
 
     return () => {
+      cancelled = true
+      if (poll) clearTimeout(poll)
       if (playerRef.current && playerRef.current.destroy) {
-        playerRef.current.destroy()
+        try {
+          playerRef.current.destroy()
+        } catch {
+          // Player war bereits zerstört/nicht initialisiert – ignorieren
+        }
       }
+      playerRef.current = null
     }
-  }, [videoId, autoplay, onReady, onStateChange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoId])
 
-  const togglePlay = () => {
-    if (!playerRef.current || !playerRef.current.playVideo) return
-    if (isPlaying) {
-      playerRef.current.pauseVideo()
-    } else {
-      playerRef.current.playVideo()
-    }
-  }
+  if (!videoId) return null
 
-  const handleVolumeChange = (newVolume: number) => {
-    if (!playerRef.current || !playerRef.current.setVolume) return
-    playerRef.current.setVolume(newVolume)
-    setVolume(newVolume)
-  }
-
-  const handleSeek = (time: number) => {
-    if (!playerRef.current || !playerRef.current.seekTo) return
-    playerRef.current.seekTo(time, true)
-    setCurrentTime(time)
-  }
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
-  const handleMouseMove = () => {
-    setShowControls(true)
-    if (hideControlsTimeout.current) clearTimeout(hideControlsTimeout.current)
-    hideControlsTimeout.current = setTimeout(() => {
-      if (isPlaying) setShowControls(false)
-    }, 3000)
-  }
-
-  return (
-    <div 
-      className={`relative bg-black ${className}`}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => isPlaying && setShowControls(false)}
-    >
-      {/* YouTube Player Container */}
-      <div ref={containerRef} className="w-full h-full" />
-
-      {/* Custom Controls Overlay */}
-      <div 
-        className={`absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-transparent to-transparent transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        <div className="p-4 space-y-3">
-          {/* Progress Bar */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-white font-mono">{formatTime(currentTime)}</span>
-            <input
-              type="range"
-              min="0"
-              max={duration || 100}
-              value={currentTime}
-              onChange={(e) => handleSeek(Number(e.target.value))}
-              className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer hover:[&::-webkit-slider-thumb]:bg-green-400"
-            />
-            <span className="text-xs text-white font-mono">{formatTime(duration)}</span>
+  if (error) {
+    return (
+      <div className={`relative flex flex-col items-center justify-center gap-4 overflow-hidden bg-gray-100 dark:bg-slate-900 px-6 py-10 text-center ${className}`}>
+        {thumbnailUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumbnailUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-20 blur-sm" />
+        )}
+        <div className="relative flex max-w-md flex-col items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/10">
+            <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-
-          {/* Control Buttons */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {/* Play/Pause */}
-              <button
-                onClick={togglePlay}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition"
-              >
-                {isPlaying ? (
-                  <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                  </svg>
-                ) : (
-                  <svg className="h-5 w-5 text-white translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                )}
-              </button>
-
-              {/* Volume */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleVolumeChange(volume > 0 ? 0 : 100)}
-                  className="text-white hover:text-green-400 transition"
-                >
-                  {volume === 0 ? (
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.531V19.94a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.506-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.395C2.806 8.757 3.63 8.25 4.51 8.25H6.75z"/>
-                    </svg>
-                  ) : volume < 50 ? (
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"/>
-                    </svg>
-                  ) : (
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"/>
-                    </svg>
-                  )}
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={volume}
-                  onChange={(e) => handleVolumeChange(Number(e.target.value))}
-                  className="w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer"
-                />
-              </div>
-            </div>
-
-            {/* Right side controls (will be added by parent component) */}
-            <div className="flex items-center gap-2">
-              {/* Placeholder for additional controls */}
-            </div>
-          </div>
+          {title && <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{title}</p>}
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {isEmbedDisabledCode(error.code)
+              ? 'Video nicht verfügbar – der Rechteinhaber hat die Einbettung dieses Videos außerhalb von YouTube gesperrt.'
+              : error.message}
+          </p>
+          <a
+            href={`https://www.youtube.com/watch?v=${videoId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-red-500"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z" />
+            </svg>
+            Auf YouTube ansehen
+          </a>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  return <div ref={containerRef} id={elementIdRef.current} className={className} />
 }
