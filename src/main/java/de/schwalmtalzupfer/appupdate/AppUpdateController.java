@@ -41,7 +41,9 @@ public class AppUpdateController {
     @Value("${app.r2.bucket}")
     private String bucket;
 
-    @Value("${app.deploy.token}")
+    // Inline-Default, damit ein fehlender app.deploy.token in application.yml NIE den
+    // gesamten Server-Start verhindert - dieser Endpoint ist ein optionales Feature.
+    @Value("${app.deploy.token:changeme-deploy-token}")
     private String deployToken;
 
     @GetMapping("/download")
