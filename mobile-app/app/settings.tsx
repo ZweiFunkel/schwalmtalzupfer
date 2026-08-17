@@ -1,11 +1,36 @@
-import { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Alert } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Switch, Alert, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 import { useAppTheme, type ThemeMode } from '../lib/ThemeContext';
 import { getNotenDefaultSubpath, setNotenDefaultSubpath } from '../lib/settings';
 import { getNotenRootPrefix } from '../lib/noten';
+import { fetchBenachrichtigungen, updateBenachrichtigungen } from '../lib/kalender';
 import { font, radius, spacing, type ColorTokens } from '../lib/theme';
+
+type NotifKey = 'konzerte' | 'freizeiten' | 'unterrichtErinnerung';
+
+/**
+ * Bestmögliche Push-Registrierung: fragt Berechtigung an (falls noch unbekannt) und holt den
+ * Expo-Push-Token. Schlägt bei fehlender Berechtigung oder fehlendem EAS-Projekt lautlos fehl -
+ * blockiert nie den Rest der App.
+ */
+async function registerForPushNotifications(): Promise<string | null> {
+  try {
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    let status = existing;
+    if (status !== 'granted') {
+      const req = await Notifications.requestPermissionsAsync();
+      status = req.status;
+    }
+    if (status !== 'granted') return null;
+    const token = await Notifications.getExpoPushTokenAsync();
+    return token.data;
+  } catch {
+    return null;
+  }
+}
 
 const MODE_OPTIONS: Array<{ key: ThemeMode; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
   { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
@@ -21,9 +46,34 @@ export default function SettingsScreen() {
   const [subpath, setSubpath] = useState('');
   const [savedSubpath, setSavedSubpath] = useState('');
 
+  const [notifLoaded, setNotifLoaded] = useState(false);
+  const [notifError, setNotifError] = useState<string | null>(null);
+  const [konzerte, setKonzerte] = useState(true);
+  const [freizeiten, setFreizeiten] = useState(true);
+  const [unterrichtErinnerung, setUnterrichtErinnerung] = useState(false);
+  const [savingNotif, setSavingNotif] = useState<NotifKey | null>(null);
+
   useEffect(() => {
     getNotenRootPrefix().then(setRootPrefix).catch(() => {});
     getNotenDefaultSubpath().then(sub => { setSubpath(sub); setSavedSubpath(sub); }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchBenachrichtigungen()
+      .then(data => {
+        setKonzerte(data.konzerte);
+        setFreizeiten(data.freizeiten);
+        setUnterrichtErinnerung(data.unterrichtErinnerung);
+        setNotifLoaded(true);
+      })
+      .catch(e => setNotifError(e instanceof Error ? e.message : 'Einstellungen konnten nicht geladen werden'));
+  }, []);
+
+  // Push-Token bestmöglich im Hintergrund registrieren - kein Blocken, kein Alert bei Ablehnung.
+  useEffect(() => {
+    registerForPushNotifications().then(token => {
+      if (token) updateBenachrichtigungen({ pushToken: token }).catch(() => {});
+    });
   }, []);
 
   async function saveSubpath() {
@@ -33,6 +83,26 @@ export default function SettingsScreen() {
   }
 
   const dirty = subpath.trim() !== savedSubpath;
+
+  // Toggles speichern sofort (kein separater Speichern-Button nötig, kein Risiko eines
+  // halb ausgefüllten Werts wie bei Textfeldern) - bei Fehler wird der alte Wert wiederhergestellt.
+  const toggleNotif = useCallback(async (key: NotifKey, value: boolean) => {
+    const setters: Record<NotifKey, (v: boolean) => void> = {
+      konzerte: setKonzerte,
+      freizeiten: setFreizeiten,
+      unterrichtErinnerung: setUnterrichtErinnerung,
+    };
+    setters[key](value);
+    setSavingNotif(key);
+    try {
+      await updateBenachrichtigungen({ [key]: value });
+    } catch {
+      setters[key](!value);
+      Alert.alert('Fehler', 'Einstellung konnte nicht gespeichert werden.');
+    } finally {
+      setSavingNotif(null);
+    }
+  }, []);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -70,6 +140,60 @@ export default function SettingsScreen() {
       <Pressable style={[styles.saveButton, !dirty && styles.saveButtonDisabled]} onPress={saveSubpath} disabled={!dirty}>
         <Text style={styles.saveButtonText}>Speichern</Text>
       </Pressable>
+
+      <Text style={styles.sectionTitle}>Benachrichtigungen</Text>
+      {notifError && <Text style={styles.hint}>{notifError}</Text>}
+
+      <View style={styles.notifRow}>
+        <View style={styles.notifLabelBox}>
+          <Text style={styles.notifLabel}>Konzerte</Text>
+          <Text style={styles.hint}>Erinnerung vor Konzertterminen.</Text>
+        </View>
+        {savingNotif === 'konzerte' ? (
+          <ActivityIndicator color={colors.primary600} />
+        ) : (
+          <Switch
+            value={konzerte}
+            onValueChange={v => toggleNotif('konzerte', v)}
+            trackColor={{ true: colors.primary600 }}
+            disabled={!notifLoaded}
+          />
+        )}
+      </View>
+
+      <View style={styles.notifRow}>
+        <View style={styles.notifLabelBox}>
+          <Text style={styles.notifLabel}>Freizeiten</Text>
+          <Text style={styles.hint}>Erinnerung vor Ausflügen und Freizeiten.</Text>
+        </View>
+        {savingNotif === 'freizeiten' ? (
+          <ActivityIndicator color={colors.primary600} />
+        ) : (
+          <Switch
+            value={freizeiten}
+            onValueChange={v => toggleNotif('freizeiten', v)}
+            trackColor={{ true: colors.primary600 }}
+            disabled={!notifLoaded}
+          />
+        )}
+      </View>
+
+      <View style={styles.notifRow}>
+        <View style={styles.notifLabelBox}>
+          <Text style={styles.notifLabel}>Unterrichts-Erinnerung</Text>
+          <Text style={styles.hint}>Erinnerung vor der eigenen wöchentlichen Unterrichtsstunde.</Text>
+        </View>
+        {savingNotif === 'unterrichtErinnerung' ? (
+          <ActivityIndicator color={colors.primary600} />
+        ) : (
+          <Switch
+            value={unterrichtErinnerung}
+            onValueChange={v => toggleNotif('unterrichtErinnerung', v)}
+            trackColor={{ true: colors.primary600 }}
+            disabled={!notifLoaded}
+          />
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -106,5 +230,12 @@ function createStyles(colors: ColorTokens) {
     },
     saveButtonDisabled: { opacity: 0.4 },
     saveButtonText: { color: '#fff', fontFamily: font.semiBold, fontSize: 15 },
+    notifRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      gap: spacing.md, paddingVertical: spacing.sm,
+      borderBottomWidth: 1, borderBottomColor: colors.border,
+    },
+    notifLabelBox: { flex: 1 },
+    notifLabel: { fontFamily: font.medium, fontSize: 15, color: colors.text },
   });
 }
