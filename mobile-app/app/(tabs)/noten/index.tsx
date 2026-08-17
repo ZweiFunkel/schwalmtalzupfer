@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import {
   folderNameFromPrefix,
   noteNameFromKey,
   listAllNoten,
+  getNotenRootPrefix,
   NotenBrowseResult,
 } from '../../../lib/noten';
 import { getCachedUri } from '../../../lib/notenCache';
@@ -28,9 +29,13 @@ type Row =
 
 export default function NotenBrowser() {
   const { prefix: prefixParam } = useLocalSearchParams<{ prefix?: string }>();
-  const prefix = prefixParam ?? '';
   const { width } = useWindowDimensions();
   const columns = columnsForWidth(width);
+
+  // Der konfigurierte Noten-Root-Ordner (Admin > noten_prefix) wird nur an der Wurzel
+  // angewendet — Unterordner kommen bereits als vollständige Präfixe von browseNoten().
+  const [rootPrefix, setRootPrefix] = useState<string | null>(null);
+  const prefix = prefixParam ?? rootPrefix ?? '';
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +44,14 @@ export default function NotenBrowser() {
   const [query, setQuery] = useState('');
 
   const isSearching = query.trim().length > 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    getNotenRootPrefix()
+      .then(p => { if (!cancelled) setRootPrefix(p); })
+      .catch(() => { if (!cancelled) setRootPrefix(''); });
+    return () => { cancelled = true; };
+  }, []);
 
   const loadBrowse = useCallback(async () => {
     const result: NotenBrowseResult = await browseNoten(prefix);
@@ -59,7 +72,7 @@ export default function NotenBrowser() {
   }, [prefix]);
 
   const loadSearch = useCallback(async (term: string) => {
-    const all = await listAllNoten();
+    const all = await listAllNoten(rootPrefix ?? '');
     const needle = term.trim().toLowerCase();
     const matches = all.filter(n => n.name.toLowerCase().includes(needle));
     return Promise.all(
@@ -70,7 +83,7 @@ export default function NotenBrowser() {
         cached: (await getCachedUri(n.key)) !== null,
       }))
     );
-  }, []);
+  }, [rootPrefix]);
 
   const load = useCallback(async () => {
     setError(null);
@@ -84,11 +97,16 @@ export default function NotenBrowser() {
     }
   }, [isSearching, loadSearch, loadBrowse, query]);
 
+  // An der Wurzel erst laden, wenn der konfigurierte Noten-Ordner bekannt ist,
+  // sonst würde kurz der gesamte Bucket statt des eingerichteten Ordners aufblitzen.
+  const readyToLoad = prefixParam !== undefined || rootPrefix !== null;
+
   useFocusEffect(
     useCallback(() => {
+      if (!readyToLoad) return;
       setLoading(true);
       load();
-    }, [load])
+    }, [load, readyToLoad])
   );
 
   const emptyLabel = useMemo(

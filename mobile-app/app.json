@@ -11,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "de.schwalmtalzupfer.app",
       "adaptiveIcon": {
         "backgroundColor": "#f0fdf4",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -31,10 +32,11 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#f0fdf4",
-          "image": "./assets/icon.png",
-          "imageWidth": 120
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
         }
-      ]
+      ],
+      "./plugins/withAndroidReleaseSigning"
     ],
     "experiments": {
       "typedRoutes": true

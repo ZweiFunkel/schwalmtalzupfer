@@ -32,8 +32,19 @@ export interface NoteListItem {
   lastModified: string;
 }
 
-export async function listAllNoten(): Promise<NoteListItem[]> {
-  const res = await apiFetch('/api/noten/list');
+export async function listAllNoten(prefix = ''): Promise<NoteListItem[]> {
+  const res = await apiFetch(`/api/noten/list?prefix=${encodeURIComponent(prefix)}`);
   if (!res.ok) throw new Error('Noten konnten nicht geladen werden');
   return res.json();
+}
+
+/**
+ * Liest den im Admin-Bereich (Website) konfigurierten Noten-Root-Ordner (`noten_prefix`),
+ * damit die App denselben Ausschnitt des Buckets zeigt wie /noten auf der Webseite.
+ */
+export async function getNotenRootPrefix(): Promise<string> {
+  const res = await apiFetch('/api/site/settings');
+  if (!res.ok) return '';
+  const data: Record<string, string> = await res.json();
+  return data.noten_prefix ?? '';
 }
