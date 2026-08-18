@@ -4,6 +4,7 @@ import de.schwalmtalzupfer.member.Gitarrengruppe;
 import de.schwalmtalzupfer.member.GitarrengruppeRepository;
 import de.schwalmtalzupfer.member.Member;
 import de.schwalmtalzupfer.member.MemberRepository;
+import de.schwalmtalzupfer.member.MemberRole;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +19,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -36,14 +39,22 @@ public class KalenderTerminController {
 
     /**
      * Kombinierter Kalender für [von, bis]: manuelle Termine + automatisch expandierte
-     * Unterrichtstermine (minus Ferien/Ausnahmen). Öffentlich, keine sensiblen Daten.
+     * Unterrichtstermine (minus Ferien/Ausnahmen) + bereits vorhandene CMS-Termine.
+     * Unterrichtstermine werden auf die eigene Gitarrengruppe eingeschränkt - BOARD/ADMIN
+     * sehen alle (für Verwaltungszwecke), alle anderen nur ihre eigene Gruppe.
      */
     @GetMapping("/termine")
     public List<Map<String, Object>> getTermine(
             @RequestParam(required = false) String von,
-            @RequestParam(required = false) String bis) {
+            @RequestParam(required = false) String bis,
+            Principal principal) {
         LocalDate[] range = resolveRange(von, bis);
+        Optional<Member> requester = currentMember(principal);
+        boolean sichtAlles = requester.map(m -> m.getRole() == MemberRole.BOARD || m.getRole() == MemberRole.ADMIN).orElse(false);
+        UUID eigeneGruppe = requester.map(Member::getGitarrengruppe).map(Gitarrengruppe::getId).orElse(null);
+
         return calendarService.combinedCalendar(range[0], range[1]).stream()
+                .filter(e -> sichtAlles || !e.istUnterricht() || Objects.equals(e.gitarrengruppeId(), eigeneGruppe))
                 .map(calendarService::toDto)
                 .toList();
     }
@@ -118,7 +129,9 @@ public class KalenderTerminController {
 
     /**
      * ICS-Datei zum Abonnieren/Importieren in die persönliche Kalender-App. Öffentlich
-     * erreichbar (wie der GET-Kalender), da Kalender-Apps solche URLs ohne Auth-Header pollen.
+     * erreichbar (wie der GET-Kalender), da Kalender-Apps solche URLs ohne Auth-Header pollen -
+     * deshalb werden Unterrichtstermine (personenbezogen: welche Gruppe/welches Kind wann Unterricht
+     * hat) hier grundsätzlich ausgeblendet, unabhängig davon wer die URL kennt.
      */
     @GetMapping("/ics")
     public void getIcs(
@@ -126,7 +139,9 @@ public class KalenderTerminController {
             @RequestParam(required = false) String bis,
             HttpServletResponse response) throws java.io.IOException {
         LocalDate[] range = resolveRange(von, bis);
-        List<CalendarEvent> events = calendarService.combinedCalendar(range[0], range[1]);
+        List<CalendarEvent> events = calendarService.combinedCalendar(range[0], range[1]).stream()
+                .filter(e -> !e.istUnterricht())
+                .toList();
         String ics = calendarService.buildIcs(events);
 
         response.setContentType("text/calendar;charset=UTF-8");
