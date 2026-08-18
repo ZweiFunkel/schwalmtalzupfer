@@ -189,7 +189,7 @@ const lbStyles = StyleSheet.create({
 function createStyles(colors: ColorTokens) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.surfaceMuted },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.surfaceMuted },
     grid: { padding: spacing.lg },
     tile: { borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surface },
     tileImage: { width: '100%', height: '100%' },

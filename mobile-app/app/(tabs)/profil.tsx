@@ -351,7 +351,7 @@ function createStyles(colors: ColorTokens) {
   return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceMuted },
   content: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.surfaceMuted },
   header: { alignItems: 'center', marginBottom: spacing.lg },
   avatar: {
     width: 72, height: 72, borderRadius: radius.full,

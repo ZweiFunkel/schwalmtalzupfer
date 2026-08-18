@@ -96,7 +96,7 @@ function createStyles(colors: ColorTokens) {
   return StyleSheet.create({
   pdf: { flex: 1, backgroundColor: colors.surfaceMuted },
   webview: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.surfaceMuted },
   error: { color: colors.danger, textAlign: 'center', marginBottom: spacing.xs, fontSize: 16, fontFamily: font.semiBold },
   hint: { color: colors.textFaint, textAlign: 'center', marginTop: spacing.xs, fontFamily: font.regular, fontSize: 13 },
   retry: { marginTop: spacing.md, backgroundColor: colors.primary600, paddingVertical: 12, paddingHorizontal: 24, borderRadius: radius.md },

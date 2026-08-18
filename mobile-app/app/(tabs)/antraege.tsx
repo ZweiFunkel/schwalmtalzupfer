@@ -241,7 +241,7 @@ export default function AntraegeScreen() {
 function createStyles(colors: ColorTokens) {
   return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceMuted },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surfaceMuted },
   filterRow: { padding: spacing.md, gap: spacing.sm, alignItems: 'center' },
   filterChip: { paddingHorizontal: spacing.md, paddingVertical: 8, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, marginRight: spacing.sm },
   filterChipActive: { backgroundColor: colors.primary600, borderColor: colors.primary600 },

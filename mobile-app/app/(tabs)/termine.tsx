@@ -303,7 +303,7 @@ export default function TermineScreen() {
 function createStyles(colors: ColorTokens) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.surfaceMuted },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surfaceMuted },
     viewSwitcher: {
       flexDirection: 'row', margin: spacing.md, marginBottom: spacing.sm,
       backgroundColor: colors.surface, borderRadius: radius.md, padding: 3,

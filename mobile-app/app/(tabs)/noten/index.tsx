@@ -385,7 +385,7 @@ export default function NotenBrowser() {
 function createStyles(colors: ColorTokens) {
   return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surfaceMuted },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',

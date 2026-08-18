@@ -248,7 +248,7 @@ export default function VideosScreen() {
 function createStyles(colors: ColorTokens) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.surfaceMuted },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.surfaceMuted },
     catRow: { flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, paddingBottom: spacing.sm },
     catChip: { flex: 1, paddingVertical: 8, borderRadius: radius.md, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
     catChipActive: { backgroundColor: colors.primary600, borderColor: colors.primary600 },
