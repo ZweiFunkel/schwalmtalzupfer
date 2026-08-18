@@ -180,6 +180,15 @@ function ExitFullscreenIcon({ className = 'h-4 w-4' }: { className?: string }) {
   )
 }
 
+function PipIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <rect x="3" y="5" width="18" height="14" rx="1.5" />
+      <rect x="12" y="12" width="6.5" height="4.5" rx="1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 // ─── Video Card (Grid-Kachel im YouTube-Stil) ────────────────────────────────
 
 function VideoCard({ video, onOpen }: { video: VideoEntry; onOpen: (v: VideoEntry) => void }) {
@@ -304,12 +313,35 @@ function WatchArea({
   onClose: () => void
 }) {
   const wrapperRef = React.useRef<HTMLDivElement>(null)
+  const sentinelRef = React.useRef<HTMLDivElement>(null)
+  const dragStateRef = React.useRef<{ startX: number; startY: number; startLeft: number; startTop: number } | null>(null)
   const [activeVideo, setActiveVideo] = useState(initialVideo)
   const [playlistItems, setPlaylistItems] = useState<PlaylistItem[]>([])
   const [playlistLoading, setPlaylistLoading] = useState(initialVideo.type === 'PLAYLIST')
   const [currentVideoId, setCurrentVideoId] = useState(activeVideo.type === 'VIDEO' ? activeVideo.youtubeId : '')
   const [theaterMode, setTheaterMode] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [manualMiniOpen, setManualMiniOpen] = useState(false)
+  const [scrolledAway, setScrolledAway] = useState(false)
+  const [miniPos, setMiniPos] = useState<{ left: number; top: number } | null>(null)
+
+  // Automatisches Verkleinern zum Mini-Player, sobald der Player-Bereich beim
+  // Runterscrollen den Viewport verlässt - "sentinel" markiert dessen Ursprungsposition,
+  // damit die Erkennung auch funktioniert, während der Player selbst per position:fixed
+  // aus dem normalen Textfluss genommen ist.
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => setScrolledAway(!entry.isIntersecting), { threshold: 0 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  const mini = !isFullscreen && (manualMiniOpen || scrolledAway)
+
+  useEffect(() => {
+    if (!mini) setMiniPos(null)
+  }, [mini])
 
   useEffect(() => {
     const h = () => setIsFullscreen(!!document.fullscreenElement)
@@ -323,6 +355,36 @@ function WatchArea({
     } else {
       wrapperRef.current?.requestFullscreen().catch(() => {})
     }
+  }
+
+  // Mini-Player verschiebbar machen. Pointer Capture sorgt dafür, dass Move/Up-Events
+  // auch dann noch an den Griff gehen, wenn der Zeiger währenddessen über das YouTube-
+  // Iframe wandert (das Iframe würde die Events sonst selbst abfangen).
+  function onDragPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    const box = wrapperRef.current
+    if (!box) return
+    e.currentTarget.setPointerCapture(e.pointerId)
+    const rect = box.getBoundingClientRect()
+    dragStateRef.current = { startX: e.clientX, startY: e.clientY, startLeft: rect.left, startTop: rect.top }
+  }
+  function onDragPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const drag = dragStateRef.current
+    const box = wrapperRef.current
+    if (!drag || !box) return
+    const rect = box.getBoundingClientRect()
+    const nextLeft = drag.startLeft + (e.clientX - drag.startX)
+    const nextTop = drag.startTop + (e.clientY - drag.startY)
+    const clampedLeft = Math.min(Math.max(nextLeft, 8), window.innerWidth - rect.width - 8)
+    const clampedTop = Math.min(Math.max(nextTop, 8), window.innerHeight - rect.height - 8)
+    setMiniPos({ left: clampedLeft, top: clampedTop })
+  }
+  function onDragPointerUp() {
+    dragStateRef.current = null
+  }
+
+  function expandFromMini() {
+    setManualMiniOpen(false)
+    sentinelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   // Playlist-Inhalte laden, sobald ein Playlist-Eintrag aktiv wird
@@ -372,14 +434,50 @@ function WatchArea({
   const related = pool.filter(v => v.id !== activeVideo.id)
 
   return (
-    <div
-      ref={wrapperRef}
-      className={isFullscreen
-        ? 'flex h-screen w-screen flex-col justify-center bg-black'
-        : `mx-auto mb-10 transition-all duration-300 ${theaterMode ? 'max-w-none' : 'max-w-3xl'}`
-      }
-    >
-      <div className="relative w-full overflow-hidden bg-black shadow-2xl rounded-xl" style={{ aspectRatio: '16/9' }}>
+    <>
+      {/* Markiert die ursprüngliche Position des Players für IntersectionObserver + Zurückspringen aus dem Mini-Player */}
+      <div ref={sentinelRef} aria-hidden />
+      <div
+        ref={wrapperRef}
+        className={isFullscreen
+          ? 'flex h-screen w-screen flex-col justify-center bg-black'
+          : mini
+            ? 'fixed z-50 w-72 select-none rounded-xl bg-black shadow-2xl ring-1 ring-black/20 sm:w-80'
+            : `mx-auto mb-10 transition-all duration-300 ${theaterMode ? 'max-w-none' : 'max-w-3xl'}`
+        }
+        style={mini ? (miniPos ? { left: miniPos.left, top: miniPos.top } : { right: 16, bottom: 16 }) : undefined}
+      >
+        {mini && (
+          <div
+            onPointerDown={onDragPointerDown}
+            onPointerMove={onDragPointerMove}
+            onPointerUp={onDragPointerUp}
+            onPointerCancel={onDragPointerUp}
+            className="flex touch-none items-center gap-1 rounded-t-xl bg-gray-900 px-2 py-1.5 cursor-move"
+          >
+            <span className="flex-1 truncate text-xs font-medium text-white">{currentTitle}</span>
+            <button
+              onClick={expandFromMini}
+              onPointerDown={e => e.stopPropagation()}
+              title="Zur normalen Ansicht"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-300 transition hover:bg-white/10 hover:text-white"
+            >
+              <FullscreenIcon className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={onClose}
+              onPointerDown={e => e.stopPropagation()}
+              title="Schließen"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-300 transition hover:bg-white/10 hover:text-white"
+            >
+              <CloseIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+        <div
+          className={`relative w-full overflow-hidden bg-black ${mini ? 'rounded-b-xl' : 'shadow-2xl rounded-xl'}`}
+          style={{ aspectRatio: '16/9' }}
+        >
         {useIframeFallback ? (
           <iframe
             src={playlistEmbedSrc(activeVideo.youtubeId)}
@@ -415,9 +513,9 @@ function WatchArea({
             <ExitFullscreenIcon />
           </button>
         )}
-      </div>
+        </div>
 
-      {!isFullscreen && (
+      {!isFullscreen && !mini && (
         <>
           {/* Titel + Normal/Theater/Vollbild-Steuerung */}
           <div className="mt-3 flex items-start justify-between gap-3">
@@ -446,6 +544,13 @@ function WatchArea({
                 className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
               >
                 <FullscreenIcon />
+              </button>
+              <button
+                onClick={() => setManualMiniOpen(true)}
+                title="Mini-Player öffnen"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
+              >
+                <PipIcon />
               </button>
               <a
                 href={currentVideoId ? `https://www.youtube.com/watch?v=${currentVideoId}` : ytUrl(activeVideo)}
@@ -533,7 +638,8 @@ function WatchArea({
           )}
         </>
       )}
-    </div>
+      </div>
+    </>
   )
 }
 
