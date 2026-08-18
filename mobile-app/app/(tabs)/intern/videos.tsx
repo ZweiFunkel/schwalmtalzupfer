@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   View, Text, Image, Pressable, StyleSheet, ActivityIndicator, FlatList,
-  Modal, useWindowDimensions,
+  Modal, useWindowDimensions, Linking,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  fetchVideos, thumbnailFor, embedUrl, buildNav,
+  fetchVideos, thumbnailFor, buildPlayerHtml, watchUrl, buildNav,
   type VideoEntry, type NavStructure,
 } from '../../../lib/videos';
 import { font, radius, spacing, type ColorTokens } from '../../../lib/theme';
@@ -32,6 +32,12 @@ export default function VideosScreen() {
   const [loading, setLoading] = useState(true);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [playing, setPlaying] = useState<VideoEntry | null>(null);
+  const [playerError, setPlayerError] = useState<number | null>(null);
+
+  function openPlayer(v: VideoEntry) {
+    setPlayerError(null);
+    setPlaying(v);
+  }
   const [cat, setCat] = useState<'SOMMER' | 'WINTER' | 'WEITERE'>('SOMMER');
 
   useEffect(() => {
@@ -173,7 +179,7 @@ export default function VideosScreen() {
           renderItem={({ item }) => {
             const thumb = thumbnailFor(item);
             return (
-              <Pressable style={{ width: tileWidth }} onPress={() => setPlaying(item)}>
+              <Pressable style={{ width: tileWidth }} onPress={() => openPlayer(item)}>
                 <View style={[styles.thumbWrap, { width: tileWidth, height: tileWidth * 9 / 16 }]}>
                   {thumb ? (
                     <Image source={{ uri: thumb }} style={styles.thumbImage} />
@@ -207,12 +213,31 @@ export default function VideosScreen() {
                 <Ionicons name="close" size={26} color="#fff" />
               </Pressable>
             </View>
-            <WebView
-              source={{ uri: embedUrl(playing) }}
-              style={styles.webview}
-              allowsFullscreenVideo
-              mediaPlaybackRequiresUserAction={false}
-            />
+            {playerError !== null ? (
+              <View style={styles.playerError}>
+                <Ionicons name="alert-circle-outline" size={36} color={colors.textFaint} />
+                <Text style={styles.playerErrorTitle}>Dieses Video kann hier nicht abgespielt werden</Text>
+                <Text style={styles.playerErrorHint}>Fehlercode {playerError} - eventuell ist die Einbettung eingeschränkt.</Text>
+                <Pressable style={styles.playerErrorButton} onPress={() => Linking.openURL(watchUrl(playing))}>
+                  <Ionicons name="logo-youtube" size={18} color="#fff" />
+                  <Text style={styles.playerErrorButtonText}>Auf YouTube ansehen</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <WebView
+                key={playing.id}
+                source={{ html: buildPlayerHtml(playing), baseUrl: 'https://www.schwalmtalzupfer.de' }}
+                style={styles.webview}
+                allowsFullscreenVideo
+                mediaPlaybackRequiresUserAction={false}
+                onMessage={e => {
+                  try {
+                    const data = JSON.parse(e.nativeEvent.data);
+                    if (data.type === 'error') setPlayerError(data.code);
+                  } catch { /* ignorieren */ }
+                }}
+              />
+            )}
           </View>
         </Modal>
       )}
@@ -229,7 +254,7 @@ function createStyles(colors: ColorTokens) {
     catChipActive: { backgroundColor: colors.primary600, borderColor: colors.primary600 },
     catChipText: { fontFamily: font.medium, fontSize: 12, color: colors.textMuted },
     catChipTextActive: { color: '#fff', fontFamily: font.semiBold },
-    subRow: { paddingHorizontal: spacing.lg, gap: spacing.xs, paddingBottom: spacing.sm },
+    subRow: { paddingHorizontal: spacing.lg, gap: spacing.xs, paddingBottom: spacing.sm, alignItems: 'center' },
     subChip: { paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
     subChipActive: { backgroundColor: colors.text, borderColor: colors.text },
     subChipText: { fontFamily: font.medium, fontSize: 13, color: colors.textMuted },
@@ -255,5 +280,13 @@ function createStyles(colors: ColorTokens) {
     playerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.md, paddingTop: spacing.xl },
     playerTitle: { flex: 1, color: '#fff', fontFamily: font.semiBold, fontSize: 15, marginRight: spacing.sm },
     webview: { flex: 1, backgroundColor: '#000' },
+    playerError: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.sm },
+    playerErrorTitle: { color: '#fff', fontFamily: font.semiBold, fontSize: 16, textAlign: 'center', marginTop: spacing.sm },
+    playerErrorHint: { color: 'rgba(255,255,255,0.6)', fontFamily: font.regular, fontSize: 13, textAlign: 'center' },
+    playerErrorButton: {
+      flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: '#dc2626',
+      borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: spacing.lg, marginTop: spacing.md,
+    },
+    playerErrorButtonText: { color: '#fff', fontFamily: font.semiBold, fontSize: 14 },
   });
 }

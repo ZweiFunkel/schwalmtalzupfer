@@ -23,11 +23,51 @@ export function thumbnailFor(v: VideoEntry): string | null {
   return v.thumbnailUrl ?? (v.type === 'VIDEO' ? `https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg` : null);
 }
 
-export function embedUrl(v: VideoEntry): string {
-  if (v.type === 'PLAYLIST') {
-    return `https://www.youtube-nocookie.com/embed/videoseries?list=${v.youtubeId}&rel=0&modestbranding=1&autoplay=1`;
-  }
-  return `https://www.youtube-nocookie.com/embed/${v.youtubeId}?rel=0&modestbranding=1&autoplay=1&playsinline=1`;
+export function watchUrl(v: VideoEntry): string {
+  return v.type === 'PLAYLIST'
+    ? `https://www.youtube.com/playlist?list=${v.youtubeId}`
+    : `https://www.youtube.com/watch?v=${v.youtubeId}`;
+}
+
+/**
+ * HTML-Seite mit der echten YouTube-IFrame-Player-API (statt einer rohen Embed-URL) - nur so
+ * lässt sich ein onError-Event abfangen und eine eigene Fehleroberfläche statt YouTubes rohem
+ * Fehlerbildschirm anzeigen (Code 101/150 = Embedding deaktiviert, 153 = auf diese Domain
+ * beschränkt). Muss mit baseUrl der echten Domain geladen werden (siehe WebView-Aufruf), sonst
+ * schlagen auf bestimmte Domains beschränkte Embeds (Code 153) grundsätzlich fehl, weil eine
+ * lokal geladene HTML-Seite sonst keinen erkennbaren Origin hat.
+ */
+export function buildPlayerHtml(v: VideoEntry): string {
+  const playerVars = v.type === 'PLAYLIST'
+    ? `listType: 'playlist', list: '${v.youtubeId}'`
+    : `videoId: '${v.youtubeId}'`;
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <style>html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden;}
+  #player{position:absolute;top:0;left:0;width:100%;height:100%;}</style>
+</head>
+<body>
+  <div id="player"></div>
+  <script>
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+    function onYouTubeIframeAPIReady() {
+      new YT.Player('player', {
+        ${playerVars},
+        playerVars: { autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1 },
+        events: {
+          onError: function(e) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', code: e.data }));
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>`;
 }
 
 const DAYS_ORDER = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
