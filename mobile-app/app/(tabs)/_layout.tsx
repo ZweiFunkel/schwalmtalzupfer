@@ -41,6 +41,14 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="intern"
+          options={{
+            title: 'Intern',
+            headerShown: false,
+            tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
           name="termine"
           options={{
             title: 'Termine',
