@@ -61,8 +61,12 @@ function playerHtmlTemplate(topLevel: string, listVars: string, width: number, h
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <style>html,body{margin:0;padding:0;background:#000;height:100%;width:100%;overflow:hidden;}
-  #player,#player iframe{position:absolute;top:0;left:0;width:100%!important;height:100%!important;}</style>
+  <style>html,body{margin:0;padding:0;background:#000;overflow:hidden;}
+  /* KEIN width/height:100% hier - das würde die von React Native vorgegebenen Pixelmaße
+     unten sofort wieder überschreiben und exakt das Zuschneide-Problem zurückbringen, das
+     diese festen Maße eigentlich beheben sollen. Das Video bekommt seine Größe ausschließlich
+     über die width/height-Parameter, die new YT.Player() unten übergeben werden. */
+  #player{position:absolute;top:0;left:0;}</style>
 </head>
 <body>
   <div id="player"></div>

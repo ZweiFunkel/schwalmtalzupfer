@@ -269,24 +269,15 @@ export default function VideosScreen() {
               </Pressable>
             </View>
 
-            {playerError !== null ? (
-              <View style={styles.playerError}>
-                <Ionicons name="alert-circle-outline" size={36} color={colors.textFaint} />
-                <Text style={styles.playerErrorTitle}>Dieses Video kann hier nicht abgespielt werden</Text>
-                <Text style={styles.playerErrorHint}>Fehlercode {playerError} - eventuell ist die Einbettung eingeschränkt.</Text>
-                <Pressable style={styles.playerErrorButton} onPress={() => Linking.openURL(watchUrl(playing))}>
-                  <Ionicons name="logo-youtube" size={18} color="#fff" />
-                  <Text style={styles.playerErrorButtonText}>Auf YouTube ansehen</Text>
-                </Pressable>
-              </View>
-            ) : playing.type === 'PLAYLIST' && playlistLoading ? (
+            {playing.type === 'PLAYLIST' && playlistLoading ? (
               <View style={styles.playerError}>
                 <ActivityIndicator color="#fff" />
                 <Text style={styles.playerErrorHint}>Lade Playlist…</Text>
               </View>
-            ) : playing.type === 'PLAYLIST' && playlistItems.length === 0 ? (
+            ) : playing.type === 'PLAYLIST' && playlistItems.length === 0 && playerError === null ? (
               // Fallback: keine Items von der Playlist-API (z.B. fehlender YouTube-API-Key) ->
-              // rohes Playlist-Embed, ohne eigene Item-Navigation.
+              // rohes Playlist-Embed, ohne eigene Item-Navigation (daher hier auch keine Liste
+              // möglich, falls dieses Embed selbst fehlschlägt).
               <WebView
                 key={playing.id}
                 source={{ html: buildPlaylistEmbedHtml(playing.youtubeId, videoWidthPx, videoHeightPx), baseUrl: 'https://www.schwalmtalzupfer.de' }}
@@ -297,14 +288,39 @@ export default function VideosScreen() {
               />
             ) : (
               <>
-                <WebView
-                  key={currentVideoId}
-                  source={{ html: buildVideoPlayerHtml(currentVideoId, videoWidthPx, videoHeightPx), baseUrl: 'https://www.schwalmtalzupfer.de' }}
-                  style={isSplitView ? styles.webviewSplit : styles.webview}
-                  allowsFullscreenVideo
-                  mediaPlaybackRequiresUserAction={false}
-                  onMessage={e => handlePlayerMessage(e.nativeEvent.data)}
-                />
+                {playerError !== null ? (
+                  // Nur das fehlgeschlagene Video ersetzen, NICHT die ganze Ansicht - bei einer
+                  // Playlist bleibt die Liste sichtbar, damit man einfach ein anderes Video
+                  // daraus wählen kann, statt komplett auszusteigen.
+                  <View style={[styles.playerError, isSplitView && { height: videoHeightPx, flex: undefined }]}>
+                    <Ionicons name="alert-circle-outline" size={32} color={colors.textFaint} />
+                    <Text style={styles.playerErrorTitle}>Dieses Video kann hier nicht abgespielt werden</Text>
+                    <Text style={styles.playerErrorHint}>Fehlercode {playerError} - eventuell ist die Einbettung eingeschränkt.</Text>
+                    <Pressable
+                      style={styles.playerErrorButton}
+                      onPress={() => Linking.openURL(
+                        playing.type === 'PLAYLIST' ? `https://www.youtube.com/watch?v=${currentVideoId}` : watchUrl(playing)
+                      )}
+                    >
+                      <Ionicons name="logo-youtube" size={18} color="#fff" />
+                      <Text style={styles.playerErrorButtonText}>Auf YouTube ansehen</Text>
+                    </Pressable>
+                    {isSplitView && playlistItems.findIndex(i => i.videoId === currentVideoId) < playlistItems.length - 1 && (
+                      <Pressable onPress={playNextInPlaylist} hitSlop={8}>
+                        <Text style={styles.playerErrorSkip}>Nächstes Video überspringen →</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                ) : (
+                  <WebView
+                    key={currentVideoId}
+                    source={{ html: buildVideoPlayerHtml(currentVideoId, videoWidthPx, videoHeightPx), baseUrl: 'https://www.schwalmtalzupfer.de' }}
+                    style={isSplitView ? styles.webviewSplit : styles.webview}
+                    allowsFullscreenVideo
+                    mediaPlaybackRequiresUserAction={false}
+                    onMessage={e => handlePlayerMessage(e.nativeEvent.data)}
+                  />
+                )}
                 {isSplitView && (
                   <FlatList
                     style={styles.playlistList}
@@ -382,5 +398,6 @@ function createStyles(colors: ColorTokens) {
       borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: spacing.lg, marginTop: spacing.md,
     },
     playerErrorButtonText: { color: '#fff', fontFamily: font.semiBold, fontSize: 14 },
+    playerErrorSkip: { color: 'rgba(255,255,255,0.6)', fontFamily: font.medium, fontSize: 13, marginTop: spacing.sm },
   });
 }
