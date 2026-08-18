@@ -153,40 +153,53 @@ export default function YouTubePlayer({
 
   if (!videoId) return null
 
-  if (error) {
-    return (
-      <div className={`relative flex flex-col items-center justify-center gap-4 overflow-hidden bg-gray-100 dark:bg-slate-900 px-6 py-10 text-center ${className}`}>
-        {thumbnailUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumbnailUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-20 blur-sm" />
-        )}
-        <div className="relative flex max-w-md flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/10">
-            <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+  // Der Container-Div unten wird von YouTubes Player-API intern gegen ein <iframe>
+  // ausgetauscht, sobald new YT.Player(...) läuft - React weiß davon nichts. Würde React
+  // diesen Div bei einem Fehler aus dem Baum entfernen (z.B. durch ein bedingtes Return),
+  // crasht die Reconciliation mit "removeChild: The node to be removed is not a child of
+  // this node", weil der von React erwartete Knoten längst durch das <iframe> ersetzt ist.
+  // Deshalb bleibt der Container IMMER gemountet; die Fehleranzeige legt sich nur optisch
+  // (via CSS) als zusätzliches Overlay darüber, React entfernt dabei nie den YT-Knoten selbst.
+  return (
+    <div className={`relative ${className}`}>
+      <div
+        ref={containerRef}
+        id={elementIdRef.current}
+        className="absolute inset-0 h-full w-full"
+        style={error ? { visibility: 'hidden' } : undefined}
+      />
+      {error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden bg-gray-100 dark:bg-slate-900 px-6 py-10 text-center">
+          {thumbnailUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumbnailUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-20 blur-sm" />
+          )}
+          <div className="relative flex max-w-md flex-col items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/10">
+              <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            {title && <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{title}</p>}
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {isEmbedDisabledCode(error.code)
+                ? 'Video nicht verfügbar – der Rechteinhaber hat die Einbettung dieses Videos außerhalb von YouTube gesperrt.'
+                : error.message}
+            </p>
+            <a
+              href={`https://www.youtube.com/watch?v=${videoId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-red-500"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z" />
+              </svg>
+              Auf YouTube ansehen
+            </a>
           </div>
-          {title && <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{title}</p>}
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {isEmbedDisabledCode(error.code)
-              ? 'Video nicht verfügbar – der Rechteinhaber hat die Einbettung dieses Videos außerhalb von YouTube gesperrt.'
-              : error.message}
-          </p>
-          <a
-            href={`https://www.youtube.com/watch?v=${videoId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-red-500"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z" />
-            </svg>
-            Auf YouTube ansehen
-          </a>
         </div>
-      </div>
-    )
-  }
-
-  return <div ref={containerRef} id={elementIdRef.current} className={className} />
+      )}
+    </div>
+  )
 }
