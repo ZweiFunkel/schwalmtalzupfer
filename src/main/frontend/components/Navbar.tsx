@@ -69,6 +69,7 @@ const DEFAULT_CONFIG: NavConfig = {
   fixedLinks: [
     { label: 'Galerie', href: '/galerie', visibility: 'public' },
     { label: 'Intern', href: '/intern', visibility: 'member', items: [
+      { label: 'Kalender',    href: '/intern/kalender' },
       { label: 'Videos',      href: '/intern/videos' },
       { label: 'Merch',       href: '/intern/merch' },
       { label: 'Notenarchiv', href: '/noten' },

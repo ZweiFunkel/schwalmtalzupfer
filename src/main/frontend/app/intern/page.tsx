@@ -49,7 +49,28 @@ export default function InternPage() {
       </div>
 
       {/* Schnelllinks */}
-      <div className="grid gap-5 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <Link
+          href="/intern/kalender"
+          className="group flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 p-6 hover:border-green-500/40 hover:bg-gray-50 dark:hover:bg-slate-800/80 transition"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30 text-2xl group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition">
+            🗓️
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 dark:text-white">Kalender</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+              Alle Termine & Unterrichtsstunden in Monats-, Wochen- oder Tagesansicht.
+            </p>
+          </div>
+          <div className="mt-auto flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-500 group-hover:text-green-500 dark:group-hover:text-green-400 transition">
+            <span>Zum Kalender</span>
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+
         <Link
           href="/intern/videos"
           className="group flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 p-6 hover:border-green-500/40 hover:bg-gray-50 dark:hover:bg-slate-800/80 transition"
