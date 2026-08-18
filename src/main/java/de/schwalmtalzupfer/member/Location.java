@@ -23,5 +23,9 @@ public class Location {
 
     @Column
     private String adresse;
+
+    /** Freitext-Hinweis zu Parkmöglichkeiten (nur von Vorstand/Admin gepflegt), z.B. "Parkplatz hinter der Kirche". */
+    @Column(name = "parkplatz_info")
+    private String parkplatzInfo;
 }
 

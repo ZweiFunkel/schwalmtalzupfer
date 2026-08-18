@@ -2,6 +2,7 @@ package de.schwalmtalzupfer.kalender;
 
 import de.schwalmtalzupfer.member.Gitarrengruppe;
 import de.schwalmtalzupfer.member.GitarrengruppeRepository;
+import de.schwalmtalzupfer.member.GruppenHistorieService;
 import de.schwalmtalzupfer.member.Member;
 import de.schwalmtalzupfer.member.MemberRepository;
 import de.schwalmtalzupfer.member.MemberRole;
@@ -36,6 +37,7 @@ public class KalenderTerminController {
     private final GitarrengruppeRepository gitarrengruppeRepository;
     private final MemberRepository memberRepository;
     private final KalenderCalendarService calendarService;
+    private final GruppenHistorieService gruppenHistorieService;
 
     /**
      * Kombinierter Kalender für [von, bis]: manuelle Termine + automatisch expandierte
@@ -51,7 +53,10 @@ public class KalenderTerminController {
         LocalDate[] range = resolveRange(von, bis);
         Optional<Member> requester = currentMember(principal);
         boolean sichtAlles = requester.map(m -> m.getRole() == MemberRole.BOARD || m.getRole() == MemberRole.ADMIN).orElse(false);
-        UUID eigeneGruppe = requester.map(Member::getGitarrengruppe).map(Gitarrengruppe::getId).orElse(null);
+        UUID eigeneGruppe = requester.map(gruppenHistorieService::current)
+                .map(GruppenHistorieService.EffectiveAssignment::gruppe)
+                .map(Gitarrengruppe::getId)
+                .orElse(null);
 
         return calendarService.combinedCalendar(range[0], range[1]).stream()
                 .filter(e -> sichtAlles || !e.istUnterricht() || Objects.equals(e.gitarrengruppeId(), eigeneGruppe))

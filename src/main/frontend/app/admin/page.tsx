@@ -3304,12 +3304,13 @@ export default function AdminPage() {
 
   // Gruppen & Locations
   interface Gruppe { id: string; wochentag: string; vonUhrzeit: string; bisUhrzeit: string; location?: { id: string; name: string; adresse: string }; priceGroup?: { id: string; name: string } }
-  interface Loc { id: string; name: string; adresse: string }
+  interface Loc { id: string; name: string; adresse: string; parkplatzInfo?: string }
   const [gruppen, setGruppen] = useState<Gruppe[]>([])
   const [locations, setLocations] = useState<Loc[]>([])
   const [gruppenMsg, setGruppenMsg] = useState('')
   const [newGruppe, setNewGruppe] = useState({ locationId: '', vonUhrzeit: '', bisUhrzeit: '', wochentag: '', priceGroupId: '' })
-  const [newLocation, setNewLocation] = useState({ name: '', adresse: '' })
+  const [newLocation, setNewLocation] = useState({ name: '', adresse: '', parkplatzInfo: '' })
+  const [parkplatzDraft, setParkplatzDraft] = useState<Record<string, string>>({})
 
   // Preisgruppen
   interface PriceRate { id: string; amountCents: number; validFrom: string; createdAt: string }
@@ -3485,12 +3486,21 @@ export default function AdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newLocation),
     })
-    if (res.ok) { setNewLocation({ name: '', adresse: '' }); loadGruppen() }
+    if (res.ok) { setNewLocation({ name: '', adresse: '', parkplatzInfo: '' }); loadGruppen() }
   }
 
   const deleteLocation = async (id: string) => {
     if (!confirm('Location wirklich löschen?')) return
     await fetch(`${API_BASE}/api/locations/${id}`, { method: 'DELETE', credentials: 'include' })
+    loadGruppen()
+  }
+
+  const updateLocationParkplatz = async (id: string, parkplatzInfo: string) => {
+    await fetch(`${API_BASE}/api/locations/${id}`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parkplatzInfo }),
+    })
     loadGruppen()
   }
 
@@ -3816,6 +3826,7 @@ export default function AdminPage() {
                       <tr>
                         <th className="px-4 py-2.5 text-left font-medium">Name</th>
                         <th className="px-4 py-2.5 text-left font-medium">Adresse</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Parkplatz-Hinweis</th>
                         <th className="px-4 py-2.5 w-16"></th>
                       </tr>
                     </thead>
@@ -3824,6 +3835,15 @@ export default function AdminPage() {
                         <tr key={l.id} className="bg-slate-900 hover:bg-slate-800/60 transition">
                           <td className="px-4 py-2.5 text-white font-medium">{l.name}</td>
                           <td className="px-4 py-2.5 text-gray-300">{l.adresse || <span className="text-gray-600 italic">–</span>}</td>
+                          <td className="px-4 py-2.5">
+                            <input
+                              value={parkplatzDraft[l.id] ?? l.parkplatzInfo ?? ''}
+                              onChange={e => setParkplatzDraft(p => ({ ...p, [l.id]: e.target.value }))}
+                              onBlur={e => updateLocationParkplatz(l.id, e.target.value)}
+                              placeholder="z.B. Parkplatz hinter der Kirche"
+                              className="w-full rounded-lg border border-white/10 bg-slate-800 px-2.5 py-1.5 text-xs text-white focus:border-green-500 focus:outline-none"
+                            />
+                          </td>
                           <td className="px-4 py-2.5">
                             <button onClick={() => deleteLocation(l.id)}
                               className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">
@@ -3854,6 +3874,12 @@ export default function AdminPage() {
                     <label className="mb-1 block text-xs text-gray-400">Adresse (optional)</label>
                     <input value={newLocation.adresse} onChange={e => setNewLocation(p => ({ ...p, adresse: e.target.value }))}
                       placeholder="Musterstr. 1, 12345 Ort"
+                      className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">Parkplatz-Hinweis (optional)</label>
+                    <input value={newLocation.parkplatzInfo} onChange={e => setNewLocation(p => ({ ...p, parkplatzInfo: e.target.value }))}
+                      placeholder="z.B. Parkplatz hinter der Kirche"
                       className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
                   </div>
                   <button type="submit"

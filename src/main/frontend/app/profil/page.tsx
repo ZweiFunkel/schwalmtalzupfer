@@ -15,6 +15,11 @@ export default function ProfilPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  const [aktuellesPasswort, setAktuellesPasswort] = useState('')
+  const [neuesPasswort, setNeuesPasswort] = useState('')
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwMsg, setPwMsg] = useState<{ text: string; error: boolean } | null>(null)
+
   useEffect(() => { document.title = 'Profil – Schwalmtalzupfer' }, [])
 
   useEffect(() => {
@@ -44,6 +49,28 @@ export default function ProfilPage() {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPwSaving(true)
+    setPwMsg(null)
+    const res = await fetch(`${API_BASE}/api/member/me/password`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ aktuellesPasswort, neuesPasswort }),
+    })
+    const data = await res.json().catch(() => ({}))
+    setPwSaving(false)
+    if (res.ok) {
+      setAktuellesPasswort('')
+      setNeuesPasswort('')
+      setPwMsg({ text: 'Passwort geändert.', error: false })
+    } else {
+      setPwMsg({ text: data.error ?? 'Passwort konnte nicht geändert werden.', error: true })
+    }
+    setTimeout(() => setPwMsg(null), 4000)
+  }
+
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
   if (!user) return null
 
@@ -56,6 +83,9 @@ export default function ProfilPage() {
 
   const displayName = [user.vorname, user.nachname].filter(Boolean).join(' ') || user.username || user.email
   const gruppe = (user as any).gruppe
+  const monatsbeitragCents = (user as any).monatsbeitragCents as number | null | undefined
+  const naechsteAenderung = (user as any).naechsteAenderung as
+    { gueltigAb: string; gruppeLabel: string; monatsbeitragCents: number | null } | null | undefined
 
   return (
     <div className="mx-auto max-w-xl px-6 py-12">
@@ -81,6 +111,16 @@ export default function ProfilPage() {
       {gruppe ? (
         <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6">
           <h2 className="mb-3 text-lg font-semibold text-white">Meine Gitarrengruppe</h2>
+
+          {naechsteAenderung && (
+            <div className="mb-4 rounded-lg border border-yellow-500/20 bg-yellow-900/10 px-4 py-2.5 text-sm text-yellow-300">
+              Ab <strong>{naechsteAenderung.gueltigAb}</strong> ändert sich das: {naechsteAenderung.gruppeLabel}
+              {naechsteAenderung.monatsbeitragCents != null && (
+                <> · {(naechsteAenderung.monatsbeitragCents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}/Monat</>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <p className="text-gray-400">Wochentag</p>
@@ -90,6 +130,14 @@ export default function ProfilPage() {
               <p className="text-gray-400">Uhrzeit</p>
               <p className="text-white font-medium">{gruppe.vonUhrzeit} – {gruppe.bisUhrzeit} Uhr</p>
             </div>
+            {monatsbeitragCents != null && (
+              <div>
+                <p className="text-gray-400">Monatsbeitrag</p>
+                <p className="text-white font-medium">
+                  {(monatsbeitragCents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                </p>
+              </div>
+            )}
             {gruppe.location && (
               <>
                 <div>
@@ -122,6 +170,9 @@ export default function ProfilPage() {
                     })()
                   ) : (
                     <p className="text-white font-medium">–</p>
+                  )}
+                  {gruppe.location.parkplatzInfo && (
+                    <p className="mt-1 text-xs text-gray-500">🅿️ {gruppe.location.parkplatzInfo}</p>
                   )}
                 </div>
               </>
@@ -160,6 +211,30 @@ export default function ProfilPage() {
         <button type="submit" disabled={saving}
           className="rounded-lg bg-green-600 py-2.5 font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
           {saved ? '✓ Gespeichert' : saving ? 'Speichern…' : 'Speichern'}
+        </button>
+      </form>
+
+      {/* Passwort ändern */}
+      <form onSubmit={handleChangePassword} className="mt-6 rounded-xl border border-white/10 bg-slate-900 p-6 flex flex-col gap-4">
+        <h2 className="text-lg font-semibold text-white mb-2">Passwort ändern</h2>
+        {pwMsg && (
+          <div className={`rounded-lg px-4 py-2 text-sm ${pwMsg.error ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
+            {pwMsg.text}
+          </div>
+        )}
+        <div>
+          <label className="mb-1 block text-sm text-gray-400">Aktuelles Passwort</label>
+          <input type="password" value={aktuellesPasswort} onChange={e => setAktuellesPasswort(e.target.value)} required
+            className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-gray-400">Neues Passwort (mind. 8 Zeichen)</label>
+          <input type="password" value={neuesPasswort} onChange={e => setNeuesPasswort(e.target.value)} required minLength={8}
+            className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
+        </div>
+        <button type="submit" disabled={pwSaving}
+          className="rounded-lg bg-green-600 py-2.5 font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
+          {pwSaving ? 'Ändern…' : 'Passwort ändern'}
         </button>
       </form>
     </div>

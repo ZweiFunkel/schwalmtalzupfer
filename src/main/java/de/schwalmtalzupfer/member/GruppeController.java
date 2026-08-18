@@ -69,7 +69,19 @@ public class GruppeController {
     @PostMapping("/locations")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createLocation(@RequestBody CreateLocationRequest req) {
-        Location l = Location.builder().name(req.name()).adresse(req.adresse()).build();
+        Location l = Location.builder().name(req.name()).adresse(req.adresse()).parkplatzInfo(req.parkplatzInfo()).build();
+        return ResponseEntity.ok(locationToDto(locationRepository.save(l)));
+    }
+
+    /** Adresse/Parkplatz-Hinweis einer Location ändern (nur BOARD/ADMIN). */
+    @PatchMapping("/locations/{id}")
+    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    public ResponseEntity<?> updateLocation(@PathVariable UUID id, @RequestBody UpdateLocationRequest req) {
+        Location l = locationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Location nicht gefunden"));
+        if (req.name() != null) l.setName(req.name());
+        if (req.adresse() != null) l.setAdresse(req.adresse());
+        if (req.parkplatzInfo() != null) l.setParkplatzInfo(req.parkplatzInfo());
         return ResponseEntity.ok(locationToDto(locationRepository.save(l)));
     }
 
@@ -96,15 +108,17 @@ public class GruppeController {
     }
 
     private Map<String, Object> locationToDto(Location l) {
-        return Map.of(
-                "id", l.getId().toString(),
-                "name", l.getName(),
-                "adresse", l.getAdresse() != null ? l.getAdresse() : ""
-        );
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", l.getId().toString());
+        map.put("name", l.getName());
+        map.put("adresse", l.getAdresse() != null ? l.getAdresse() : "");
+        map.put("parkplatzInfo", l.getParkplatzInfo() != null ? l.getParkplatzInfo() : "");
+        return map;
     }
 
     public record CreateGruppeRequest(String locationId, String vonUhrzeit, String bisUhrzeit, String wochentag, String priceGroupId) {}
-    public record CreateLocationRequest(String name, String adresse) {}
+    public record CreateLocationRequest(String name, String adresse, String parkplatzInfo) {}
+    public record UpdateLocationRequest(String name, String adresse, String parkplatzInfo) {}
     public record UpdatePreisgruppeRequest(String priceGroupId) {}
 }
 

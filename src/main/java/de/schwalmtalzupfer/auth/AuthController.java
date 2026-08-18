@@ -1,5 +1,6 @@
 package de.schwalmtalzupfer.auth;
 
+import de.schwalmtalzupfer.member.GruppenHistorieService;
 import de.schwalmtalzupfer.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class AuthController {
 
     private final MemberRepository memberRepository;
+    private final GruppenHistorieService gruppenHistorieService;
 
     /**
      * Gibt den aktuell eingeloggten Nutzer zurück.
@@ -37,8 +39,10 @@ public class AuthController {
                     dto.put("nachname", m.getNachname() != null ? m.getNachname() : "");
                     dto.put("role", "ROLE_" + m.getRole().name());
                     dto.put("istAktiv", m.isIstAktiv());
-                    if (m.getGitarrengruppe() != null) {
-                        var g = m.getGitarrengruppe();
+
+                    GruppenHistorieService.EffectiveAssignment aktuell = gruppenHistorieService.current(m);
+                    if (aktuell.gruppe() != null) {
+                        var g = aktuell.gruppe();
                         Map<String, Object> gruppeDto = new LinkedHashMap<>();
                         gruppeDto.put("id", g.getId());
                         gruppeDto.put("wochentag", g.getWochentag());
@@ -48,10 +52,22 @@ public class AuthController {
                             Map<String, Object> locDto = new LinkedHashMap<>();
                             locDto.put("name", g.getLocation().getName());
                             locDto.put("adresse", g.getLocation().getAdresse());
+                            locDto.put("parkplatzInfo", g.getLocation().getParkplatzInfo());
                             gruppeDto.put("location", locDto);
                         }
                         dto.put("gruppe", gruppeDto);
                     }
+                    dto.put("monatsbeitragCents", aktuell.monatsbeitragCents());
+                    dto.put("individuellerPreis", aktuell.individuellerPreis());
+                    gruppenHistorieService.next(m).ifPresent(next -> {
+                        Map<String, Object> naechste = new LinkedHashMap<>();
+                        naechste.put("gueltigAb", next.getGueltigAb().toString());
+                        naechste.put("gruppeLabel", next.getGitarrengruppe() != null
+                                ? next.getGitarrengruppe().getWochentag() + " " + next.getGitarrengruppe().getVonUhrzeit() + "–" + next.getGitarrengruppe().getBisUhrzeit()
+                                : "Keine Gruppe");
+                        naechste.put("monatsbeitragCents", next.getMonatsbeitragCents());
+                        dto.put("naechsteAenderung", naechste);
+                    });
                     return ResponseEntity.ok(dto);
                 })
                 .orElse(ResponseEntity.status(401).body(Map.of("error", "Nicht gefunden")));

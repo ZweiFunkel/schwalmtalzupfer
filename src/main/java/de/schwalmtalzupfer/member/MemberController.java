@@ -5,9 +5,11 @@ import de.schwalmtalzupfer.payment.MembershipContractRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDate;
 import java.util.*;
 
 @RestController
@@ -19,6 +21,8 @@ public class MemberController {
     private final GitarrengruppeRepository gitarrengruppeRepository;
     private final UserHistoryRepository userHistoryRepository;
     private final MembershipContractRepository membershipContractRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final GruppenHistorieService gruppenHistorieService;
 
     /** Eigenes Profil lesen */
     @GetMapping("/me")
@@ -40,6 +44,27 @@ public class MemberController {
                     return ResponseEntity.ok(toDto(memberRepository.save(m)));
                 }).orElse(ResponseEntity.notFound().build());
     }
+
+    /** Eigenes Passwort ändern - verlangt das aktuelle Passwort zur Bestätigung. */
+    @PatchMapping("/me/password")
+    public ResponseEntity<?> changePassword(Principal principal, @RequestBody ChangePasswordRequest req) {
+        Optional<Member> memberOpt = memberRepository.findByEmail(principal.getName())
+                .or(() -> memberRepository.findByUsername(principal.getName()));
+        if (memberOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Member m = memberOpt.get();
+
+        if (req.neuesPasswort() == null || req.neuesPasswort().length() < 8) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Neues Passwort muss mindestens 8 Zeichen lang sein."));
+        }
+        if (req.aktuellesPasswort() == null || !passwordEncoder.matches(req.aktuellesPasswort(), m.getPasswordHash())) {
+            return ResponseEntity.status(403).body(Map.of("error", "Aktuelles Passwort ist falsch."));
+        }
+        m.setPasswordHash(passwordEncoder.encode(req.neuesPasswort()));
+        memberRepository.save(m);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    public record ChangePasswordRequest(String aktuellesPasswort, String neuesPasswort) {}
 
     /** Alle Mitglieder suchen (nur BOARD/ADMIN) */
     @GetMapping
@@ -85,30 +110,62 @@ public class MemberController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    /** Gruppe eines Mitglieds ändern (nur BOARD/ADMIN) */
+    /**
+     * Gruppe (+ optional individueller Preis) eines Mitglieds ändern (nur BOARD/ADMIN).
+     * Ohne gueltigAb wird die Änderung sofort (heute) wirksam - wie bisher. Mit einem Datum in
+     * der Zukunft bleibt die bisherige Gruppe/der bisherige Preis bis dahin sichtbar und die
+     * neuen Werte greifen automatisch ab dem Stichtag (siehe {@link GruppenHistorieService}).
+     */
     @PatchMapping("/{id}/gruppe")
     @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
-    public ResponseEntity<?> updateGruppe(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> updateGruppe(@PathVariable UUID id, @RequestBody UpdateGruppeRequest req, Principal principal) {
         return memberRepository.findById(id).map(m -> {
-            String gruppeIdStr = body.get("gruppeId");
             String alterWert = m.getGitarrengruppe() != null ? m.getGitarrengruppe().getId().toString() : "keine";
-            if (gruppeIdStr == null || gruppeIdStr.isBlank()) {
-                m.setGitarrengruppe(null);
-            } else {
-                UUID gruppeId = UUID.fromString(gruppeIdStr);
-                Gitarrengruppe gruppe = gitarrengruppeRepository.findById(gruppeId)
+
+            Gitarrengruppe gruppe = null;
+            if (req.gruppeId() != null && !req.gruppeId().isBlank()) {
+                gruppe = gitarrengruppeRepository.findById(UUID.fromString(req.gruppeId()))
                         .orElseThrow(() -> new IllegalArgumentException("Gruppe nicht gefunden"));
-                m.setGitarrengruppe(gruppe);
             }
-            memberRepository.save(m);
-            String neuerWert = m.getGitarrengruppe() != null ? m.getGitarrengruppe().getId().toString() : "keine";
+            LocalDate gueltigAb = req.gueltigAb() != null && !req.gueltigAb().isBlank()
+                    ? LocalDate.parse(req.gueltigAb())
+                    : LocalDate.now();
+            Member erstelltVon = currentMember(principal).orElse(null);
+
+            gruppenHistorieService.addEntry(m, gruppe, req.monatsbeitragCents(), gueltigAb, req.notiz(), erstelltVon);
+
+            String neuerWert = gruppe != null ? gruppe.getId().toString() : "keine";
             userHistoryRepository.save(UserHistory.builder()
                     .userId(id)
                     .aenderungsTyp("GRUPPENWECHSEL")
                     .alterWert(alterWert)
-                    .neuerWert(neuerWert)
+                    .neuerWert(neuerWert + (gueltigAb.isAfter(LocalDate.now()) ? " (ab " + gueltigAb + ")" : ""))
                     .build());
-            return ResponseEntity.ok(toDto(m));
+            return ResponseEntity.ok(toDto(memberRepository.findById(id).orElse(m)));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    public record UpdateGruppeRequest(String gruppeId, Integer monatsbeitragCents, String gueltigAb, String notiz) {}
+
+    /** Verlauf der Gruppen-/Preis-Zuordnung eines Mitglieds (nur BOARD/ADMIN) - inkl. bereits geplanter, zukünftiger Wechsel. */
+    @GetMapping("/{id}/gruppen-historie")
+    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    public ResponseEntity<?> getGruppenHistorie(@PathVariable UUID id) {
+        return memberRepository.findById(id).map(m -> {
+            List<Map<String, Object>> historie = gruppenHistorieService.history(m).stream().map(h -> {
+                Map<String, Object> map = new LinkedHashMap<>();
+                map.put("id", h.getId().toString());
+                map.put("gueltigAb", h.getGueltigAb().toString());
+                map.put("gruppeId", h.getGitarrengruppe() != null ? h.getGitarrengruppe().getId().toString() : null);
+                map.put("gruppeLabel", h.getGitarrengruppe() != null
+                        ? h.getGitarrengruppe().getWochentag() + " " + h.getGitarrengruppe().getVonUhrzeit() + "–" + h.getGitarrengruppe().getBisUhrzeit()
+                        : "Keine Gruppe");
+                map.put("monatsbeitragCents", h.getMonatsbeitragCents());
+                map.put("notiz", h.getNotiz());
+                map.put("zukuenftig", h.getGueltigAb().isAfter(LocalDate.now()));
+                return map;
+            }).toList();
+            return ResponseEntity.ok(historie);
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -193,6 +250,12 @@ public class MemberController {
 
     public record CreateMemberRequest(String email, String vorname, String nachname) {}
 
+    private Optional<Member> currentMember(Principal principal) {
+        if (principal == null) return Optional.empty();
+        return memberRepository.findByEmail(principal.getName())
+                .or(() -> memberRepository.findByUsername(principal.getName()));
+    }
+
     Map<String, Object> toDto(Member m) {
         Map<String, Object> dto = new LinkedHashMap<>();
         dto.put("id", m.getId().toString());
@@ -204,8 +267,10 @@ public class MemberController {
         dto.put("istAktiv", m.isIstAktiv());
         dto.put("eintrittsdatum", m.getEintrittsdatum() != null ? m.getEintrittsdatum().toString() : null);
         dto.put("austrittsdatum", m.getAustrittsdatum() != null ? m.getAustrittsdatum().toString() : null);
-        if (m.getGitarrengruppe() != null) {
-            Gitarrengruppe g = m.getGitarrengruppe();
+
+        GruppenHistorieService.EffectiveAssignment aktuell = gruppenHistorieService.current(m);
+        if (aktuell.gruppe() != null) {
+            Gitarrengruppe g = aktuell.gruppe();
             Map<String, Object> gruppeMap = new LinkedHashMap<>();
             gruppeMap.put("id", g.getId().toString());
             gruppeMap.put("wochentag", g.getWochentag());
@@ -216,12 +281,27 @@ public class MemberController {
                 locMap.put("id", g.getLocation().getId().toString());
                 locMap.put("name", g.getLocation().getName());
                 locMap.put("adresse", g.getLocation().getAdresse() != null ? g.getLocation().getAdresse() : "");
+                locMap.put("parkplatzInfo", g.getLocation().getParkplatzInfo() != null ? g.getLocation().getParkplatzInfo() : "");
                 gruppeMap.put("location", locMap);
             }
             dto.put("gruppe", gruppeMap);
         } else {
             dto.put("gruppe", null);
         }
+        dto.put("monatsbeitragCents", aktuell.monatsbeitragCents());
+        dto.put("individuellerPreis", aktuell.individuellerPreis());
+
+        gruppenHistorieService.next(m).ifPresent(next -> {
+            Map<String, Object> naechste = new LinkedHashMap<>();
+            naechste.put("gueltigAb", next.getGueltigAb().toString());
+            naechste.put("gruppeId", next.getGitarrengruppe() != null ? next.getGitarrengruppe().getId().toString() : null);
+            naechste.put("gruppeLabel", next.getGitarrengruppe() != null
+                    ? next.getGitarrengruppe().getWochentag() + " " + next.getGitarrengruppe().getVonUhrzeit() + "–" + next.getGitarrengruppe().getBisUhrzeit()
+                    : "Keine Gruppe");
+            naechste.put("monatsbeitragCents", next.getMonatsbeitragCents());
+            dto.put("naechsteAenderung", naechste);
+        });
+
         return dto;
     }
 }
