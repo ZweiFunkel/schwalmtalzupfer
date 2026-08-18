@@ -38,9 +38,11 @@ export function watchUrl(v: VideoEntry): string {
  * lokal geladene HTML-Seite sonst keinen erkennbaren Origin hat.
  */
 export function buildPlayerHtml(v: VideoEntry): string {
-  const playerVars = v.type === 'PLAYLIST'
-    ? `listType: 'playlist', list: '${v.youtubeId}'`
-    : `videoId: '${v.youtubeId}'`;
+  // videoId gehört auf die oberste Ebene, listType/list dagegen MÜSSEN in playerVars stecken -
+  // beides auf derselben Ebene zu mischen ergibt für die IFrame-API einen ungültigen Aufruf
+  // (Fehlercode 2 "invalid parameter"), keinen echten Einbettungsfehler.
+  const topLevel = v.type === 'PLAYLIST' ? '' : `videoId: '${v.youtubeId}',`;
+  const listVars = v.type === 'PLAYLIST' ? `listType: 'playlist', list: '${v.youtubeId}',` : '';
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -56,8 +58,8 @@ export function buildPlayerHtml(v: VideoEntry): string {
     document.body.appendChild(tag);
     function onYouTubeIframeAPIReady() {
       new YT.Player('player', {
-        ${playerVars},
-        playerVars: { autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1 },
+        ${topLevel}
+        playerVars: { ${listVars} autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1 },
         events: {
           onError: function(e) {
             window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', code: e.data }));
