@@ -2,7 +2,8 @@
 import { getApiBase } from '@/lib/api'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth'
 import Lightbox from '@/components/Lightbox'
 
 const API_BASE = getApiBase()
@@ -123,19 +124,20 @@ function FolderCard({ folder }: { folder: BrowseFolder }) {
 }
 
 // ─── Photo Grid ──────────────────────────────────────────────────────────────
-function thumbUrl(key: string) {
-  return `${API_BASE}/api/galerie/thumbnail?key=${encodeURIComponent(key)}`
+function thumbUrl(apiPath: string, key: string) {
+  return `${API_BASE}/api/${apiPath}/thumbnail?key=${encodeURIComponent(key)}`
 }
 
 // Einzelnes Foto-Tile: lädt erst wenn es (fast) im Viewport ist,
 // zeigt Skeleton solange und blendet das Bild beim Laden ein.
-function PhotoThumb({ img, eager, onLoaded, onClick }: {
+function PhotoThumb({ img, apiPath, eager, onLoaded, onClick }: {
   img: BrowseImage
+  apiPath: string
   eager: boolean
   onLoaded?: () => void
   onClick: () => void
 }) {
-  const [src, setSrc]     = useState<string | null>(eager ? thumbUrl(img.key) : null)
+  const [src, setSrc]     = useState<string | null>(eager ? thumbUrl(apiPath, img.key) : null)
   const [loaded, setLoaded] = useState(false)
   const containerRef = useRef<HTMLButtonElement>(null)
   const reportedRef  = useRef(false)
@@ -161,13 +163,13 @@ function PhotoThumb({ img, eager, onLoaded, onClick }: {
     if (!el) return
     const obs = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
-        setSrc(thumbUrl(img.key))
+        setSrc(thumbUrl(apiPath, img.key))
         obs.disconnect()
       }
     }, { rootMargin: '300px' })
     obs.observe(el)
     return () => obs.disconnect()
-  }, [eager, img.key])
+  }, [eager, img.key, apiPath])
 
   return (
     <button
@@ -211,7 +213,7 @@ function PhotoThumb({ img, eager, onLoaded, onClick }: {
 // Wie viele Bilder sind "above the fold"? (ca. 2 Reihen × 5 Spalten)
 const ABOVE_FOLD = 10
 
-function PhotoGrid({ images }: { images: BrowseImage[] }) {
+function PhotoGrid({ images, apiPath }: { images: BrowseImage[]; apiPath: string }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [gridVisible, setGridVisible]     = useState(false)
 
@@ -256,6 +258,7 @@ function PhotoGrid({ images }: { images: BrowseImage[] }) {
           <PhotoThumb
             key={img.key}
             img={img}
+            apiPath={apiPath}
             eager={i < ABOVE_FOLD}
             onLoaded={i < ABOVE_FOLD ? handleAboveFoldLoad : undefined}
             onClick={() => setLightboxIndex(i)}
@@ -283,38 +286,57 @@ interface Props {
   /** R2-Prefix des aktuellen Ordners, z.B. 'galerie/sommerkonzerte/2023/'
    *  Wenn nicht angegeben, wird der Pfad aus der URL abgeleitet (usePathname). */
   prefix?: string
+  /** Root-Prefix dieser Galerie-Instanz, z.B. 'galerie/' (öffentlich) oder 'galerie-intern/'. */
+  rootPrefix?: string
+  /** API-Pfadsegment, z.B. 'galerie' → /api/galerie/browse, oder 'galerie-intern'. */
+  apiPath?: string
+  /** true = Requests mit Session-Cookie senden (nötig für die authentifizierte interne Galerie). */
+  requireAuth?: boolean
 }
 
-export default function GalerieModernView({ prefix: prefixProp }: Props) {
+export default function GalerieModernView({
+  prefix: prefixProp, rootPrefix = 'galerie/', apiPath = 'galerie', requireAuth = false,
+}: Props) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
 
   // Prefix aus Prop oder aus der aktuellen URL ableiten
   const currentPrefix = useMemo(() => {
     if (prefixProp) return prefixProp.endsWith('/') ? prefixProp : prefixProp + '/'
     // pathname = '/galerie' oder '/galerie/sommerkonzerte/2023'
-    const raw = (pathname ?? '/galerie').replace(/^\//, '')
+    const raw = (pathname ?? `/${rootPrefix}`).replace(/^\//, '')
     return raw.endsWith('/') ? raw : raw + '/'
-  }, [prefixProp, pathname])
+  }, [prefixProp, pathname, rootPrefix])
 
   const [data, setData]   = useState<BrowseResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [apiError, setApiError] = useState(false)
-  const isRoot = currentPrefix === 'galerie/'
+  const isRoot = currentPrefix === rootPrefix
   const parts  = currentPrefix.replace(/\/$/, '').split('/').filter(Boolean)
+
+  // Nur relevant für requireAuth=true (interne Galerie) - ohne Login zum Login schicken.
+  useEffect(() => {
+    if (requireAuth && !authLoading && !user) router.push('/login')
+  }, [requireAuth, authLoading, user, router])
+  const authBlocked = requireAuth && (authLoading || !user)
 
   // Seitentitel
   useEffect(() => {
-    const title = currentPrefix === 'galerie/' ? 'Galerie' : buildTitle(
+    const title = isRoot ? 'Galerie' : buildTitle(
       currentPrefix.replace(/\/$/, '').split('/').filter(Boolean)
     )
     document.title = `${title} – Schwalmtalzupfer`
-  }, [currentPrefix])
+  }, [currentPrefix, isRoot])
 
   useEffect(() => {
+    if (authBlocked) return
     setLoading(true)
     setData(null)
     setApiError(false)
-    fetch(`${API_BASE}/api/galerie/browse?prefix=${encodeURIComponent(currentPrefix)}`)
+    fetch(`${API_BASE}/api/${apiPath}/browse?prefix=${encodeURIComponent(currentPrefix)}`, {
+      credentials: requireAuth ? 'include' : 'same-origin',
+    })
       .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
       .then(d => {
         setData(d)
@@ -325,7 +347,9 @@ export default function GalerieModernView({ prefix: prefixProp }: Props) {
         setApiError(true)
         setLoading(false)
       })
-  }, [currentPrefix])
+  }, [currentPrefix, apiPath, requireAuth, authBlocked])
+
+  if (authBlocked) return null
 
   const hasContent = data && (data.folders.length > 0 || data.images.length > 0)
 
@@ -382,7 +406,7 @@ export default function GalerieModernView({ prefix: prefixProp }: Props) {
 
           {data.images.length > 0 && (
             <div className={data.folders.length > 0 ? 'mt-10' : ''}>
-              <PhotoGrid images={data.images} />
+              <PhotoGrid images={data.images} apiPath={apiPath} />
             </div>
           )}
 
@@ -404,7 +428,7 @@ export default function GalerieModernView({ prefix: prefixProp }: Props) {
             Möglicherweise ist die R2-Speicher-Verbindung nicht konfiguriert.
           </p>
           <button
-            onClick={() => { setApiError(false); setLoading(true); fetch(`${API_BASE}/api/galerie/browse?prefix=${encodeURIComponent(currentPrefix)}`).then(r => r.ok ? r.json() : Promise.reject()).then(d => { setData(d); setLoading(false) }).catch(() => { setApiError(true); setLoading(false) }) }}
+            onClick={() => { setApiError(false); setLoading(true); fetch(`${API_BASE}/api/${apiPath}/browse?prefix=${encodeURIComponent(currentPrefix)}`, { credentials: requireAuth ? 'include' : 'same-origin' }).then(r => r.ok ? r.json() : Promise.reject()).then(d => { setData(d); setLoading(false) }).catch(() => { setApiError(true); setLoading(false) }) }}
             className="mt-4 rounded-lg border border-gray-300 dark:border-white/20 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:border-green-500/50 hover:text-green-600 dark:hover:text-green-400 transition"
           >
             Erneut versuchen

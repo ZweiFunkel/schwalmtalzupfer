@@ -83,6 +83,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/kalender/benachrichtigungen").authenticated()
                 .requestMatchers("/api/kalender/**").hasAnyRole("BOARD", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/galerie/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/galerie-intern/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/beitritt").permitAll()
                 .requestMatchers("/api/beitritt/**").hasAnyRole("BOARD", "ADMIN")
