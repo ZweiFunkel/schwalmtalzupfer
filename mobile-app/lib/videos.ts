@@ -29,20 +29,28 @@ export function watchUrl(v: VideoEntry): string {
     : `https://www.youtube.com/watch?v=${v.youtubeId}`;
 }
 
+export interface PlaylistItem {
+  videoId: string;
+  title: string;
+  thumbnail: string;
+}
+
+/** Einzelne Videos einer Playlist, gleicher Endpoint wie im Web (WatchArea). */
+export async function fetchPlaylistItems(youtubeId: string): Promise<PlaylistItem[]> {
+  const res = await apiFetch(`/api/intern/videos/playlist/${youtubeId}`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 /**
  * HTML-Seite mit der echten YouTube-IFrame-Player-API (statt einer rohen Embed-URL) - nur so
- * lässt sich ein onError-Event abfangen und eine eigene Fehleroberfläche statt YouTubes rohem
- * Fehlerbildschirm anzeigen (Code 101/150 = Embedding deaktiviert, 153 = auf diese Domain
- * beschränkt). Muss mit baseUrl der echten Domain geladen werden (siehe WebView-Aufruf), sonst
- * schlagen auf bestimmte Domains beschränkte Embeds (Code 153) grundsätzlich fehl, weil eine
+ * lässt sich ein onError/onStateChange-Event abfangen und eine eigene Fehleroberfläche statt
+ * YouTubes rohem Fehlerbildschirm anzeigen (Code 101/150 = Einbettung deaktiviert, 153 = auf
+ * diese Domain beschränkt). Muss mit baseUrl der echten Domain geladen werden (siehe WebView-
+ * Aufruf), sonst schlagen auf bestimmte Domains beschränkte Embeds grundsätzlich fehl, weil eine
  * lokal geladene HTML-Seite sonst keinen erkennbaren Origin hat.
  */
-export function buildPlayerHtml(v: VideoEntry): string {
-  // videoId gehört auf die oberste Ebene, listType/list dagegen MÜSSEN in playerVars stecken -
-  // beides auf derselben Ebene zu mischen ergibt für die IFrame-API einen ungültigen Aufruf
-  // (Fehlercode 2 "invalid parameter"), keinen echten Einbettungsfehler.
-  const topLevel = v.type === 'PLAYLIST' ? '' : `videoId: '${v.youtubeId}',`;
-  const listVars = v.type === 'PLAYLIST' ? `listType: 'playlist', list: '${v.youtubeId}',` : '';
+function playerHtmlTemplate(topLevel: string, listVars: string): string {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -63,6 +71,9 @@ export function buildPlayerHtml(v: VideoEntry): string {
         events: {
           onError: function(e) {
             window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', code: e.data }));
+          },
+          onStateChange: function(e) {
+            if (e.data === 0) window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ended' }));
           }
         }
       });
@@ -70,6 +81,20 @@ export function buildPlayerHtml(v: VideoEntry): string {
   </script>
 </body>
 </html>`;
+}
+
+/** Player für ein einzelnes Video (auch für das jeweils aktuelle Video innerhalb einer Playlist). */
+export function buildVideoPlayerHtml(videoId: string): string {
+  return playerHtmlTemplate(`videoId: '${videoId}',`, '');
+}
+
+/**
+ * Fallback, falls die Playlist-API keine Items liefert (z.B. fehlender YouTube-API-Key auf dem
+ * Server) - direkt die YouTube-Playlist als Embed laden. Hier ist keine Item-für-Item-Navigation
+ * möglich, nur YouTubes eigene, eingebaute Playlist-Steuerung innerhalb des Players.
+ */
+export function buildPlaylistEmbedHtml(playlistId: string): string {
+  return playerHtmlTemplate('', `listType: 'playlist', list: '${playlistId}',`);
 }
 
 const DAYS_ORDER = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];

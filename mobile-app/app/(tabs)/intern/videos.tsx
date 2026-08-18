@@ -6,8 +6,9 @@ import {
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  fetchVideos, thumbnailFor, buildPlayerHtml, watchUrl, buildNav,
-  type VideoEntry, type NavStructure,
+  fetchVideos, thumbnailFor, buildVideoPlayerHtml, buildPlaylistEmbedHtml, fetchPlaylistItems,
+  watchUrl, buildNav,
+  type VideoEntry, type NavStructure, type PlaylistItem,
 } from '../../../lib/videos';
 import { font, radius, spacing, type ColorTokens } from '../../../lib/theme';
 import { useAppTheme } from '../../../lib/ThemeContext';
@@ -33,10 +34,45 @@ export default function VideosScreen() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [playing, setPlaying] = useState<VideoEntry | null>(null);
   const [playerError, setPlayerError] = useState<number | null>(null);
+  const [playlistItems, setPlaylistItems] = useState<PlaylistItem[]>([]);
+  const [playlistLoading, setPlaylistLoading] = useState(false);
+  const [currentVideoId, setCurrentVideoId] = useState('');
 
   function openPlayer(v: VideoEntry) {
     setPlayerError(null);
     setPlaying(v);
+    setPlaylistItems([]);
+    if (v.type === 'VIDEO') {
+      setCurrentVideoId(v.youtubeId);
+      setPlaylistLoading(false);
+    } else {
+      setCurrentVideoId('');
+      setPlaylistLoading(true);
+      fetchPlaylistItems(v.youtubeId)
+        .then(items => {
+          setPlaylistItems(items);
+          if (items.length > 0) setCurrentVideoId(items[0].videoId);
+        })
+        .finally(() => setPlaylistLoading(false));
+    }
+  }
+
+  function playNextInPlaylist() {
+    const idx = playlistItems.findIndex(i => i.videoId === currentVideoId);
+    if (idx >= 0 && idx < playlistItems.length - 1) {
+      setCurrentVideoId(playlistItems[idx + 1].videoId);
+      setPlayerError(null);
+    }
+  }
+
+  function handlePlayerMessage(raw: string) {
+    try {
+      const data = JSON.parse(raw);
+      if (data.type === 'error') setPlayerError(data.code);
+      else if (data.type === 'ended') playNextInPlaylist();
+    } catch {
+      // ignorieren
+    }
   }
   const [cat, setCat] = useState<'SOMMER' | 'WINTER' | 'WEITERE'>('SOMMER');
 
@@ -208,11 +244,16 @@ export default function VideosScreen() {
         <Modal visible animationType="slide" onRequestClose={() => setPlaying(null)}>
           <View style={styles.playerModal}>
             <View style={styles.playerHeader}>
-              <Text style={styles.playerTitle} numberOfLines={1}>{playing.title}</Text>
+              <Text style={styles.playerTitle} numberOfLines={1}>
+                {playing.type === 'PLAYLIST'
+                  ? (playlistItems.find(i => i.videoId === currentVideoId)?.title ?? playing.title)
+                  : playing.title}
+              </Text>
               <Pressable onPress={() => setPlaying(null)} hitSlop={12}>
                 <Ionicons name="close" size={26} color="#fff" />
               </Pressable>
             </View>
+
             {playerError !== null ? (
               <View style={styles.playerError}>
                 <Ionicons name="alert-circle-outline" size={36} color={colors.textFaint} />
@@ -223,20 +264,50 @@ export default function VideosScreen() {
                   <Text style={styles.playerErrorButtonText}>Auf YouTube ansehen</Text>
                 </Pressable>
               </View>
-            ) : (
+            ) : playing.type === 'PLAYLIST' && playlistLoading ? (
+              <View style={styles.playerError}>
+                <ActivityIndicator color="#fff" />
+                <Text style={styles.playerErrorHint}>Lade Playlist…</Text>
+              </View>
+            ) : playing.type === 'PLAYLIST' && playlistItems.length === 0 ? (
+              // Fallback: keine Items von der Playlist-API (z.B. fehlender YouTube-API-Key) ->
+              // rohes Playlist-Embed, ohne eigene Item-Navigation.
               <WebView
                 key={playing.id}
-                source={{ html: buildPlayerHtml(playing), baseUrl: 'https://www.schwalmtalzupfer.de' }}
+                source={{ html: buildPlaylistEmbedHtml(playing.youtubeId), baseUrl: 'https://www.schwalmtalzupfer.de' }}
                 style={styles.webview}
                 allowsFullscreenVideo
                 mediaPlaybackRequiresUserAction={false}
-                onMessage={e => {
-                  try {
-                    const data = JSON.parse(e.nativeEvent.data);
-                    if (data.type === 'error') setPlayerError(data.code);
-                  } catch { /* ignorieren */ }
-                }}
+                onMessage={e => handlePlayerMessage(e.nativeEvent.data)}
               />
+            ) : (
+              <>
+                <WebView
+                  key={currentVideoId}
+                  source={{ html: buildVideoPlayerHtml(currentVideoId), baseUrl: 'https://www.schwalmtalzupfer.de' }}
+                  style={playing.type === 'PLAYLIST' ? styles.webviewSplit : styles.webview}
+                  allowsFullscreenVideo
+                  mediaPlaybackRequiresUserAction={false}
+                  onMessage={e => handlePlayerMessage(e.nativeEvent.data)}
+                />
+                {playing.type === 'PLAYLIST' && (
+                  <FlatList
+                    style={styles.playlistList}
+                    data={playlistItems}
+                    keyExtractor={i => i.videoId}
+                    ListHeaderComponent={<Text style={styles.playlistHeader}>Playlist · {playlistItems.length} Videos</Text>}
+                    renderItem={({ item }) => (
+                      <Pressable
+                        style={[styles.playlistRow, item.videoId === currentVideoId && styles.playlistRowActive]}
+                        onPress={() => { setCurrentVideoId(item.videoId); setPlayerError(null); }}
+                      >
+                        <Image source={{ uri: item.thumbnail }} style={styles.playlistThumb} />
+                        <Text style={styles.playlistItemTitle} numberOfLines={2}>{item.title}</Text>
+                      </Pressable>
+                    )}
+                  />
+                )}
+              </>
             )}
           </View>
         </Modal>
@@ -280,6 +351,13 @@ function createStyles(colors: ColorTokens) {
     playerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.md, paddingTop: spacing.xl },
     playerTitle: { flex: 1, color: '#fff', fontFamily: font.semiBold, fontSize: 15, marginRight: spacing.sm },
     webview: { flex: 1, backgroundColor: '#000' },
+    webviewSplit: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000' },
+    playlistList: { flex: 1, backgroundColor: '#0d0d0d' },
+    playlistHeader: { color: 'rgba(255,255,255,0.5)', fontFamily: font.semiBold, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, padding: spacing.md, paddingBottom: spacing.xs },
+    playlistRow: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, alignItems: 'center' },
+    playlistRowActive: { backgroundColor: 'rgba(22,163,74,0.18)' },
+    playlistThumb: { width: 96, height: 54, borderRadius: radius.sm, backgroundColor: '#222' },
+    playlistItemTitle: { flex: 1, color: '#fff', fontFamily: font.medium, fontSize: 13 },
     playerError: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.sm },
     playerErrorTitle: { color: '#fff', fontFamily: font.semiBold, fontSize: 16, textAlign: 'center', marginTop: spacing.sm },
     playerErrorHint: { color: 'rgba(255,255,255,0.6)', fontFamily: font.regular, fontSize: 13, textAlign: 'center' },
