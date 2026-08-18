@@ -73,6 +73,9 @@ export default function ProfilPage() {
 
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
   if (!user) return null
+  // Gäste dürfen ihre Daten nicht ändern - Redirect oben läuft asynchron, hier zusätzlich
+  // sofort nichts rendern, damit das Formular nicht kurz aufblitzt, bevor er greift.
+  if (user.role === 'ROLE_GUEST') return null
 
   const roleLabel: Record<string, string> = {
     ROLE_GUEST: 'Gast',

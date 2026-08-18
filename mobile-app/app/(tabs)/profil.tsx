@@ -258,74 +258,80 @@ export default function ProfilScreen() {
         </View>
       )}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Daten bearbeiten</Text>
-        <View style={styles.sectionCard}>
-          <View>
-            <Text style={styles.fieldLabel}>Vorname</Text>
-            <TextInput
-              style={styles.input}
-              value={vorname}
-              onChangeText={setVorname}
-              placeholderTextColor={colors.textFaint}
-            />
+      {/* Gäste dürfen ihre Daten/ihr Passwort nicht ändern (geteilte Gast-Zugänge) - der
+          Server lehnt das ohnehin ab, hier zusätzlich gar nicht erst anzeigen. */}
+      {profile.role !== 'ROLE_GUEST' && (
+        <>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Daten bearbeiten</Text>
+            <View style={styles.sectionCard}>
+              <View>
+                <Text style={styles.fieldLabel}>Vorname</Text>
+                <TextInput
+                  style={styles.input}
+                  value={vorname}
+                  onChangeText={setVorname}
+                  placeholderTextColor={colors.textFaint}
+                />
+              </View>
+              <View>
+                <Text style={styles.fieldLabel}>Nachname</Text>
+                <TextInput
+                  style={styles.input}
+                  value={nachname}
+                  onChangeText={setNachname}
+                  placeholderTextColor={colors.textFaint}
+                />
+              </View>
+            </View>
+            <Pressable style={styles.button} onPress={handleSaveProfile} disabled={savingProfile}>
+              {savingProfile
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.buttonText}>{profileSaved ? '✓ Gespeichert' : 'Speichern'}</Text>}
+            </Pressable>
           </View>
-          <View>
-            <Text style={styles.fieldLabel}>Nachname</Text>
-            <TextInput
-              style={styles.input}
-              value={nachname}
-              onChangeText={setNachname}
-              placeholderTextColor={colors.textFaint}
-            />
-          </View>
-        </View>
-        <Pressable style={styles.button} onPress={handleSaveProfile} disabled={savingProfile}>
-          {savingProfile
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>{profileSaved ? '✓ Gespeichert' : 'Speichern'}</Text>}
-        </Pressable>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Passwort ändern</Text>
-        {pwMsg && (
-          <View style={[styles.msgBox, pwMsg.error ? styles.msgBoxError : styles.msgBoxSuccess]}>
-            <Text style={[styles.msgText, { color: pwMsg.error ? colors.danger : colors.primary700 }]}>{pwMsg.text}</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Passwort ändern</Text>
+            {pwMsg && (
+              <View style={[styles.msgBox, pwMsg.error ? styles.msgBoxError : styles.msgBoxSuccess]}>
+                <Text style={[styles.msgText, { color: pwMsg.error ? colors.danger : colors.primary700 }]}>{pwMsg.text}</Text>
+              </View>
+            )}
+            <View style={styles.sectionCard}>
+              <View>
+                <Text style={styles.fieldLabel}>Aktuelles Passwort</Text>
+                <TextInput
+                  style={styles.input}
+                  value={aktuellesPasswort}
+                  onChangeText={setAktuellesPasswort}
+                  secureTextEntry
+                  placeholderTextColor={colors.textFaint}
+                />
+              </View>
+              <View>
+                <Text style={styles.fieldLabel}>Neues Passwort (mind. 8 Zeichen)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={neuesPasswort}
+                  onChangeText={setNeuesPasswort}
+                  secureTextEntry
+                  placeholderTextColor={colors.textFaint}
+                />
+              </View>
+            </View>
+            <Pressable
+              style={styles.button}
+              onPress={handleChangePassword}
+              disabled={pwSaving || !aktuellesPasswort || neuesPasswort.length < 8}
+            >
+              {pwSaving
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.buttonText}>Passwort ändern</Text>}
+            </Pressable>
           </View>
-        )}
-        <View style={styles.sectionCard}>
-          <View>
-            <Text style={styles.fieldLabel}>Aktuelles Passwort</Text>
-            <TextInput
-              style={styles.input}
-              value={aktuellesPasswort}
-              onChangeText={setAktuellesPasswort}
-              secureTextEntry
-              placeholderTextColor={colors.textFaint}
-            />
-          </View>
-          <View>
-            <Text style={styles.fieldLabel}>Neues Passwort (mind. 8 Zeichen)</Text>
-            <TextInput
-              style={styles.input}
-              value={neuesPasswort}
-              onChangeText={setNeuesPasswort}
-              secureTextEntry
-              placeholderTextColor={colors.textFaint}
-            />
-          </View>
-        </View>
-        <Pressable
-          style={styles.button}
-          onPress={handleChangePassword}
-          disabled={pwSaving || !aktuellesPasswort || neuesPasswort.length < 8}
-        >
-          {pwSaving
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Passwort ändern</Text>}
-        </Pressable>
-      </View>
+        </>
+      )}
 
       <Pressable style={styles.settingsRow} onPress={() => router.push('/settings')}>
         <Ionicons name="settings-outline" size={20} color={colors.textMuted} />

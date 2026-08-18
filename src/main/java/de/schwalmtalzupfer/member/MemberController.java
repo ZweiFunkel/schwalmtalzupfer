@@ -33,19 +33,25 @@ public class MemberController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /** Eigenes Profil aktualisieren (nur Vor-/Nachname) */
+    /** Eigenes Profil aktualisieren (nur Vor-/Nachname) - Gäste dürfen ihre Daten nicht ändern. */
     @PatchMapping("/me")
     public ResponseEntity<?> updateProfile(Principal principal, @RequestBody Map<String, String> body) {
         return memberRepository.findByEmail(principal.getName())
                 .or(() -> memberRepository.findByUsername(principal.getName()))
                 .map(m -> {
+                    if (m.getRole() == MemberRole.GUEST) {
+                        return ResponseEntity.status(403).body(Map.of("error", "Gäste können ihre Daten nicht ändern."));
+                    }
                     if (body.containsKey("vorname")) m.setVorname(body.get("vorname"));
                     if (body.containsKey("nachname")) m.setNachname(body.get("nachname"));
                     return ResponseEntity.ok(toDto(memberRepository.save(m)));
                 }).orElse(ResponseEntity.notFound().build());
     }
 
-    /** Eigenes Passwort ändern - verlangt das aktuelle Passwort zur Bestätigung. */
+    /**
+     * Eigenes Passwort ändern - verlangt das aktuelle Passwort zur Bestätigung.
+     * Gäste dürfen ihr Passwort nicht selbst ändern (geteilte Gast-Zugänge).
+     */
     @PatchMapping("/me/password")
     public ResponseEntity<?> changePassword(Principal principal, @RequestBody ChangePasswordRequest req) {
         Optional<Member> memberOpt = memberRepository.findByEmail(principal.getName())
@@ -53,6 +59,9 @@ public class MemberController {
         if (memberOpt.isEmpty()) return ResponseEntity.notFound().build();
         Member m = memberOpt.get();
 
+        if (m.getRole() == MemberRole.GUEST) {
+            return ResponseEntity.status(403).body(Map.of("error", "Gäste können ihr Passwort nicht ändern."));
+        }
         if (req.neuesPasswort() == null || req.neuesPasswort().length() < 8) {
             return ResponseEntity.badRequest().body(Map.of("error", "Neues Passwort muss mindestens 8 Zeichen lang sein."));
         }
