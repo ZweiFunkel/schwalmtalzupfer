@@ -26,6 +26,7 @@ public class KalenderCalendarService {
     private final KalenderUnterrichtAusnahmeRepository ausnahmeRepository;
     private final SchulferienRepository schulferienRepository;
     private final GitarrengruppeRepository gitarrengruppeRepository;
+    private final LegacyTermineSource legacyTermineSource;
 
     private static final Map<String, DayOfWeek> WOCHENTAG_MAP = Map.of(
             "Montag", DayOfWeek.MONDAY,
@@ -54,6 +55,16 @@ public class KalenderCalendarService {
         List<CalendarEvent> ergebnis = new ArrayList<>();
         for (KalenderTermin t : manuelleTermine) {
             ergebnis.add(toEvent(t));
+        }
+
+        // Bereits bestehende Termine aus dem CMS (Konzerte, Ausflüge, ...) mit einbeziehen - diese
+        // wurden bisher nur über den "Seiten"-Admin-Tab gepflegt und erschienen im internen Kalender
+        // (App/intern/kalender) gar nicht, obwohl es dieselben Termine sind.
+        for (CalendarEvent e : legacyTermineSource.load()) {
+            LocalDate ende = e.endDatum() != null ? e.endDatum() : e.startDatum();
+            if (!ende.isBefore(von) && !e.startDatum().isAfter(bis)) {
+                ergebnis.add(e);
+            }
         }
 
         List<KalenderUnterrichtAusnahme> ausnahmen = ausnahmeRepository.findByDatumBetweenOrderByDatumAsc(von, bis);
