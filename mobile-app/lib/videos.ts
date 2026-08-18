@@ -55,8 +55,8 @@ function playerHtmlTemplate(topLevel: string, listVars: string): string {
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <style>html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden;}
-  #player{position:absolute;top:0;left:0;width:100%;height:100%;}</style>
+  <style>html,body{margin:0;padding:0;background:#000;height:100%;width:100%;overflow:hidden;}
+  #player,#player iframe{position:absolute;top:0;left:0;width:100%!important;height:100%!important;}</style>
 </head>
 <body>
   <div id="player"></div>
@@ -65,7 +65,13 @@ function playerHtmlTemplate(topLevel: string, listVars: string): string {
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
     function onYouTubeIframeAPIReady() {
-      new YT.Player('player', {
+      // Explizite Pixelmaße statt '100%' - der YT-Player berechnet Prozentangaben in manchen
+      // WebViews falsch (Video ragt seitlich über den sichtbaren Bereich hinaus/wird
+      // abgeschnitten). #player/iframe werden zusätzlich per CSS auf 100% erzwungen, falls sich
+      // die Fenstergröße nach dem Erstellen noch ändert (z.B. Rotation).
+      var player = new YT.Player('player', {
+        height: String(document.documentElement.clientHeight),
+        width: String(document.documentElement.clientWidth),
         ${topLevel}
         playerVars: { ${listVars} autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1 },
         events: {
@@ -76,6 +82,9 @@ function playerHtmlTemplate(topLevel: string, listVars: string): string {
             if (e.data === 0) window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ended' }));
           }
         }
+      });
+      window.addEventListener('resize', function() {
+        player.setSize(document.documentElement.clientWidth, document.documentElement.clientHeight);
       });
     }
   </script>

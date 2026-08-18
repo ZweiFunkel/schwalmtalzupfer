@@ -37,9 +37,11 @@ export default function VideosScreen() {
   const [playlistItems, setPlaylistItems] = useState<PlaylistItem[]>([]);
   const [playlistLoading, setPlaylistLoading] = useState(false);
   const [currentVideoId, setCurrentVideoId] = useState('');
+  const [playlistHidden, setPlaylistHidden] = useState(false);
 
   function openPlayer(v: VideoEntry) {
     setPlayerError(null);
+    setPlaylistHidden(false);
     setPlaying(v);
     setPlaylistItems([]);
     if (v.type === 'VIDEO') {
@@ -249,6 +251,11 @@ export default function VideosScreen() {
                   ? (playlistItems.find(i => i.videoId === currentVideoId)?.title ?? playing.title)
                   : playing.title}
               </Text>
+              {playing.type === 'PLAYLIST' && playlistItems.length > 0 && (
+                <Pressable onPress={() => setPlaylistHidden(h => !h)} hitSlop={12} style={styles.playlistToggle}>
+                  <Ionicons name={playlistHidden ? 'list' : 'list-outline'} size={22} color="#fff" />
+                </Pressable>
+              )}
               <Pressable onPress={() => setPlaying(null)} hitSlop={12}>
                 <Ionicons name="close" size={26} color="#fff" />
               </Pressable>
@@ -285,12 +292,12 @@ export default function VideosScreen() {
                 <WebView
                   key={currentVideoId}
                   source={{ html: buildVideoPlayerHtml(currentVideoId), baseUrl: 'https://www.schwalmtalzupfer.de' }}
-                  style={playing.type === 'PLAYLIST' ? styles.webviewSplit : styles.webview}
+                  style={playing.type === 'PLAYLIST' && !playlistHidden ? styles.webviewSplit : styles.webview}
                   allowsFullscreenVideo
                   mediaPlaybackRequiresUserAction={false}
                   onMessage={e => handlePlayerMessage(e.nativeEvent.data)}
                 />
-                {playing.type === 'PLAYLIST' && (
+                {playing.type === 'PLAYLIST' && !playlistHidden && (
                   <FlatList
                     style={styles.playlistList}
                     data={playlistItems}
@@ -348,7 +355,8 @@ function createStyles(colors: ColorTokens) {
     playlistBadgeText: { color: '#fff', fontFamily: font.semiBold, fontSize: 9 },
     videoTitle: { fontFamily: font.medium, fontSize: 12, color: colors.text, marginTop: 6 },
     playerModal: { flex: 1, backgroundColor: '#000' },
-    playerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.md, paddingTop: spacing.xl },
+    playerHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, paddingTop: spacing.xl },
+    playlistToggle: { marginLeft: 'auto' },
     playerTitle: { flex: 1, color: '#fff', fontFamily: font.semiBold, fontSize: 15, marginRight: spacing.sm },
     webview: { flex: 1, backgroundColor: '#000' },
     webviewSplit: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000' },
