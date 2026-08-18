@@ -36,6 +36,11 @@ spring:
       mail.smtp.timeout: 5000
 
 app:
+  bootstrap:
+    # Nur beim allerersten Start relevant (solange noch kein ADMIN-Account existiert).
+    # Absichtlich KEIN Standardwert - ohne diese beiden Variablen wird kein Admin angelegt.
+    admin-email: ${APP_BOOTSTRAP_ADMIN_EMAIL:}
+    admin-password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:}
   cors:
     # Komma-getrennte Liste erlaubter Origins (die öffentliche URL der App + localhost für Dev)
     allowed-origins: ${APP_CORS_ORIGINS:https://schwalmtalzupfer.de,https://159.195.70.118.nip.io,http://localhost:3000,https://localhost:3000}

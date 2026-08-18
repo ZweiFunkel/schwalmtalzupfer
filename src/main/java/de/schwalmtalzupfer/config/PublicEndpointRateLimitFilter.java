@@ -52,14 +52,17 @@ public class PublicEndpointRateLimitFilter extends OncePerRequestFilter {
                 .build();
     }
 
+    /**
+     * X-Forwarded-For/X-Real-IP werden bewusst NICHT mehr ausgewertet: beide Header kann ein
+     * Client selbst frei setzen, wodurch sich das Rate-Limit sonst durch einen gefälschten
+     * Wert umgehen ließe. CF-Connecting-IP wird von Cloudflare am Edge gesetzt/überschrieben
+     * (siehe docs/deployment.md - Cloudflare steht vor der App) und ist daher clientseitig
+     * nicht fälschbar, solange der Origin-Server nur über Cloudflare erreichbar ist.
+     */
     private String clientIp(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
-        }
-        String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) {
-            return realIp;
+        String cfConnectingIp = request.getHeader("CF-Connecting-IP");
+        if (cfConnectingIp != null && !cfConnectingIp.isBlank()) {
+            return cfConnectingIp.trim();
         }
         return request.getRemoteAddr();
     }

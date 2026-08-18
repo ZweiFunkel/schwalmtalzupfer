@@ -6,6 +6,7 @@ import de.schwalmtalzupfer.member.MemberRole;
 import de.schwalmtalzupfer.page.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +19,13 @@ import java.util.Map;
 /**
  * Stellt sicher, dass beim Start mindestens die Basis-Seitenstruktur vorhanden ist.
  * Verhindert 404-Fehler auf Home, Konzerte, Vorstand, Geschichte.
+ *
+ * Legt EINMALIG (nur falls noch kein Admin existiert) einen Bootstrap-Admin an - aus
+ * app.bootstrap.admin-email/-password (Umgebungsvariablen), NIE aus einem hartkodierten
+ * Wert im Quellcode. Ist eine der beiden Variablen nicht gesetzt, wird das Anlegen
+ * übersprungen (fail-closed) statt auf ein unsicheres Standard-Passwort zurückzufallen -
+ * anders als z.B. beim Deploy-Token ist ein zu schwaches/fehlendes Admin-Passwort ein
+ * ernstes Risiko, kein bloßer Komfortverlust.
  */
 @Component
 @RequiredArgsConstructor
@@ -28,50 +36,28 @@ public class DataInitializer implements ApplicationRunner {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
-    private static final String ADMIN_EMAIL = "simon.lankes@gmx.de";
-    private static final String ADMIN_PASSWORD = "REDACTED-SEE-HISTORY-CLEANUP";
-    private static final String GUEST_EMAIL = "zupfer@schwalmtalzupfer.de";
-    private static final String GUEST_PASSWORD = "REDACTED";
-    private static final String ZUPF_PASSWORD = "REDACTED";
+    @Value("${app.bootstrap.admin-email:}")
+    private String bootstrapAdminEmail;
+
+    @Value("${app.bootstrap.admin-password:}")
+    private String bootstrapAdminPassword;
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        // ---- Admin-User ----
-        if (!memberRepository.existsByEmail(ADMIN_EMAIL)) {
-            memberRepository.save(Member.builder()
-                    .email(ADMIN_EMAIL)
-                    .passwordHash(passwordEncoder.encode(ADMIN_PASSWORD))
-                    .vorname("Simon")
-                    .nachname("Lankes")
-                    .role(MemberRole.ADMIN)
-                    .build());
-            log.info("DataInitializer: Admin-User '{}' angelegt (Passwort: {}).", ADMIN_EMAIL, ADMIN_PASSWORD);
-        }
-
-        // ---- Gast-Demo-User (zupfer/zupfer) ----
-        if (!memberRepository.existsByEmail(GUEST_EMAIL)) {
-            memberRepository.save(Member.builder()
-                    .email(GUEST_EMAIL)
-                    .passwordHash(passwordEncoder.encode(GUEST_PASSWORD))
-                    .vorname("Gast")
-                    .nachname("Zupfer")
-                    .role(MemberRole.GUEST)
-                    .build());
-            log.info("DataInitializer: Gast-User '{}' angelegt.", GUEST_EMAIL);
-        }
-
-        // ---- Zupf-User (zupf/zupf) - Nur Intern-Zugang, kein Profil ----
-        // Dieser User nutzt Username statt Email für Login
-        if (!memberRepository.existsByUsername("zupf")) {
-            memberRepository.save(Member.builder()
-                    .username("zupf")
-                    .email(null)
-                    .passwordHash(passwordEncoder.encode(ZUPF_PASSWORD))
-                    .vorname("Zupf")
-                    .role(MemberRole.GUEST)
-                    .build());
-            log.info("DataInitializer: Zupf-User 'zupf' angelegt.");
+        if (!memberRepository.existsByRole(MemberRole.ADMIN)) {
+            if (bootstrapAdminEmail.isBlank() || bootstrapAdminPassword.isBlank()) {
+                log.warn("DataInitializer: Kein Admin-Account vorhanden und app.bootstrap.admin-email/-password " +
+                        "nicht gesetzt - es wird KEIN Bootstrap-Admin angelegt. Bitte in application.yml/Env setzen.");
+            } else {
+                memberRepository.save(Member.builder()
+                        .email(bootstrapAdminEmail)
+                        .passwordHash(passwordEncoder.encode(bootstrapAdminPassword))
+                        .vorname("Admin")
+                        .role(MemberRole.ADMIN)
+                        .build());
+                log.info("DataInitializer: Bootstrap-Admin-User '{}' angelegt.", bootstrapAdminEmail);
+            }
         }
 
         ensurePage("home", "Startseite", List.of(
