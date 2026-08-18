@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Switch, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Switch, Alert, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import type { Directory } from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import { useAppTheme, type ThemeMode } from '../lib/ThemeContext';
-import { getNotenDefaultSubpath, setNotenDefaultSubpath } from '../lib/settings';
-import { getNotenRootPrefix } from '../lib/noten';
 import {
   getNotenDir, defaultNotenDir, prettyDirLabel, pickNotenDir,
   setCustomNotenDir, resetNotenDirToDefault, listCachedNoten, moveCachedNotesToCurrentDir,
@@ -47,10 +45,6 @@ export default function SettingsScreen() {
   const { colors, mode, setMode } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const [rootPrefix, setRootPrefix] = useState('');
-  const [subpath, setSubpath] = useState('');
-  const [savedSubpath, setSavedSubpath] = useState('');
-
   const [localDir, setLocalDir] = useState<Directory | null>(null);
   const [changingDir, setChangingDir] = useState(false);
 
@@ -60,11 +54,6 @@ export default function SettingsScreen() {
   const [freizeiten, setFreizeiten] = useState(true);
   const [unterrichtErinnerung, setUnterrichtErinnerung] = useState(false);
   const [savingNotif, setSavingNotif] = useState<NotifKey | null>(null);
-
-  useEffect(() => {
-    getNotenRootPrefix().then(setRootPrefix).catch(() => {});
-    getNotenDefaultSubpath().then(sub => { setSubpath(sub); setSavedSubpath(sub); }).catch(() => {});
-  }, []);
 
   const refreshLocalDir = useCallback(async () => {
     setLocalDir(await getNotenDir());
@@ -146,14 +135,6 @@ export default function SettingsScreen() {
     });
   }, []);
 
-  async function saveSubpath() {
-    await setNotenDefaultSubpath(subpath);
-    setSavedSubpath(subpath.trim());
-    Alert.alert('Gespeichert', subpath.trim() ? `Noten-Tab startet jetzt in „${subpath.trim()}“.` : 'Noten-Tab startet wieder im Hauptordner.');
-  }
-
-  const dirty = subpath.trim() !== savedSubpath;
-
   // Toggles speichern sofort (kein separater Speichern-Button nötig, kein Risiko eines
   // halb ausgefüllten Werts wie bei Textfeldern) - bei Fehler wird der alte Wert wiederhergestellt.
   const toggleNotif = useCallback(async (key: NotifKey, value: boolean) => {
@@ -230,25 +211,6 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
       <Text style={styles.hint}>Bereits heruntergeladene Noten bleiben unabhängig vom gewählten Ordner nutzbar.</Text>
-
-      <Text style={[styles.label, { marginTop: spacing.lg }]}>Start-Unterordner im Notenarchiv</Text>
-      <Text style={styles.hint}>
-        Nicht der Speicherort auf dem Handy (siehe oben) - legt fest, in welchem Unterordner des
-        Vereins-Notenarchivs{rootPrefix ? ` („${rootPrefix}“)` : ''} der Noten-Tab beim Öffnen startet.
-        Leer lassen für den Hauptordner.
-      </Text>
-      <TextInput
-        style={styles.input}
-        placeholder="z.B. Blasmusik/Trompete"
-        placeholderTextColor={colors.textFaint}
-        value={subpath}
-        onChangeText={setSubpath}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-      <Pressable style={[styles.saveButton, !dirty && styles.saveButtonDisabled]} onPress={saveSubpath} disabled={!dirty}>
-        <Text style={styles.saveButtonText}>Speichern</Text>
-      </Pressable>
 
       <Text style={styles.sectionTitle}>Benachrichtigungen</Text>
       {notifError && <Text style={styles.hint}>{notifError}</Text>}

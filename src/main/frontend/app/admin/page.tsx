@@ -3151,6 +3151,7 @@ function SiteSettingsEditor() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showFolderPicker, setShowFolderPicker] = useState(false)
+  const [folderPickerTarget, setFolderPickerTarget] = useState<'noten_prefix' | 'galerie_intern_prefix'>('noten_prefix')
   const [allPages, setAllPages] = useState<{ slug: string; title: string }[]>([])
 
   const reloadPages = () =>
@@ -3183,7 +3184,7 @@ function SiteSettingsEditor() {
     <div className="space-y-6">
       {showFolderPicker && (
         <R2FolderPickerModal
-          onSelect={v => setSettings({ ...settings, noten_prefix: v })}
+          onSelect={v => setSettings({ ...settings, [folderPickerTarget]: v })}
           onClose={() => setShowFolderPicker(false)}
         />
       )}
@@ -3217,13 +3218,42 @@ function SiteSettingsEditor() {
               placeholder="z.B. Noten/"
               className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white font-mono focus:border-green-500 focus:outline-none"
             />
-            <button onClick={() => setShowFolderPicker(true)}
+            <button onClick={() => { setFolderPickerTarget('noten_prefix'); setShowFolderPicker(true) }}
               className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition whitespace-nowrap">
               📁 R2 wählen
             </button>
           </div>
           <p className="mt-1 text-xs text-gray-500">
             Aktuell: <span className="font-mono text-green-400">{settings.noten_prefix || '(nicht gesetzt – Root)'}</span>
+          </p>
+        </div>
+      </div>
+
+      {/* ── Interne Galerie ──────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
+        <div className="border-b border-white/10 px-5 py-4">
+          <h3 className="text-sm font-bold text-white">🖼️ Interne Galerie</h3>
+          <p className="mt-0.5 text-xs text-gray-400">
+            Der R2-Ordner, aus dem die interne Galerie (nur für angemeldete Mitglieder) lädt.
+            Solange hier nichts eingetragen ist, zeigt die Seite einen Hinweis, dass noch nichts hinterlegt wurde.
+          </p>
+        </div>
+        <div className="p-5">
+          <label className="mb-1 block text-xs text-gray-400">Interne-Galerie-Ordner (R2-Präfix)</label>
+          <div className="flex gap-2 items-center">
+            <input
+              value={settings.galerie_intern_prefix || ''}
+              onChange={e => setSettings({ ...settings, galerie_intern_prefix: e.target.value })}
+              placeholder="z.B. galerie-intern/"
+              className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white font-mono focus:border-green-500 focus:outline-none"
+            />
+            <button onClick={() => { setFolderPickerTarget('galerie_intern_prefix'); setShowFolderPicker(true) }}
+              className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition whitespace-nowrap">
+              📁 R2 wählen
+            </button>
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Aktuell: <span className="font-mono text-green-400">{settings.galerie_intern_prefix || '(nicht gesetzt – Galerie zeigt "Noch nichts hinterlegt")'}</span>
           </p>
         </div>
       </div>

@@ -1,5 +1,6 @@
 package de.schwalmtalzupfer.galerie;
 
+import de.schwalmtalzupfer.config.SiteSettingsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -15,35 +16,80 @@ import java.util.*;
 
 /**
  * Interne Galerie (nur für angemeldete Mitglieder/Gäste, siehe SecurityConfig) - fachlich
- * dasselbe wie {@link GalerieController}, aber unter einem eigenen R2-Prefix ("galerie-intern/")
- * und nicht öffentlich erreichbar. Bewusst als eigener Controller statt Parametrisierung des
- * öffentlichen GalerieController, um die Auth-Grenze nicht von einem Request-Parameter abhängig
- * zu machen.
+ * dasselbe wie {@link GalerieController}, aber unter einem vom Vorstand/Admin frei wählbaren
+ * R2-Ordner (Einstellung "galerie_intern_prefix", siehe AdminController) und nicht öffentlich
+ * erreichbar. Bewusst als eigener Controller statt Parametrisierung des öffentlichen
+ * GalerieController, um die Auth-Grenze nicht von einem Request-Parameter abhängig zu machen.
  *
  * WICHTIG: Anders als beim öffentlichen GalerieController werden Bild-URLs NICHT über die
  * öffentliche R2-Public-URL oder den unauthentifizierten "/r2/"-Proxy ausgeliefert (der jeden
  * Key ungeprüft durchlässt) - sonst wäre die "interne" Galerie trotzdem für jeden ohne Login
  * direkt per URL abrufbar. Stattdessen werden Vorschau UND Vollbild über eigene, durch
  * SecurityConfig geschützte Endpunkte gestreamt (siehe /thumbnail und /image).
+ *
+ * Web/App verwenden für Routing/Navigation einen festen virtuellen Namespace "galerie-intern/"
+ * (unabhängig vom tatsächlich konfigurierten R2-Ordner) - toReal()/toVirtual() übersetzen
+ * zwischen diesem virtuellen Pfad und dem echten R2-Pfad. So bleiben Web-Routen stabil, auch
+ * wenn der Admin den Ziel-Ordner später ändert.
  */
 @RestController
 @RequestMapping("/api/galerie-intern")
 @RequiredArgsConstructor
 public class GalerieInternController {
 
-    private static final String ROOT = "galerie-intern/";
+    private static final String VIRTUAL_ROOT = "galerie-intern/";
+    private static final String SETTING_KEY = "galerie_intern_prefix";
 
     private final S3Client s3Client;
     private final ThumbnailService thumbnailService;
+    private final SiteSettingsRepository siteSettingsRepository;
 
     @Value("${app.r2.bucket}")
     private String bucket;
 
     private static final Set<String> IMAGE_EXTS = Set.of(".jpg", ".jpeg", ".png", ".webp", ".gif");
 
+    /** Vom Vorstand/Admin gewählter echter R2-Ordner, oder null falls noch nicht konfiguriert. */
+    private String realRoot() {
+        return siteSettingsRepository.findBySettingKey(SETTING_KEY)
+                .map(s -> s.getSettingValue())
+                .filter(v -> v != null && !v.isBlank())
+                .map(v -> v.endsWith("/") ? v : v + "/")
+                .orElse(null);
+    }
+
+    private String toReal(String virtualPrefix, String realRootValue) {
+        String rel = virtualPrefix.startsWith(VIRTUAL_ROOT) ? virtualPrefix.substring(VIRTUAL_ROOT.length()) : "";
+        return realRootValue + rel;
+    }
+
+    private String toVirtual(String realPath, String realRootValue) {
+        String rel = realPath.startsWith(realRootValue) ? realPath.substring(realRootValue.length()) : realPath;
+        return VIRTUAL_ROOT + rel;
+    }
+
+    private Map<String, Object> emptyResult() {
+        Map<String, Object> empty = new HashMap<>();
+        empty.put("prefix", VIRTUAL_ROOT);
+        empty.put("folders", Collections.emptyList());
+        empty.put("images", Collections.emptyList());
+        empty.put("configured", false);
+        return empty;
+    }
+
     @GetMapping("/browse")
-    public Map<String, Object> browse(@RequestParam(name = "prefix", defaultValue = ROOT) String prefixParam) {
-        final String prefix = prefixParam.endsWith("/") ? prefixParam : prefixParam + "/";
+    public Map<String, Object> browse(@RequestParam(name = "prefix", required = false) String prefixParam) {
+        String realRootValue = realRoot();
+        // Weder Ordner konfiguriert noch Inhalte vorhanden -> klare "nichts hinterlegt"-Antwort
+        // statt eines Zugriffs auf einen geratenen/nicht existierenden R2-Pfad.
+        if (realRootValue == null) {
+            return emptyResult();
+        }
+
+        String virtualPrefix = (prefixParam == null || prefixParam.isBlank()) ? VIRTUAL_ROOT
+                : (prefixParam.endsWith("/") ? prefixParam : prefixParam + "/");
+        String prefix = toReal(virtualPrefix, realRootValue);
+
         try {
             ListObjectsV2Response direct = s3Client.listObjectsV2(
                     ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).delimiter("/").build());
@@ -62,7 +108,7 @@ public class GalerieInternController {
 
                 Map<String, Object> folder = new HashMap<>();
                 folder.put("name", folderName);
-                folder.put("prefix", folderPrefix);
+                folder.put("prefix", toVirtual(folderPrefix, realRootValue));
                 folder.put("coverUrl", imageKeys.isEmpty() ? "" : buildImageUrl(imageKeys.get(0)));
                 folder.put("imageCount", imageKeys.size());
                 folder.put("hasSubFolders", hasSubFolders);
@@ -89,23 +135,21 @@ public class GalerieInternController {
             }
 
             Map<String, Object> result = new HashMap<>();
-            result.put("prefix", prefix);
+            result.put("prefix", virtualPrefix);
             result.put("folders", folders);
             result.put("images", images);
+            result.put("configured", true);
             return result;
         } catch (Exception e) {
             System.err.println("ERROR in galerie-intern browse for prefix '" + prefix + "': " + e.getMessage());
-            Map<String, Object> empty = new HashMap<>();
-            empty.put("prefix", prefix);
-            empty.put("folders", Collections.emptyList());
-            empty.put("images", Collections.emptyList());
-            return empty;
+            return emptyResult();
         }
     }
 
     @GetMapping("/thumbnail")
     public ResponseEntity<byte[]> thumbnail(@RequestParam String key) {
-        if (!key.startsWith(ROOT)) {
+        String realRootValue = realRoot();
+        if (realRootValue == null || !key.startsWith(realRootValue)) {
             return ResponseEntity.badRequest().build();
         }
         try {
@@ -122,7 +166,8 @@ public class GalerieInternController {
     /** Vollbild (Lightbox) - wie /thumbnail auth-gated, aber ohne Verkleinerung. */
     @GetMapping("/image")
     public void image(@RequestParam String key, jakarta.servlet.http.HttpServletResponse response) throws IOException {
-        if (!key.startsWith(ROOT)) {
+        String realRootValue = realRoot();
+        if (realRootValue == null || !key.startsWith(realRootValue)) {
             response.setStatus(400);
             return;
         }

@@ -23,7 +23,6 @@ import {
 } from '../../../lib/noten';
 import { getCachedUri, listCachedNoten, downloadMany } from '../../../lib/notenCache';
 import { fetchMe } from '../../../lib/auth';
-import { getNotenDefaultSubpath, joinPrefix } from '../../../lib/settings';
 import { font, radius, spacing, columnsForWidth, type ColorTokens } from '../../../lib/theme';
 import { useAppTheme } from '../../../lib/ThemeContext';
 
@@ -38,13 +37,10 @@ export default function NotenBrowser() {
   const { width } = useWindowDimensions();
   const columns = columnsForWidth(width);
 
-  // Der konfigurierte Noten-Root-Ordner (Admin > noten_prefix) plus der persönliche
-  // Standard-Unterordner (Profil > Einstellungen) gelten nur an der Wurzel — Unterordner
-  // kommen bereits als vollständige Präfixe von browseNoten().
+  // Der konfigurierte Noten-Root-Ordner (Admin > noten_prefix) gilt nur an der Wurzel —
+  // Unterordner kommen bereits als vollständige Präfixe von browseNoten().
   const [rootPrefix, setRootPrefix] = useState<string | null>(null);
-  const [defaultSubpath, setDefaultSubpath] = useState('');
-  const effectiveRoot = rootPrefix !== null ? joinPrefix(rootPrefix, defaultSubpath) : null;
-  const prefix = prefixParam ?? effectiveRoot ?? '';
+  const prefix = prefixParam ?? rootPrefix ?? '';
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,20 +134,11 @@ export default function NotenBrowser() {
   // sonst würde kurz der gesamte Bucket statt des eingerichteten Ordners aufblitzen.
   const readyToLoad = prefixParam !== undefined || rootPrefix !== null;
 
-  // Bei jedem Fokussieren des Tabs den persönlichen Standard-Unterordner neu lesen
-  // (könnte sich zwischenzeitlich in den Einstellungen geändert haben).
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
       setSelectionMode(false);
       setSelected(new Set());
-      if (prefixParam === undefined) {
-        getNotenDefaultSubpath()
-          .then(sub => { if (!cancelled) setDefaultSubpath(sub); })
-          .catch(() => {});
-      }
-      return () => { cancelled = true; };
-    }, [prefixParam])
+    }, [])
   );
 
   useEffect(() => {
