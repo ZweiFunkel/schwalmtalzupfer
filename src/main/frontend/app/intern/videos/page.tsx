@@ -172,6 +172,14 @@ function CloseIcon({ className = 'h-4 w-4' }: { className?: string }) {
   )
 }
 
+function ExitFullscreenIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 4v4a1 1 0 01-1 1H4M15 4v4a1 1 0 001 1h4M20 15h-4a1 1 0 00-1 1v4M4 15h4a1 1 0 011 1v4" />
+    </svg>
+  )
+}
+
 // ─── Video Card (Grid-Kachel im YouTube-Stil) ────────────────────────────────
 
 function VideoCard({ video, onOpen }: { video: VideoEntry; onOpen: (v: VideoEntry) => void }) {
@@ -394,6 +402,18 @@ function WatchArea({
           <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
             {playlistLoading ? 'Lade Playlist…' : 'Keine Videos gefunden'}
           </div>
+        )}
+        {/* Im Vollbild bleibt das der einzige sichtbare Button - vorher waren alle
+            Steuerelemente (inkl. des Vollbild-Umschalters selbst) ausgeblendet, sodass
+            man nur noch per ESC rauskam. */}
+        {isFullscreen && (
+          <button
+            onClick={toggleFullscreen}
+            title="Vollbild verlassen"
+            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70"
+          >
+            <ExitFullscreenIcon />
+          </button>
         )}
       </div>
 
