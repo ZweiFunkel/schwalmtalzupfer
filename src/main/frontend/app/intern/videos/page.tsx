@@ -147,6 +147,31 @@ function YouTubeIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
   )
 }
 
+// Klassisches YouTube-Kinomodus-Symbol: ein breites Rechteck.
+function TheaterIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <rect x="3" y="7" width="18" height="10" rx="1.5" />
+    </svg>
+  )
+}
+
+function FullscreenIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 9V5a1 1 0 011-1h4M15 4h4a1 1 0 011 1v4M20 15v4a1 1 0 01-1 1h-4M9 20H5a1 1 0 01-1-1v-4" />
+    </svg>
+  )
+}
+
+function CloseIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+}
+
 // ─── Video Card (Grid-Kachel im YouTube-Stil) ────────────────────────────────
 
 function VideoCard({ video, onOpen }: { video: VideoEntry; onOpen: (v: VideoEntry) => void }) {
@@ -257,28 +282,40 @@ function SplitVideos({ items, onOpen }: { items: VideoEntry[]; onOpen: (v: Video
   )
 }
 
-// ─── Theater-Ansicht (großes Kino/Watch-Page-artiges Overlay) ───────────────
+// ─── Watch-Bereich: normale Ansicht → Kinomodus → Vollbild, wie bei YouTube ──
+// Anders als vorher KEIN Vollbild-Overlay mehr, sondern ein normaler Teil der Seite
+// (rendert oben in <main>, Archiv-Navigation und Grid bleiben darunter erreichbar).
+// "Kinomodus" verbreitert den Player innerhalb der Spalte, "Vollbild" nutzt die
+// native Fullscreen-API des Browsers - genau die drei Stufen, die YouTube selbst hat.
 
-function TheaterOverlay({
+function WatchArea({
   initialVideo, pool, onClose,
 }: {
   initialVideo: VideoEntry
   pool: VideoEntry[]
   onClose: () => void
 }) {
+  const wrapperRef = React.useRef<HTMLDivElement>(null)
   const [activeVideo, setActiveVideo] = useState(initialVideo)
   const [playlistItems, setPlaylistItems] = useState<PlaylistItem[]>([])
   const [playlistLoading, setPlaylistLoading] = useState(initialVideo.type === 'PLAYLIST')
   const [currentVideoId, setCurrentVideoId] = useState(activeVideo.type === 'VIDEO' ? activeVideo.youtubeId : '')
-  const [showSidebar, setShowSidebar] = useState(true)
+  const [theaterMode, setTheaterMode] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // ESC schließt, Hintergrund-Scroll sperren (wie Lightbox)
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', h)
-    document.body.style.overflow = 'hidden'
-    return () => { document.removeEventListener('keydown', h); document.body.style.overflow = '' }
-  }, [onClose])
+    const h = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', h)
+    return () => document.removeEventListener('fullscreenchange', h)
+  }, [])
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {})
+    } else {
+      wrapperRef.current?.requestFullscreen().catch(() => {})
+    }
+  }
 
   // Playlist-Inhalte laden, sobald ein Playlist-Eintrag aktiv wird
   useEffect(() => {
@@ -322,175 +359,160 @@ function TheaterOverlay({
 
   function switchTo(v: VideoEntry) {
     setActiveVideo(v)
-    setShowSidebar(true)
   }
 
   const related = pool.filter(v => v.id !== activeVideo.id)
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-white/97 dark:bg-black/97 backdrop-blur-sm"
-      onClick={onClose}
+      ref={wrapperRef}
+      className={isFullscreen
+        ? 'flex h-screen w-screen flex-col justify-center bg-black'
+        : `mx-auto mb-10 transition-all duration-300 ${theaterMode ? 'max-w-none' : 'max-w-3xl'}`
+      }
     >
-      {/* Top bar */}
-      <div
-        className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gray-200 dark:border-white/10 bg-white/90 dark:bg-black/80 px-4 py-3 backdrop-blur sm:px-6"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex min-w-0 items-center gap-2">
-          <button
-            onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white"
-            aria-label="Schließen"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <p className="truncate text-sm font-semibold text-gray-800 dark:text-white">{currentTitle}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            onClick={() => setShowSidebar(v => !v)}
-            className={`hidden items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition lg:flex ${
-              showSidebar
-                ? 'border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400'
-                : 'border-gray-200 dark:border-white/15 text-gray-500 dark:text-gray-400 hover:border-green-500/40 hover:text-green-600 dark:hover:text-green-400'
-            }`}
-          >
-            <PlaylistIcon className="h-3.5 w-3.5" />
-            Seitenleiste
-          </button>
-          <a
-            href={currentVideoId ? `https://www.youtube.com/watch?v=${currentVideoId}` : ytUrl(activeVideo)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/15 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 transition hover:border-red-400 hover:text-red-500 dark:hover:text-red-400"
-          >
-            <YouTubeIcon />
-            YouTube
-          </a>
-          <span className="hidden text-xs text-gray-400 dark:text-gray-500 sm:inline">
-            <kbd className="rounded border border-gray-300 dark:border-white/20 px-1.5 py-0.5 font-mono">ESC</kbd> schließt
-          </span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div
-        className={`mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 ${showSidebar ? 'max-w-[1600px] lg:flex-row' : 'max-w-[1280px]'}`}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Player-Spalte */}
-        <div className="min-w-0 flex-1">
-          <div className="relative w-full overflow-hidden rounded-xl bg-black shadow-2xl" style={{ aspectRatio: '16/9' }}>
-            {useIframeFallback ? (
-              <iframe
-                src={playlistEmbedSrc(activeVideo.youtubeId)}
-                title={currentTitle}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0 h-full w-full border-0"
-              />
-            ) : currentVideoId ? (
-              <YouTubePlayer
-                key={currentVideoId}
-                videoId={currentVideoId}
-                title={currentTitle}
-                thumbnailUrl={currentThumb}
-                autoplay
-                onEnded={handleEnded}
-                className="absolute inset-0 h-full w-full"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
-                {playlistLoading ? 'Lade Playlist…' : 'Keine Videos gefunden'}
-              </div>
-            )}
-          </div>
-          <div className="mt-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{currentTitle}</h2>
-            {isPlaylist && (
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Playlist · {activeVideo.title}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Seitenleiste: Playlist-Queue + Weitere Videos */}
-        {showSidebar && (
-          <div className="w-full shrink-0 lg:w-[380px]">
-            {isPlaylist && (
-              <div className="mb-6">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Playlist</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">{playlistItems.length} Videos</span>
-                </div>
-                <div className="flex max-h-[50vh] flex-col gap-1.5 overflow-y-auto rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-2">
-                  {playlistLoading ? (
-                    [1, 2, 3, 4].map(i => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-100 dark:bg-white/5" />)
-                  ) : playlistItems.length === 0 ? (
-                    <p className="px-2 py-4 text-center text-xs text-gray-400 dark:text-gray-500">Keine Videos gefunden</p>
-                  ) : playlistItems.map((item, idx) => (
-                    <button
-                      key={item.videoId}
-                      onClick={() => setCurrentVideoId(item.videoId)}
-                      className={`flex gap-2 rounded-lg p-2 text-left transition ${
-                        currentVideoId === item.videoId
-                          ? 'bg-green-600 text-white'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
-                      }`}
-                    >
-                      <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded bg-gray-200 dark:bg-slate-800">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={item.thumbnail} alt="" className="h-full w-full object-cover" />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                          <span className="text-[10px] font-bold text-white">{idx + 1}</span>
-                        </div>
-                      </div>
-                      <p className="min-w-0 flex-1 line-clamp-2 text-xs font-medium">{item.title}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {related.length > 0 && (
-              <div>
-                <span className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-200">Weitere Videos</span>
-                <div className="flex flex-col gap-2">
-                  {related.map(v => {
-                    const thumb = thumbnailFor(v)
-                    return (
-                      <button
-                        key={v.id}
-                        onClick={() => switchTo(v)}
-                        className="flex gap-2 rounded-lg p-1.5 text-left transition hover:bg-gray-100 dark:hover:bg-white/10"
-                      >
-                        <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-slate-800">
-                          {thumb ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={thumb} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center">
-                              <PlaylistIcon className="h-5 w-5 text-gray-400 dark:text-slate-600" />
-                            </div>
-                          )}
-                          {v.type === 'PLAYLIST' && (
-                            <div className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.5 text-[9px] font-medium text-white">
-                              Playlist
-                            </div>
-                          )}
-                        </div>
-                        <p className="min-w-0 flex-1 line-clamp-2 text-xs font-medium text-gray-700 dark:text-gray-200">{v.title}</p>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
+      <div className="relative w-full overflow-hidden bg-black shadow-2xl rounded-xl" style={{ aspectRatio: '16/9' }}>
+        {useIframeFallback ? (
+          <iframe
+            src={playlistEmbedSrc(activeVideo.youtubeId)}
+            title={currentTitle}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 h-full w-full border-0"
+          />
+        ) : currentVideoId ? (
+          <YouTubePlayer
+            key={currentVideoId}
+            videoId={currentVideoId}
+            title={currentTitle}
+            thumbnailUrl={currentThumb}
+            autoplay
+            onEnded={handleEnded}
+            className="absolute inset-0 h-full w-full"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
+            {playlistLoading ? 'Lade Playlist…' : 'Keine Videos gefunden'}
           </div>
         )}
       </div>
+
+      {!isFullscreen && (
+        <>
+          {/* Titel + Normal/Theater/Vollbild-Steuerung */}
+          <div className="mt-3 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">{currentTitle}</h2>
+              {isPlaylist && (
+                <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Playlist · {activeVideo.title}</p>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                onClick={() => setTheaterMode(v => !v)}
+                title={theaterMode ? 'Standardansicht' : 'Kinomodus'}
+                aria-pressed={theaterMode}
+                className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                  theaterMode
+                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10'
+                }`}
+              >
+                <TheaterIcon />
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                title="Vollbild"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
+              >
+                <FullscreenIcon />
+              </button>
+              <a
+                href={currentVideoId ? `https://www.youtube.com/watch?v=${currentVideoId}` : ytUrl(activeVideo)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Auf YouTube ansehen"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-red-500 dark:hover:text-red-400"
+              >
+                <YouTubeIcon className="h-4 w-4" />
+              </a>
+              <button
+                onClick={onClose}
+                title="Schließen"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+          </div>
+
+          {isPlaylist && (
+            <div className="mt-5">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Playlist</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">{playlistItems.length} Videos</span>
+              </div>
+              <div className="flex max-h-[420px] flex-col gap-1.5 overflow-y-auto rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-2">
+                {playlistLoading ? (
+                  [1, 2, 3, 4].map(i => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-100 dark:bg-white/5" />)
+                ) : playlistItems.length === 0 ? (
+                  <p className="px-2 py-4 text-center text-xs text-gray-400 dark:text-gray-500">Keine Videos gefunden</p>
+                ) : playlistItems.map((item, idx) => (
+                  <button
+                    key={item.videoId}
+                    onClick={() => setCurrentVideoId(item.videoId)}
+                    className={`flex gap-2 rounded-lg p-2 text-left transition ${
+                      currentVideoId === item.videoId
+                        ? 'bg-green-600 text-white'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded bg-gray-200 dark:bg-slate-800">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.thumbnail} alt="" className="h-full w-full object-cover" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <span className="text-[10px] font-bold text-white">{idx + 1}</span>
+                      </div>
+                    </div>
+                    <p className="min-w-0 flex-1 line-clamp-2 text-xs font-medium">{item.title}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {related.length > 0 && (
+            <div className="mt-6">
+              <span className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-200">Weitere Videos</span>
+              <div className={`grid gap-4 ${theaterMode ? 'sm:grid-cols-3 xl:grid-cols-5' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
+                {related.map(v => {
+                  const thumb = thumbnailFor(v)
+                  return (
+                    <button key={v.id} onClick={() => switchTo(v)} className="group text-left">
+                      <div className="relative aspect-video overflow-hidden rounded-lg bg-gray-200 dark:bg-slate-800">
+                        {thumb ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={thumb} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <PlaylistIcon className="h-6 w-6 text-gray-400 dark:text-slate-600" />
+                          </div>
+                        )}
+                        {v.type === 'PLAYLIST' && (
+                          <div className="absolute bottom-1.5 right-1.5 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                            Playlist
+                          </div>
+                        )}
+                      </div>
+                      <p className="mt-2 line-clamp-2 text-xs font-medium text-gray-700 dark:text-gray-200">{v.title}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -570,16 +592,39 @@ function WeitereContent({ videos, sub, onOpen }: {
 
 // ─── Sidebar nav ──────────────────────────────────────────────────────────────
 
+// Kleine, ruhige Linien-Icons statt der vorherigen bunten Punkte pro Sektion.
+function SunIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+    </svg>
+  )
+}
+function SnowflakeIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20M4.5 6l15 12M4.5 18l15-12" />
+    </svg>
+  )
+}
+function StarIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+    </svg>
+  )
+}
+
 function NavItem({ active, onClick, children, indent = false }: {
   active: boolean; onClick: () => void; children: React.ReactNode; indent?: boolean
 }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left text-sm transition-all duration-150 rounded-lg px-3 py-1.5 flex items-center gap-2 ${indent ? 'pl-5' : ''}
+      className={`w-full text-left text-sm transition-colors duration-150 rounded-lg px-3 py-1.5 flex items-center gap-2 ${indent ? 'pl-6' : ''}
         ${active
-          ? 'bg-green-600 text-white font-semibold shadow-sm shadow-green-700/20'
-          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white'
+          ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 font-medium'
+          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
         }`}
     >
       {children}
@@ -587,12 +632,12 @@ function NavItem({ active, onClick, children, indent = false }: {
   )
 }
 
-function SidebarSection({ label, color, children }: { label: string; color: string; children: React.ReactNode }) {
+function SidebarSection({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <div className="flex items-center gap-2 mb-1.5 px-1">
-        <span className={`h-2 w-2 rounded-full shrink-0 ${color}`} />
-        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{label}</span>
+      <div className="flex items-center gap-2 mb-1.5 px-2 text-gray-400 dark:text-gray-500">
+        {icon}
+        <span className="text-xs font-medium">{label}</span>
       </div>
       {children}
     </div>
@@ -604,13 +649,13 @@ function SidebarNav({ nav, selection, onSelect }: {
   selection: Selection | null
   onSelect: (s: Selection) => void
 }) {
-  function KonzertSection({ cat, label, color, years }: {
-    cat: 'SOMMER' | 'WINTER'; label: string; color: string; years: KonzertNavYear[]
+  function KonzertSection({ cat, label, icon, years }: {
+    cat: 'SOMMER' | 'WINTER'; label: string; icon: React.ReactNode; years: KonzertNavYear[]
   }) {
     return (
-      <SidebarSection label={label} color={color}>
+      <SidebarSection label={label} icon={icon}>
         {years.length === 0 ? (
-          <p className="px-2 pb-1 text-xs italic text-gray-400 dark:text-gray-600">Keine Videos</p>
+          <p className="px-3 pb-1 text-xs italic text-gray-400 dark:text-gray-600">Keine Videos</p>
         ) : (
           <div className="flex flex-col gap-0.5">
             {years.map(({ year, days }) =>
@@ -621,10 +666,10 @@ function SidebarNav({ nav, selection, onSelect }: {
               ) : (
                 <div key={year}>
                   <NavItem active={isSel(selection, { cat, year, day: null })} onClick={() => onSelect({ cat, year, day: null })}>
-                    <span className="font-medium">{year}</span>
-                    <span className="ml-auto text-[10px] opacity-60">{days.length}d</span>
+                    <span>{year}</span>
+                    <span className="ml-auto text-[10px] text-gray-400 dark:text-gray-500">{days.length}d</span>
                   </NavItem>
-                  <div className="relative ml-3 mt-0.5 mb-1 flex flex-col gap-0.5">
+                  <div className="relative ml-3.5 mt-0.5 mb-1 flex flex-col gap-0.5">
                     <div className="absolute left-0 top-1 bottom-1 w-px bg-gray-200 dark:bg-white/10" />
                     {days.map(day => (
                       <NavItem key={day} active={isSel(selection, { cat, year, day })} onClick={() => onSelect({ cat, year, day })} indent>
@@ -642,13 +687,13 @@ function SidebarNav({ nav, selection, onSelect }: {
   }
 
   return (
-    <nav className="flex flex-col gap-5">
-      <KonzertSection cat="SOMMER" label="Sommerkonzert" color="bg-amber-400" years={nav.sommer} />
-      <KonzertSection cat="WINTER" label="Winterkonzert" color="bg-sky-400" years={nav.winter} />
+    <nav className="flex flex-col gap-6">
+      <KonzertSection cat="SOMMER" label="Sommerkonzert" icon={<SunIcon />} years={nav.sommer} />
+      <KonzertSection cat="WINTER" label="Winterkonzert" icon={<SnowflakeIcon />} years={nav.winter} />
 
-      <SidebarSection label="Weitere Auftritte" color="bg-purple-400">
+      <SidebarSection label="Weitere Auftritte" icon={<StarIcon />}>
         {nav.weitere.length === 0 ? (
-          <p className="px-2 pb-1 text-xs italic text-gray-400 dark:text-gray-600">Keine Videos</p>
+          <p className="px-3 pb-1 text-xs italic text-gray-400 dark:text-gray-600">Keine Videos</p>
         ) : (
           <div className="flex flex-col gap-0.5">
             {nav.weitere.map(sub => (
@@ -674,7 +719,7 @@ function VideosPageInner() {
   const [videosLoading, setVideosLoading] = useState(true)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [navOpen, setNavOpen] = useState(false)
-  const [theater, setTheater] = useState<{ video: VideoEntry; pool: VideoEntry[] } | null>(null)
+  const [watch, setWatch] = useState<{ video: VideoEntry; pool: VideoEntry[] } | null>(null)
 
   useEffect(() => { document.title = 'Videos – Schwalmtalzupfer' }, [])
 
@@ -716,8 +761,8 @@ function VideosPageInner() {
     router.replace(`?${params.toString()}`, { scroll: false })
   }, [router])
 
-  const openTheater = useCallback((video: VideoEntry, pool: VideoEntry[]) => setTheater({ video, pool }), [])
-  const closeTheater = useCallback(() => setTheater(null), [])
+  const openWatch = useCallback((video: VideoEntry, pool: VideoEntry[]) => setWatch({ video, pool }), [])
+  const closeWatch = useCallback(() => setWatch(null), [])
 
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
   if (!user) return null
@@ -817,14 +862,18 @@ function VideosPageInner() {
             </div>
           ) : selection ? (
             <>
+              {watch && (
+                <WatchArea initialVideo={watch.video} pool={watch.pool} onClose={closeWatch} />
+              )}
+
               {/* Section header */}
               <div className={`mb-6 flex items-center gap-3 rounded-xl border bg-gradient-to-r px-4 py-3 ${catColor}`}>
                 <div className={`h-7 w-1 rounded-full shrink-0 ${catAccent}`} />
                 <span className="font-semibold text-gray-800 dark:text-white">{selectionLabel(selection)}</span>
               </div>
               {selection.cat === 'WEITERE'
-                ? <WeitereContent videos={videos} sub={selection.sub} onOpen={openTheater} />
-                : <KonzertContent videos={videos} cat={selection.cat} year={selection.year} day={selection.day} onOpen={openTheater} />
+                ? <WeitereContent videos={videos} sub={selection.sub} onOpen={openWatch} />
+                : <KonzertContent videos={videos} cat={selection.cat} year={selection.year} day={selection.day} onOpen={openWatch} />
               }
             </>
           ) : (
@@ -842,10 +891,6 @@ function VideosPageInner() {
           )}
         </main>
       </div>
-
-      {theater && (
-        <TheaterOverlay initialVideo={theater.video} pool={theater.pool} onClose={closeTheater} />
-      )}
     </div>
   )
 }
