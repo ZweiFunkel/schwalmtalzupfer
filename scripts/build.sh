@@ -30,11 +30,72 @@ done
 APP_DIR="/opt/schwalmtalzupfer"
 JAR_TARGET="$APP_DIR/app.jar"
 JAR_BACKUP="$APP_DIR/app.jar.backup"
+BACKUP_DIR="$APP_DIR/backups"
+MAX_BACKUPS=3
+BACKUP_MARKER="$BACKUP_DIR/.last_backup_commit"
+DB_CONTAINER="zupfer-db-v2"
+DB_NAME="zupfer"
+DB_USER="zupfer"
 
 echo ""
 echo -e "${BOLD}${CYAN}  Schwalmtalzupfer – Server Build${NC}"
 hr
 echo ""
+
+# ── Backups (App-JAR + DB) ────────────────────────────────────────────────────
+# Läuft VOR allem anderen. Übersprungen, wenn sich der Code seit dem letzten
+# Backup nicht geändert hat (z.B. erneutes build.sh nach einem Absturz ohne
+# neuen Commit) - sonst würde jeder Neustart ein weiteres, redundantes Backup
+# anlegen. Immer nur die neuesten 3 Backups je Typ werden aufgehoben.
+hr
+echo -e "${BOLD}  Schritt 0 – Backups${NC}"
+hr
+mkdir -p "$BACKUP_DIR"
+
+INCOMING_COMMIT=""
+if [[ -d "$APP_DIR/.git" ]]; then
+  git -C "$APP_DIR" fetch --quiet origin 2>/dev/null || true
+  INCOMING_COMMIT=$(git -C "$APP_DIR" rev-parse '@{u}' 2>/dev/null || git -C "$APP_DIR" rev-parse HEAD 2>/dev/null || true)
+fi
+LAST_BACKUP_COMMIT=""
+[[ -f "$BACKUP_MARKER" ]] && LAST_BACKUP_COMMIT=$(cat "$BACKUP_MARKER")
+
+if [[ -n "$INCOMING_COMMIT" && "$INCOMING_COMMIT" == "$LAST_BACKUP_COMMIT" ]]; then
+  info "Kein neuer Commit seit dem letzten Backup (${INCOMING_COMMIT:0:8}) – überspringe Backup."
+else
+  TS=$(date +%Y%m%d-%H%M%S)
+
+  if [[ -f "$JAR_TARGET" ]]; then
+    cp "$JAR_TARGET" "$BACKUP_DIR/app-$TS.jar"
+    ok "JAR-Backup: $BACKUP_DIR/app-$TS.jar"
+  else
+    info "Noch keine app.jar vorhanden – kein JAR-Backup nötig."
+  fi
+
+  if command -v docker &>/dev/null && docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
+    if docker exec "$DB_CONTAINER" pg_dump -U "$DB_USER" -d "$DB_NAME" -F c -f "/tmp/db-$TS.dump" 2>/dev/null \
+       && docker cp "$DB_CONTAINER:/tmp/db-$TS.dump" "$BACKUP_DIR/db-$TS.dump" 2>/dev/null; then
+      docker exec "$DB_CONTAINER" rm -f "/tmp/db-$TS.dump" 2>/dev/null || true
+      ok "DB-Backup: $BACKUP_DIR/db-$TS.dump"
+    else
+      warn "DB-Backup fehlgeschlagen (pg_dump/docker cp) – Build läuft trotzdem weiter."
+    fi
+  else
+    warn "DB-Container '$DB_CONTAINER' nicht gefunden/läuft nicht – kein DB-Backup erstellt."
+  fi
+
+  # Rotation: je Typ (app-*, db-*) nur die neuesten $MAX_BACKUPS behalten.
+  # "|| true" nötig, da ls bei keinem Treffer (z.B. beim allerersten Lauf) mit
+  # Fehlercode abbricht, was unter set -e/pipefail sonst das ganze Skript stoppen würde.
+  for prefix in app db; do
+    { ls -1t "$BACKUP_DIR/$prefix"-* 2>/dev/null || true; } | tail -n +$((MAX_BACKUPS + 1)) | while read -r old; do
+      rm -f "$old"
+      info "Altes Backup entfernt (max. $MAX_BACKUPS): $(basename "$old")"
+    done
+  done
+
+  [[ -n "$INCOMING_COMMIT" ]] && echo "$INCOMING_COMMIT" > "$BACKUP_MARKER"
+fi
 
 # ── API-URL ermitteln ─────────────────────────────────────────────────────────
 if [[ -z "$API_URL" ]]; then
