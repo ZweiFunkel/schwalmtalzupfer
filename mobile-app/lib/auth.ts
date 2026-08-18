@@ -43,8 +43,15 @@ export interface MemberProfile {
     wochentag?: string;
     vonUhrzeit?: string | null;
     bisUhrzeit?: string | null;
-    location?: { name?: string; adresse?: string };
+    location?: { name?: string; adresse?: string; parkplatzInfo?: string };
   };
+  monatsbeitragCents?: number | null;
+  individuellerPreis?: boolean;
+  naechsteAenderung?: {
+    gueltigAb: string;
+    gruppeLabel: string;
+    monatsbeitragCents: number | null;
+  } | null;
 }
 
 export async function fetchMe(): Promise<MemberProfile | null> {
