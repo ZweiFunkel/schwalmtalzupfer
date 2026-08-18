@@ -27,7 +27,7 @@ function isSel(sel: Selection | null, item: Selection): boolean {
 export default function VideosScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { width } = useWindowDimensions();
+  const { width, height: screenHeight } = useWindowDimensions();
 
   const [videos, setVideos] = useState<VideoEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +76,14 @@ export default function VideosScreen() {
       // ignorieren
     }
   }
+
+  // Feste, von RN vorgegebene Maße statt sie innerhalb der WebView zu messen (siehe
+  // playerHtmlTemplate) - bei geteilter Ansicht (Video + Playlist-Liste) exakt die per
+  // aspectRatio berechnete Höhe, sonst die volle verfügbare Höhe (YouTube letterboxt bei
+  // abweichendem Seitenverhältnis selbst sauber, das ist kein Zuschneide-Problem).
+  const isSplitView = playing?.type === 'PLAYLIST' && !playlistHidden;
+  const videoWidthPx = width;
+  const videoHeightPx = isSplitView ? (width * 9) / 16 : screenHeight;
   const [cat, setCat] = useState<'SOMMER' | 'WINTER' | 'WEITERE'>('SOMMER');
 
   useEffect(() => {
@@ -281,7 +289,7 @@ export default function VideosScreen() {
               // rohes Playlist-Embed, ohne eigene Item-Navigation.
               <WebView
                 key={playing.id}
-                source={{ html: buildPlaylistEmbedHtml(playing.youtubeId), baseUrl: 'https://www.schwalmtalzupfer.de' }}
+                source={{ html: buildPlaylistEmbedHtml(playing.youtubeId, videoWidthPx, videoHeightPx), baseUrl: 'https://www.schwalmtalzupfer.de' }}
                 style={styles.webview}
                 allowsFullscreenVideo
                 mediaPlaybackRequiresUserAction={false}
@@ -291,13 +299,13 @@ export default function VideosScreen() {
               <>
                 <WebView
                   key={currentVideoId}
-                  source={{ html: buildVideoPlayerHtml(currentVideoId), baseUrl: 'https://www.schwalmtalzupfer.de' }}
-                  style={playing.type === 'PLAYLIST' && !playlistHidden ? styles.webviewSplit : styles.webview}
+                  source={{ html: buildVideoPlayerHtml(currentVideoId, videoWidthPx, videoHeightPx), baseUrl: 'https://www.schwalmtalzupfer.de' }}
+                  style={isSplitView ? styles.webviewSplit : styles.webview}
                   allowsFullscreenVideo
                   mediaPlaybackRequiresUserAction={false}
                   onMessage={e => handlePlayerMessage(e.nativeEvent.data)}
                 />
-                {playing.type === 'PLAYLIST' && !playlistHidden && (
+                {isSplitView && (
                   <FlatList
                     style={styles.playlistList}
                     data={playlistItems}

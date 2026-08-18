@@ -49,8 +49,14 @@ export async function fetchPlaylistItems(youtubeId: string): Promise<PlaylistIte
  * diese Domain beschränkt). Muss mit baseUrl der echten Domain geladen werden (siehe WebView-
  * Aufruf), sonst schlagen auf bestimmte Domains beschränkte Embeds grundsätzlich fehl, weil eine
  * lokal geladene HTML-Seite sonst keinen erkennbaren Origin hat.
+ *
+ * width/height werden bewusst von React Native aus vorgegeben (statt sie per
+ * document.documentElement.clientWidth/Height innerhalb der WebView zu messen) - dieses Messen
+ * lief bei der geteilten Ansicht (Video + Playlist-Liste darunter) offenbar zu früh, bevor die
+ * WebView ihre endgültige, per aspectRatio berechnete Höhe hatte, wodurch das Video seitlich
+ * abgeschnitten wurde. Feste, von RN übergebene Pixelwerte umgehen dieses Timing-Problem.
  */
-function playerHtmlTemplate(topLevel: string, listVars: string): string {
+function playerHtmlTemplate(topLevel: string, listVars: string, width: number, height: number): string {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -65,13 +71,9 @@ function playerHtmlTemplate(topLevel: string, listVars: string): string {
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
     function onYouTubeIframeAPIReady() {
-      // Explizite Pixelmaße statt '100%' - der YT-Player berechnet Prozentangaben in manchen
-      // WebViews falsch (Video ragt seitlich über den sichtbaren Bereich hinaus/wird
-      // abgeschnitten). #player/iframe werden zusätzlich per CSS auf 100% erzwungen, falls sich
-      // die Fenstergröße nach dem Erstellen noch ändert (z.B. Rotation).
       var player = new YT.Player('player', {
-        height: String(document.documentElement.clientHeight),
-        width: String(document.documentElement.clientWidth),
+        height: '${Math.round(height)}',
+        width: '${Math.round(width)}',
         ${topLevel}
         playerVars: { ${listVars} autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1 },
         events: {
@@ -83,9 +85,6 @@ function playerHtmlTemplate(topLevel: string, listVars: string): string {
           }
         }
       });
-      window.addEventListener('resize', function() {
-        player.setSize(document.documentElement.clientWidth, document.documentElement.clientHeight);
-      });
     }
   </script>
 </body>
@@ -93,8 +92,8 @@ function playerHtmlTemplate(topLevel: string, listVars: string): string {
 }
 
 /** Player für ein einzelnes Video (auch für das jeweils aktuelle Video innerhalb einer Playlist). */
-export function buildVideoPlayerHtml(videoId: string): string {
-  return playerHtmlTemplate(`videoId: '${videoId}',`, '');
+export function buildVideoPlayerHtml(videoId: string, width: number, height: number): string {
+  return playerHtmlTemplate(`videoId: '${videoId}',`, '', width, height);
 }
 
 /**
@@ -102,8 +101,8 @@ export function buildVideoPlayerHtml(videoId: string): string {
  * Server) - direkt die YouTube-Playlist als Embed laden. Hier ist keine Item-für-Item-Navigation
  * möglich, nur YouTubes eigene, eingebaute Playlist-Steuerung innerhalb des Players.
  */
-export function buildPlaylistEmbedHtml(playlistId: string): string {
-  return playerHtmlTemplate('', `listType: 'playlist', list: '${playlistId}',`);
+export function buildPlaylistEmbedHtml(playlistId: string, width: number, height: number): string {
+  return playerHtmlTemplate('', `listType: 'playlist', list: '${playlistId}',`, width, height);
 }
 
 const DAYS_ORDER = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
