@@ -172,14 +172,6 @@ function CloseIcon({ className = 'h-4 w-4' }: { className?: string }) {
   )
 }
 
-function ExitFullscreenIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 4v4a1 1 0 01-1 1H4M15 4v4a1 1 0 001 1h4M20 15h-4a1 1 0 00-1 1v4M4 15h4a1 1 0 011 1v4" />
-    </svg>
-  )
-}
-
 function PipIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -299,11 +291,13 @@ function SplitVideos({ items, onOpen }: { items: VideoEntry[]; onOpen: (v: Video
   )
 }
 
-// ─── Watch-Bereich: normale Ansicht → Kinomodus → Vollbild, wie bei YouTube ──
-// Anders als vorher KEIN Vollbild-Overlay mehr, sondern ein normaler Teil der Seite
-// (rendert oben in <main>, Archiv-Navigation und Grid bleiben darunter erreichbar).
-// "Kinomodus" verbreitert den Player innerhalb der Spalte, "Vollbild" nutzt die
-// native Fullscreen-API des Browsers - genau die drei Stufen, die YouTube selbst hat.
+// ─── Watch-Bereich: normale Ansicht → Kinomodus → Mini-Player ────────────────
+// Vollbild wird bewusst NICHT mehr selbst verwaltet, sondern komplett YouTube
+// überlassen (dessen eigener Steuerungsbutton, dank controls:1 immer sichtbar):
+// eigenes Vollbild hätte den WRAPPER (nicht das Iframe) zum Fullscreen-Element
+// gemacht - YouTubes eigener "Verkleinern"-Button im Iframe wusste davon nichts
+// und konnte dadurch nicht mehr rauswechseln, nur ESC hat funktioniert.
+// "Kinomodus" verbreitert den Player weiterhin innerhalb der Spalte.
 
 function WatchArea({
   initialVideo, pool, onClose,
@@ -314,13 +308,13 @@ function WatchArea({
 }) {
   const wrapperRef = React.useRef<HTMLDivElement>(null)
   const sentinelRef = React.useRef<HTMLDivElement>(null)
+  const lastHeightRef = React.useRef(0)
   const dragStateRef = React.useRef<{ startX: number; startY: number; startLeft: number; startTop: number } | null>(null)
   const [activeVideo, setActiveVideo] = useState(initialVideo)
   const [playlistItems, setPlaylistItems] = useState<PlaylistItem[]>([])
   const [playlistLoading, setPlaylistLoading] = useState(initialVideo.type === 'PLAYLIST')
   const [currentVideoId, setCurrentVideoId] = useState(activeVideo.type === 'VIDEO' ? activeVideo.youtubeId : '')
   const [theaterMode, setTheaterMode] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const [manualMiniOpen, setManualMiniOpen] = useState(false)
   const [scrolledAway, setScrolledAway] = useState(false)
   const [miniPos, setMiniPos] = useState<{ left: number; top: number } | null>(null)
@@ -337,25 +331,24 @@ function WatchArea({
     return () => obs.disconnect()
   }, [])
 
-  const mini = !isFullscreen && (manualMiniOpen || scrolledAway)
+  const mini = manualMiniOpen || scrolledAway
 
   useEffect(() => {
     if (!mini) setMiniPos(null)
   }, [mini])
 
+  // Hält die zuletzt gerenderte Höhe des normalen (nicht-mini) Bereichs fest, damit beim
+  // Umschalten auf den (position:fixed, also aus dem Textfluss genommenen) Mini-Player ein
+  // gleich hoher Platzhalter eingesetzt werden kann - sonst rutscht der gesamte Seiteninhalt
+  // beim Verkleinern/Wiederherstellen abrupt um die fehlende/wiederkehrende Höhe.
   useEffect(() => {
-    const h = () => setIsFullscreen(!!document.fullscreenElement)
-    document.addEventListener('fullscreenchange', h)
-    return () => document.removeEventListener('fullscreenchange', h)
-  }, [])
-
-  function toggleFullscreen() {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {})
-    } else {
-      wrapperRef.current?.requestFullscreen().catch(() => {})
-    }
-  }
+    if (mini) return
+    const el = wrapperRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => { lastHeightRef.current = entry.contentRect.height })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [mini])
 
   // Mini-Player verschiebbar machen. Pointer Capture sorgt dafür, dass Move/Up-Events
   // auch dann noch an den Griff gehen, wenn der Zeiger währenddessen über das YouTube-
@@ -437,13 +430,15 @@ function WatchArea({
     <>
       {/* Markiert die ursprüngliche Position des Players für IntersectionObserver + Zurückspringen aus dem Mini-Player */}
       <div ref={sentinelRef} aria-hidden />
+      {/* Platzhalter in Originalhöhe, damit der Seiteninhalt beim Verkleinern/Wiederherstellen
+          nicht abrupt springt (der eigentliche Wrapper wird beim Mini-Player aus dem Textfluss
+          genommen, siehe lastHeightRef oben). */}
+      {mini && <div style={{ height: lastHeightRef.current }} aria-hidden />}
       <div
         ref={wrapperRef}
-        className={isFullscreen
-          ? 'flex h-screen w-screen flex-col justify-center bg-black'
-          : mini
-            ? 'fixed z-50 w-72 select-none rounded-xl bg-black shadow-2xl ring-1 ring-black/20 sm:w-80'
-            : `mx-auto mb-10 transition-all duration-300 ${theaterMode ? 'max-w-none' : 'max-w-3xl'}`
+        className={mini
+          ? 'fixed z-50 w-72 select-none rounded-xl bg-black shadow-2xl ring-1 ring-black/20 sm:w-80'
+          : `mx-auto mb-10 transition-all duration-300 ${theaterMode ? 'max-w-none' : 'max-w-3xl'}`
         }
         style={mini ? (miniPos ? { left: miniPos.left, top: miniPos.top } : { right: 16, bottom: 16 }) : undefined}
       >
@@ -501,21 +496,9 @@ function WatchArea({
             {playlistLoading ? 'Lade Playlist…' : 'Keine Videos gefunden'}
           </div>
         )}
-        {/* Im Vollbild bleibt das der einzige sichtbare Button - vorher waren alle
-            Steuerelemente (inkl. des Vollbild-Umschalters selbst) ausgeblendet, sodass
-            man nur noch per ESC rauskam. */}
-        {isFullscreen && (
-          <button
-            onClick={toggleFullscreen}
-            title="Vollbild verlassen"
-            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70"
-          >
-            <ExitFullscreenIcon />
-          </button>
-        )}
         </div>
 
-      {!isFullscreen && !mini && (
+      {!mini && (
         <>
           {/* Titel + Normal/Theater/Vollbild-Steuerung */}
           <div className="mt-3 flex items-start justify-between gap-3">
@@ -537,13 +520,6 @@ function WatchArea({
                 }`}
               >
                 <TheaterIcon />
-              </button>
-              <button
-                onClick={toggleFullscreen}
-                title="Vollbild"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
-              >
-                <FullscreenIcon />
               </button>
               <button
                 onClick={() => setManualMiniOpen(true)}

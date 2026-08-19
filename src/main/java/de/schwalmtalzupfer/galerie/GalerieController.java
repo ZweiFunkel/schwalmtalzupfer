@@ -22,6 +22,9 @@ public class GalerieController {
     @Value("${app.r2.public-url:}")
     private String publicUrl;
 
+    @Value("${app.invitation.base-url:http://localhost:8080}")
+    private String appBaseUrl;
+
     private static final Set<String> IMAGE_EXTS = Set.of(".jpg", ".jpeg", ".png", ".webp", ".gif");
 
     /**
@@ -184,7 +187,9 @@ public class GalerieController {
         if (publicUrl != null && !publicUrl.isBlank()) {
             return publicUrl.stripTrailing() + "/" + key;
         }
-        return "/r2/" + key;
+        // Absolut statt eines bloß relativen "/r2/..."-Pfads - siehe AdminController.buildPublicUrl
+        // für die ausführliche Begründung (Mobile-App hat keinen impliziten Ursprung).
+        return appBaseUrl.stripTrailing() + "/r2/" + key;
     }
 }
 

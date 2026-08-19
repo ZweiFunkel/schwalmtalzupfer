@@ -1,4 +1,4 @@
-import { apiFetch } from './api';
+import { apiFetch, absoluteApiUrl } from './api';
 
 export interface VideoEntry {
   id: string;
@@ -20,7 +20,11 @@ export async function fetchVideos(): Promise<VideoEntry[]> {
 }
 
 export function thumbnailFor(v: VideoEntry): string | null {
-  return v.thumbnailUrl ?? (v.type === 'VIDEO' ? `https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg` : null);
+  // v.thumbnailUrl kann ein relativer R2-Fallback-Pfad sein (siehe absoluteApiUrl) -
+  // RN Image lädt sowas anders als ein Browser-<img> nicht automatisch gegen die eigene
+  // Origin auf, sondern zeigt einfach nichts an.
+  const raw = v.thumbnailUrl ?? (v.type === 'VIDEO' ? `https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg` : null);
+  return raw ? absoluteApiUrl(raw) : null;
 }
 
 export function watchUrl(v: VideoEntry): string {

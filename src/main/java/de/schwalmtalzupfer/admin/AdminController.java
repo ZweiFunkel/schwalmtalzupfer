@@ -39,6 +39,9 @@ public class AdminController {
     @Value("${app.r2.public-url:}")
     private String publicUrl;
 
+    @Value("${app.invitation.base-url:http://localhost:8080}")
+    private String appBaseUrl;
+
     /** Listet Assets im R2-Bucket mit Ordnerstruktur (delimiter=/).
      *  Mit recursive=true werden alle Dateien tief unterhalb des Prefixes zurückgegeben (kein Delimiter). */
     @GetMapping("/assets")
@@ -294,7 +297,14 @@ public class AdminController {
         if (publicUrl != null && !publicUrl.isBlank()) {
             return publicUrl.stripTrailing() + "/" + key;
         }
-        return "/r2/" + key; // handled by R2ProxyController
+        // Absolut statt eines bloß relativen "/r2/..."-Pfads: relative Pfade lassen sich nur
+        // im Browser gegen die aktuelle Seite auflösen, nicht z.B. in der Mobile-App (dort
+        // gibt es keinen impliziten Ursprung - ein Image-Loader lädt sowas kommentarlos nicht).
+        // appBaseUrl ist dieselbe, bereits korrekt hinter Reverse-Proxy/Cloudflare konfigurierte
+        // öffentliche Basis-URL, die auch für Einladungslinks genutzt wird (app.invitation.base-url) -
+        // zuverlässiger als ServletUriComponentsBuilder, das ohne konfiguriertes
+        // forward-headers-strategy die interne statt der öffentlichen Origin liefern würde.
+        return appBaseUrl.stripTrailing() + "/r2/" + key; // handled by R2ProxyController
     }
 }
 

@@ -1,4 +1,4 @@
-import { apiFetch, API_BASE } from './api';
+import { apiFetch, API_BASE, absoluteApiUrl } from './api';
 
 export interface GalerieFolder {
   name: string;
@@ -28,10 +28,7 @@ export async function browseGalerieIntern(prefix: string): Promise<GalerieBrowse
   return res.json();
 }
 
-/** Backend liefert bereits absolute API-Pfade (z.B. "/api/galerie-intern/image?key=..."). */
-export function absoluteApiUrl(path: string): string {
-  return path.startsWith('http') ? path : `${API_BASE}${path}`;
-}
+export { absoluteApiUrl };
 
 export function thumbnailUrl(key: string): string {
   return `${API_BASE}/api/galerie-intern/thumbnail?key=${encodeURIComponent(key)}`;

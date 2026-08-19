@@ -10,6 +10,7 @@ import {
   watchUrl, buildNav,
   type VideoEntry, type NavStructure, type PlaylistItem,
 } from '../../../lib/videos';
+import { absoluteApiUrl } from '../../../lib/api';
 import { font, radius, spacing, type ColorTokens } from '../../../lib/theme';
 import { useAppTheme } from '../../../lib/ThemeContext';
 
@@ -332,7 +333,7 @@ export default function VideosScreen() {
                         style={[styles.playlistRow, item.videoId === currentVideoId && styles.playlistRowActive]}
                         onPress={() => { setCurrentVideoId(item.videoId); setPlayerError(null); }}
                       >
-                        <Image source={{ uri: item.thumbnail }} style={styles.playlistThumb} />
+                        <Image source={{ uri: absoluteApiUrl(item.thumbnail) }} style={styles.playlistThumb} />
                         <Text style={styles.playlistItemTitle} numberOfLines={2}>{item.title}</Text>
                       </Pressable>
                     )}
