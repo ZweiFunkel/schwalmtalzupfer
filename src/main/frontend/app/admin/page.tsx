@@ -6,6 +6,14 @@ import { useAuth, isAdmin, isBoard, isChef } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import KalenderTab from './components/KalenderTab'
 import { AdminDocsPanel } from './components/AdminDocsPanel'
+import { ConfirmDialog } from './components/ui/ConfirmDialog'
+import { useToast } from './components/ui/Toast'
+import { HelpHint } from './components/ui/HelpHint'
+import { PreviewErrorBoundary } from './components/ui/PreviewErrorBoundary'
+import SectionResolver from '@/components/SectionResolver'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 const API_BASE = getApiBase()
 
@@ -17,19 +25,26 @@ interface PageMeta { id: string; slug: string; title: string; published?: boolea
 // ─── Section-Typen: verständliche Namen statt technischer Codes ────────────────
 // Reihenfolge bestimmt auch die Sortierung im "Sektion hinzufügen"-Dropdown.
 const SECTION_TYPE_INFO: Record<string, { label: string; icon: string; hint: string }> = {
-  HERO:              { label: 'Hero-Banner',              icon: '🖼️', hint: 'Großes Titelbild mit Überschrift & Button' },
-  EVENT_CARD:        { label: 'Event-Karten',              icon: '🎫', hint: 'Liste einzelner Veranstaltungs-Karten' },
-  TEXT_BLOCK:        { label: 'Textblock',                 icon: '📝', hint: 'Freier Text (Markdown)' },
-  PERSON_GRID:       { label: 'Personen-Übersicht',        icon: '👤', hint: 'Kachel-Raster mit Personen' },
-  NEXT_CONCERT:      { label: 'Nächstes Konzert',          icon: '🎵', hint: 'Countdown/Hinweis auf den nächsten Auftritt' },
-  BAND_GRID:         { label: 'Band-Mitglieder',           icon: '🎸', hint: 'Kachel-Raster der Band-Besetzung' },
-  CHOIR_LIST:        { label: 'Chor-Liste',                icon: '🎶', hint: 'Chorleitung & Stimmgruppen' },
-  IMAGE_CAPTION:     { label: 'Bild mit Bildunterschrift',  icon: '🖼️', hint: 'Einzelnes Bild inkl. Beschriftung' },
-  TERMINE_LIST:      { label: 'Terminliste',                icon: '📅', hint: 'Volle Terminverwaltung (wie /termine)' },
+  HERO:              { label: 'Hero-Banner',              icon: '🖼️', hint: 'Großes Titelbild mit Überschrift & Button - meist ganz oben auf einer Seite' },
+  EVENT_CARD:        { label: 'Event-Karten',              icon: '🎫', hint: 'Manuell gepflegte Liste einzelner Veranstaltungen (unabhängig von der Terminverwaltung)' },
+  TEXT_BLOCK:        { label: 'Textblock',                 icon: '📝', hint: 'Freier Fließtext mit optionaler Überschrift (unterstützt einfache Markdown-Formatierung)' },
+  PERSON_GRID:       { label: 'Personen-Übersicht',        icon: '👤', hint: 'Kachel-Raster mit Personen, Foto, Rolle(n) und kurzer Biografie' },
+  NEXT_CONCERT:      { label: 'Nächstes Konzert',          icon: '🎵', hint: 'Zeigt automatisch nur den nächsten anstehenden Termin aus deiner Liste an' },
+  BAND_GRID:         { label: 'Band-Mitglieder',           icon: '🎸', hint: 'Wie "Personen-Übersicht", aber als eigener Bereich für die Band-Besetzung' },
+  CHOIR_LIST:        { label: 'Chor-Liste',                icon: '🎶', hint: 'Chorleitung & Stimmgruppen mit Mitgliederliste' },
+  IMAGE_CAPTION:     { label: 'Einzelbild',                 icon: '🖼️', hint: 'Ein großes Bild mit Bildunterschrift - für Bild+Text nebeneinander siehe "Bild & Text"' },
+  TERMINE_LIST:      { label: 'Terminliste',                icon: '📅', hint: 'Vollständige Terminverwaltung mit Kategorien, Details und Archiv - wie die eigenständige Termine-Seite' },
   ACTIVITY_GRID:     { label: 'Aktivitäten & Ausflüge',    icon: '🚌', hint: 'Kachel-Raster für Ausflüge/Jugendfahrten' },
-  SPONSOR_GRID:      { label: 'Sponsoren',                  icon: '🤝', hint: 'Logo-Raster der Sponsoren' },
-  TERMINE_KONZERTE:  { label: 'Konzerttermine',             icon: '🎪', hint: 'Kompakte Konzertliste (wie /konzerte)' },
-  INTERN_CHANGELOG:  { label: 'Änderungsprotokoll',         icon: '🆕', hint: 'Was ist neu? (nur intern sichtbar)' },
+  SPONSOR_GRID:      { label: 'Sponsoren',                  icon: '🤝', hint: 'Logo-Raster der Sponsoren mit Kontaktdaten' },
+  TERMINE_KONZERTE:  { label: 'Konzerttermine',             icon: '🎪', hint: 'Automatische, kompakte Liste ALLER kommenden Konzerte - kein manuelles Pflegen nötig' },
+  INTERN_CHANGELOG:  { label: 'Änderungsprotokoll',         icon: '🆕', hint: 'Was ist neu? Nur für angemeldete Mitglieder im internen Bereich sichtbar' },
+  IMAGE_TEXT:        { label: 'Bild & Text',                icon: '🖇️', hint: 'Bild und Fließtext nebeneinander, wahlweise Bild links oder rechts' },
+  CTA_BUTTON:        { label: 'Aufruf-Button',              icon: '🔘', hint: 'Eigenständiger, auffälliger Button mit optionaler Überschrift/Text - z.B. "Jetzt anmelden"' },
+  FAQ:               { label: 'Häufige Fragen',             icon: '❓', hint: 'Aufklappbare Liste aus Frage und Antwort' },
+  SPACER:            { label: 'Abstand/Trenner',            icon: '➖', hint: 'Reiner Zwischenraum zur optischen Gliederung, optional mit dünner Trennlinie' },
+  QUOTE:             { label: 'Zitat',                      icon: '💬', hint: 'Groß hervorgehobenes Zitat mit optionalem Namen/Rolle' },
+  STATS:             { label: 'Zahlen & Fakten',            icon: '📊', hint: 'Große Kennzahlen nebeneinander, z.B. "seit 1975" oder "120+ Mitglieder"' },
+  VIDEO_EMBED:       { label: 'Video',                      icon: '🎬', hint: 'YouTube- oder Vimeo-Video direkt in die Seite eingebettet' },
 }
 function sectionTypeInfo(type: string) {
   return SECTION_TYPE_INFO[type] ?? { label: type, icon: '📦', hint: 'Unbekannter Sektionstyp' }
@@ -285,7 +300,9 @@ function TextBlockForm({ content, onChange }: { content: Record<string, unknown>
         <textarea value={String(content.markdown ?? '')} onChange={e => set('markdown', e.target.value)} rows={6}
           className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
       </div>
-      <ImageField label="Bild (optional)" value={String(content.imageUrl ?? '')} onChange={v => set('imageUrl', v)} />
+      <p className="text-xs text-gray-500">
+        Willst du ein Bild neben dem Text? Nutze stattdessen den Baustein "Bild &amp; Text".
+      </p>
     </div>
   )
 }
@@ -476,7 +493,19 @@ function PersonRolesEditor({ roles, onChange }: { roles: string[]; onChange: (r:
   )
 }
 
-function PersonGridForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+/** Gemeinsame Basis für PersonGridForm und BandGridForm - beide pflegen eine Liste von
+ *  Personen mit Foto/Rollen, unterscheiden sich nur in Beschriftung, Akzentfarbe und ob
+ *  Bio/E-Mail-Felder gezeigt werden. */
+function PersonRosterForm({
+  content, onChange, itemLabel = 'Person', ringColorClass = 'ring-green-500/40',
+  avatarSizeClass = 'h-20 w-20', avatarTextClass = 'text-green-400',
+  cropAccentClass = 'border-green-500/30 bg-green-900/20 text-green-400 hover:bg-green-900/40',
+  showBioEmail = true, defaultRole = 'Rolle',
+}: {
+  content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void
+  itemLabel?: string; ringColorClass?: string; avatarSizeClass?: string; avatarTextClass?: string
+  cropAccentClass?: string; showBioEmail?: boolean; defaultRole?: string
+}) {
   const persons: PersonItem[] = (content.persons as PersonItem[]) ?? []
   const [cropIdx, setCropIdx] = useState<number | null>(null)
   const [pickerIdx, setPickerIdx] = useState<number | null>(null)
@@ -484,7 +513,7 @@ function PersonGridForm({ content, onChange }: { content: Record<string, unknown
   const updatePerson = (i: number, patch: Partial<PersonItem>) =>
     onChange({ ...content, persons: persons.map((p, idx) => idx === i ? { ...p, ...patch } : p) })
 
-  const add = () => onChange({ ...content, persons: [...persons, { name: 'Name', roles: ['Rolle'], imageUrl: '', bio: '' }] })
+  const add = () => onChange({ ...content, persons: [...persons, { name: 'Name', roles: [defaultRole], imageUrl: '', ...(showBioEmail ? { bio: '' } : {}) }] })
   const remove = (i: number) => onChange({ ...content, persons: persons.filter((_, idx) => idx !== i) })
 
   return (
@@ -495,19 +524,23 @@ function PersonGridForm({ content, onChange }: { content: Record<string, unknown
         return (
           <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-3">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-300">Person {i + 1}</span>
+              <span className="text-xs font-bold text-gray-300">{itemLabel} {i + 1}</span>
               <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕ Entfernen</button>
             </div>
             <Field label="Name" value={p.name} onChange={v => updatePerson(i, { name: v })} />
             <PersonRolesEditor roles={roles} onChange={r => updatePerson(i, { roles: r, role: undefined })} />
-            <Field label="Kurzbiografie" value={p.bio ?? ''} onChange={v => updatePerson(i, { bio: v })} />
-            <Field label="E-Mail" value={p.email ?? ''} onChange={v => updatePerson(i, { email: v })} />
+            {showBioEmail && (
+              <>
+                <Field label="Kurzbiografie" value={p.bio ?? ''} onChange={v => updatePerson(i, { bio: v })} />
+                <Field label="E-Mail" value={p.email ?? ''} onChange={v => updatePerson(i, { email: v })} />
+              </>
+            )}
 
             {/* Image + crop */}
             <div>
               <label className="mb-1 block text-xs text-gray-400">Foto</label>
               <div className="flex gap-3 items-start">
-                <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-green-500/40 relative bg-slate-800">
+                <div className={`${avatarSizeClass} flex-shrink-0 overflow-hidden rounded-full ring-2 ${ringColorClass} relative bg-slate-800`}>
                   {p.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.imageUrl} alt={p.name} style={{
@@ -516,7 +549,7 @@ function PersonGridForm({ content, onChange }: { content: Record<string, unknown
                       transformOrigin: 'center',
                     }} />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-green-400">
+                    <div className={`flex h-full w-full items-center justify-center text-2xl font-bold ${avatarTextClass}`}>
                       {p.name.charAt(0)}
                     </div>
                   )}
@@ -533,7 +566,7 @@ function PersonGridForm({ content, onChange }: { content: Record<string, unknown
                   </div>
                   {p.imageUrl && (
                     <button onClick={() => setCropIdx(i)}
-                      className="rounded-lg border border-green-500/30 bg-green-900/20 px-3 py-1.5 text-xs text-green-400 hover:bg-green-900/40 transition text-left">
+                      className={`rounded-lg border px-3 py-1.5 text-xs transition text-left ${cropAccentClass}`}>
                       ✂ Bild zoomen &amp; ausrichten
                     </button>
                   )}
@@ -544,7 +577,7 @@ function PersonGridForm({ content, onChange }: { content: Record<string, unknown
         )
       })}
       <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + Person hinzufügen
+        + {itemLabel} hinzufügen
       </button>
       {cropIdx !== null && persons[cropIdx]?.imageUrl && (
         <ImageCropModal
@@ -564,6 +597,10 @@ function PersonGridForm({ content, onChange }: { content: Record<string, unknown
       )}
     </div>
   )
+}
+
+function PersonGridForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  return <PersonRosterForm content={content} onChange={onChange} itemLabel="Person" />
 }
 
 // ─── Next Concert Form ────────────────────────────────────────────────────────
@@ -598,55 +635,18 @@ function NextConcertForm({ content, onChange }: { content: Record<string, unknow
 
 // ─── Band Grid Form ───────────────────────────────────────────────────────────
 function BandGridForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
-  // Same as PersonGridForm but labeled "Band"
-  const persons: PersonItem[] = (content.persons as PersonItem[]) ?? []
-  const [cropIdx, setCropIdx] = useState<number | null>(null)
-  const [pickerIdx, setPickerIdx] = useState<number | null>(null)
-  const updatePerson = (i: number, patch: Partial<PersonItem>) =>
-    onChange({ ...content, persons: persons.map((p, idx) => idx === i ? { ...p, ...patch } : p) })
-  const add = () => onChange({ ...content, persons: [...persons, { name: 'Name', roles: ['Instrument'], imageUrl: '' }] })
-  const remove = (i: number) => onChange({ ...content, persons: persons.filter((_, idx) => idx !== i) })
   return (
-    <div className="flex flex-col gap-4">
-      <Field label="Überschrift" value={String(content.heading ?? '')} onChange={v => onChange({ ...content, heading: v })} />
-      {persons.map((p, i) => {
-        const roles = p.roles ?? (p.role ? [p.role] : [])
-        return (
-          <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-300">Mitglied {i + 1}</span>
-              <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕</button>
-            </div>
-            <Field label="Name" value={p.name} onChange={v => updatePerson(i, { name: v })} />
-            <PersonRolesEditor roles={roles} onChange={r => updatePerson(i, { roles: r, role: undefined })} />
-            <div className="flex gap-3 items-start">
-              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-purple-500/40 relative bg-slate-800">
-                {p.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.imageUrl} alt={p.name} style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${p.imageZoom ?? 1}) translate(${p.imageX ?? 0}px, ${p.imageY ?? 0}px)`, transformOrigin: 'center' }} />
-                ) : <div className="flex h-full w-full items-center justify-center text-xl font-bold text-purple-400">{p.name.charAt(0)}</div>}
-              </div>
-              <div className="flex flex-1 flex-col gap-2">
-                <div className="flex gap-2">
-                  <input value={p.imageUrl ?? ''} onChange={e => updatePerson(i, { imageUrl: e.target.value })} placeholder="Bild-URL"
-                    className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-xs text-white focus:border-green-500 focus:outline-none" />
-                  <button type="button" onClick={() => setPickerIdx(i)} className="rounded-lg bg-slate-700 px-2 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition">🖼 R2</button>
-                </div>
-                {p.imageUrl && <button onClick={() => setCropIdx(i)} className="rounded-lg border border-purple-500/30 bg-purple-900/20 px-3 py-1.5 text-xs text-purple-400 hover:bg-purple-900/40 transition">✂ Zoomen & ausrichten</button>}
-              </div>
-            </div>
-          </div>
-        )
-      })}
-      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + Mitglied hinzufügen
-      </button>
-      {cropIdx !== null && persons[cropIdx]?.imageUrl && (
-        <ImageCropModal imageUrl={persons[cropIdx].imageUrl!} zoom={persons[cropIdx].imageZoom ?? 1} x={persons[cropIdx].imageX ?? 0} y={persons[cropIdx].imageY ?? 0}
-          onSave={(zoom, x, y) => { updatePerson(cropIdx, { imageZoom: zoom, imageX: x, imageY: y }); setCropIdx(null) }} onClose={() => setCropIdx(null)} />
-      )}
-      {pickerIdx !== null && <AssetPickerModal onSelect={url => { updatePerson(pickerIdx, { imageUrl: url }); setPickerIdx(null) }} onClose={() => setPickerIdx(null)} />}
-    </div>
+    <PersonRosterForm
+      content={content}
+      onChange={onChange}
+      itemLabel="Mitglied"
+      ringColorClass="ring-purple-500/40"
+      avatarSizeClass="h-16 w-16"
+      avatarTextClass="text-purple-400"
+      cropAccentClass="border-purple-500/30 bg-purple-900/20 text-purple-400 hover:bg-purple-900/40"
+      showBioEmail={false}
+      defaultRole="Instrument"
+    />
   )
 }
 
@@ -1400,15 +1400,176 @@ function InternChangelogForm({ content, onChange }: { content: Record<string, un
   )
 }
 
+// ─── Image & Text Form ────────────────────────────────────────────────────────
+function ImageTextForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  const set = (key: string, val: unknown) => onChange({ ...content, [key]: val })
+  const position = String(content.imagePosition ?? 'left')
+  return (
+    <div className="flex flex-col gap-3">
+      <Field label="Überschrift (optional)" value={String(content.heading ?? '')} onChange={v => set('heading', v)} />
+      <div>
+        <label className="mb-1 block text-xs text-gray-400">Bildposition</label>
+        <div className="flex gap-2">
+          {(['left', 'right'] as const).map(p => (
+            <button key={p} type="button" onClick={() => set('imagePosition', p)}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${position === p ? 'bg-green-900/40 border-green-500/40 text-green-400' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'}`}>
+              {p === 'left' ? 'Bild links' : 'Bild rechts'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <ImageField label="Bild" value={String(content.imageUrl ?? '')} onChange={v => set('imageUrl', v)} />
+      <div>
+        <label className="mb-1 block text-xs text-gray-400">Text (Markdown)</label>
+        <textarea value={String(content.markdown ?? '')} onChange={e => set('markdown', e.target.value)} rows={6}
+          className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
+      </div>
+    </div>
+  )
+}
+
+// ─── Aufruf-Button Form ───────────────────────────────────────────────────────
+function CtaButtonForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  const set = (key: string, val: unknown) => onChange({ ...content, [key]: val })
+  return (
+    <div className="flex flex-col gap-3">
+      <Field label="Überschrift (optional)" value={String(content.heading ?? '')} onChange={v => set('heading', v)} />
+      <div>
+        <label className="mb-1 block text-xs text-gray-400">Text (optional)</label>
+        <textarea value={String(content.text ?? '')} onChange={e => set('text', e.target.value)} rows={2}
+          className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
+      </div>
+      <Field label="Button-Text" value={String(content.buttonLabel ?? '')} onChange={v => set('buttonLabel', v)} placeholder="z.B. Jetzt anmelden" />
+      <Field label="Button-Ziel (Link)" value={String(content.buttonHref ?? '')} onChange={v => set('buttonHref', v)} placeholder="z.B. /beitritt oder https://…" />
+    </div>
+  )
+}
+
+// ─── FAQ Form ─────────────────────────────────────────────────────────────────
+function FaqForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  interface FaqItem { question: string; answer: string }
+  const items: FaqItem[] = (content.items as FaqItem[]) ?? []
+  const update = (i: number, patch: Partial<FaqItem>) =>
+    onChange({ ...content, items: items.map((it, idx) => idx === i ? { ...it, ...patch } : it) })
+  const add = () => onChange({ ...content, items: [...items, { question: 'Neue Frage', answer: '' }] })
+  const remove = (i: number) => onChange({ ...content, items: items.filter((_, idx) => idx !== i) })
+  return (
+    <div className="flex flex-col gap-4">
+      <Field label="Überschrift (optional)" value={String(content.heading ?? '')} onChange={v => onChange({ ...content, heading: v })} />
+      {items.map((it, i) => (
+        <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-gray-300">Frage {i + 1}</span>
+            <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕ entfernen</button>
+          </div>
+          <Field label="Frage" value={it.question} onChange={v => update(i, { question: v })} />
+          <div>
+            <label className="mb-1 block text-xs text-gray-400">Antwort</label>
+            <textarea value={it.answer} onChange={e => update(i, { answer: e.target.value })} rows={3}
+              className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white focus:border-green-500 focus:outline-none resize-y" />
+          </div>
+        </div>
+      ))}
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
+        + Frage hinzufügen
+      </button>
+    </div>
+  )
+}
+
+// ─── Spacer Form ──────────────────────────────────────────────────────────────
+function SpacerForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  const size = String(content.size ?? 'md')
+  const showLine = Boolean(content.showLine)
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <label className="mb-1 block text-xs text-gray-400">Höhe</label>
+        <div className="flex gap-2">
+          {(['sm', 'md', 'lg'] as const).map(s => (
+            <button key={s} type="button" onClick={() => onChange({ ...content, size: s })}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${size === s ? 'bg-green-900/40 border-green-500/40 text-green-400' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'}`}>
+              {s === 'sm' ? 'Klein' : s === 'md' ? 'Mittel' : 'Groß'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-gray-300">
+        <input type="checkbox" checked={showLine} onChange={e => onChange({ ...content, showLine: e.target.checked })}
+          className="h-4 w-4 rounded border-white/20 bg-slate-800 accent-green-500" />
+        Dünne Trennlinie anzeigen
+      </label>
+    </div>
+  )
+}
+
+// ─── Zitat Form ───────────────────────────────────────────────────────────────
+function QuoteForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  const set = (key: string, val: unknown) => onChange({ ...content, [key]: val })
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <label className="mb-1 block text-xs text-gray-400">Zitat</label>
+        <textarea value={String(content.quote ?? '')} onChange={e => set('quote', e.target.value)} rows={3}
+          className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
+      </div>
+      <Field label="Name (optional)" value={String(content.author ?? '')} onChange={v => set('author', v)} />
+      <Field label="Rolle/Zusatz (optional)" value={String(content.role ?? '')} onChange={v => set('role', v)} placeholder="z.B. Vorstand oder Mitglied seit 1998" />
+    </div>
+  )
+}
+
+// ─── Statistik Form ───────────────────────────────────────────────────────────
+function StatsForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  interface StatItem { value: string; label: string }
+  const items: StatItem[] = (content.items as StatItem[]) ?? []
+  const update = (i: number, patch: Partial<StatItem>) =>
+    onChange({ ...content, items: items.map((it, idx) => idx === i ? { ...it, ...patch } : it) })
+  const add = () => onChange({ ...content, items: [...items, { value: '100+', label: 'Beschriftung' }] })
+  const remove = (i: number) => onChange({ ...content, items: items.filter((_, idx) => idx !== i) })
+  return (
+    <div className="flex flex-col gap-4">
+      <Field label="Überschrift (optional)" value={String(content.heading ?? '')} onChange={v => onChange({ ...content, heading: v })} />
+      {items.map((it, i) => (
+        <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex gap-2 items-end">
+          <div className="flex-1"><Field label="Wert" value={it.value} onChange={v => update(i, { value: v })} placeholder="z.B. seit 1975" /></div>
+          <div className="flex-1"><Field label="Beschriftung" value={it.label} onChange={v => update(i, { label: v })} placeholder="z.B. Mitglieder" /></div>
+          <button onClick={() => remove(i)} className="mb-1.5 text-xs text-red-400 hover:text-red-300 whitespace-nowrap">✕ entfernen</button>
+        </div>
+      ))}
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
+        + Zahl hinzufügen
+      </button>
+    </div>
+  )
+}
+
+// ─── Video-Einbettung Form ────────────────────────────────────────────────────
+function VideoEmbedForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  const set = (key: string, val: unknown) => onChange({ ...content, [key]: val })
+  return (
+    <div className="flex flex-col gap-3">
+      <Field label="Überschrift (optional)" value={String(content.heading ?? '')} onChange={v => set('heading', v)} />
+      <Field label="Video-Link" value={String(content.videoUrl ?? '')} onChange={v => set('videoUrl', v)} placeholder="YouTube- oder Vimeo-Link" />
+      <Field label="Bildunterschrift (optional)" value={String(content.caption ?? '')} onChange={v => set('caption', v)} />
+    </div>
+  )
+}
+
 // ─── Section Editor ───────────────────────────────────────────────────────────
-function SectionEditor({ section, pageSlug, onSaved, onDeleted }: {
+function SectionEditor({ section, pageSlug, onSaved, onDeleted, dragHandleProps, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: {
   section: SectionResponse; pageSlug: string; onSaved: () => void; onDeleted: () => void
+  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>
+  onMoveUp?: () => void; onMoveDown?: () => void; canMoveUp?: boolean; canMoveDown?: boolean
 }) {
+  const { showToast } = useToast()
   const [content, setContent] = useState<Record<string, unknown>>(section.content)
   const [expertMode, setExpertMode] = useState(false)
   const [rawJson, setRawJson] = useState(JSON.stringify(section.content, null, 2))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showPreview, setShowPreview] = useState(true)
 
   const save = async () => {
     setSaving(true); setError('')
@@ -1422,13 +1583,15 @@ function SectionEditor({ section, pageSlug, onSaved, onDeleted }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: section.type, position: section.position, content: parsed }),
       })
-      if (res.ok) onSaved(); else setError('Speichern fehlgeschlagen.')
-    } catch { setError('Fehler.') } finally { setSaving(false) }
+      if (res.ok) { showToast('Sektion gespeichert.', 'success'); onSaved() }
+      else { setError('Speichern fehlgeschlagen.'); showToast('Speichern fehlgeschlagen.', 'error') }
+    } catch { setError('Fehler.'); showToast('Speichern fehlgeschlagen.', 'error') } finally { setSaving(false) }
   }
 
   const del = async () => {
-    if (!confirm('Sektion wirklich löschen?')) return
+    setConfirmDelete(false)
     await fetch(`${API_BASE}/api/pages/${pageSlug}/sections/${section.id}`, { method: 'DELETE', credentials: 'include' })
+    showToast('Sektion gelöscht.', 'success')
     onDeleted()
   }
 
@@ -1440,8 +1603,30 @@ function SectionEditor({ section, pageSlug, onSaved, onDeleted }: {
 
   return (
     <div className="rounded-xl border border-white/10 bg-slate-800/60 p-4">
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Sektion löschen"
+        message={`"${sectionTypeInfo(section.type).label}" wirklich löschen? Das kann nicht rückgängig gemacht werden.`}
+        confirmLabel="Löschen"
+        onConfirm={del}
+        onCancel={() => setConfirmDelete(false)}
+      />
       <div className="mb-3 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 min-w-0">
+          {dragHandleProps && (
+            <button type="button" {...dragHandleProps}
+              className="cursor-grab active:cursor-grabbing rounded px-1.5 py-1 text-gray-500 hover:text-gray-300 touch-none" title="Ziehen zum Verschieben">
+              ⠿
+            </button>
+          )}
+          {(onMoveUp || onMoveDown) && (
+            <div className="flex flex-col -my-1">
+              <button type="button" onClick={onMoveUp} disabled={!canMoveUp}
+                className="px-1 text-[10px] leading-tight text-gray-500 hover:text-white disabled:opacity-20 disabled:hover:text-gray-500 transition" title="Nach oben verschieben">▲</button>
+              <button type="button" onClick={onMoveDown} disabled={!canMoveDown}
+                className="px-1 text-[10px] leading-tight text-gray-500 hover:text-white disabled:opacity-20 disabled:hover:text-gray-500 transition" title="Nach unten verschieben">▼</button>
+            </div>
+          )}
           <span className="flex items-center gap-1.5 rounded-lg border border-green-500/20 bg-green-900/30 px-2.5 py-1 text-xs font-semibold text-green-400 whitespace-nowrap">
             <span>{sectionTypeInfo(section.type).icon}</span>
             {sectionTypeInfo(section.type).label}
@@ -1449,40 +1634,68 @@ function SectionEditor({ section, pageSlug, onSaved, onDeleted }: {
           <span className="hidden sm:inline text-xs text-gray-500 truncate">{sectionTypeInfo(section.type).hint}</span>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <button type="button" onClick={() => setShowPreview(v => !v)}
+            className={`rounded px-2 py-1 text-xs transition ${showPreview ? 'bg-green-900/30 text-green-400' : 'bg-slate-700 text-gray-400 hover:text-white'}`}>
+            {showPreview ? '👁 Vorschau an' : '👁 Vorschau aus'}
+          </button>
           <button type="button" onClick={toggleExpert}
             className={`rounded px-2 py-1 text-xs transition ${expertMode ? 'bg-yellow-800/40 text-yellow-400' : 'bg-slate-700 text-gray-400 hover:text-white'}`}>
             {expertMode ? '🔧 Expertenmode (aktiv)' : '🔧 Expertenmode'}
           </button>
-          <button type="button" onClick={del} className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">Löschen</button>
+          <button type="button" onClick={() => setConfirmDelete(true)} className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">Löschen</button>
         </div>
       </div>
 
-      {expertMode ? (
-        <textarea value={rawJson} onChange={e => setRawJson(e.target.value)} rows={10}
-          className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 font-mono text-xs text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
-      ) : (
-        <div className="mb-3">
-          {section.type === 'HERO'          && <HeroForm content={content} onChange={setContent} />}
-          {section.type === 'TEXT_BLOCK'    && <TextBlockForm content={content} onChange={setContent} />}
-          {section.type === 'EVENT_CARD'    && <EventCardForm content={content} onChange={setContent} />}
-          {section.type === 'PERSON_GRID'   && <PersonGridForm content={content} onChange={setContent} />}
-          {section.type === 'NEXT_CONCERT'  && <NextConcertForm content={content} onChange={setContent} />}
-          {section.type === 'BAND_GRID'     && <BandGridForm content={content} onChange={setContent} />}
-          {section.type === 'CHOIR_LIST'    && <ChoirListForm content={content} onChange={setContent} />}
-          {section.type === 'IMAGE_CAPTION' && <ImageCaptionForm content={content} onChange={setContent} />}
-          {section.type === 'TERMINE_LIST'  && <TermineListForm content={content} onChange={setContent} />}
-          {section.type === 'ACTIVITY_GRID'     && <ActivityGridForm content={content} onChange={setContent} />}
-          {section.type === 'SPONSOR_GRID'      && <SponsorGridForm content={content} onChange={setContent} />}
-          {section.type === 'TERMINE_KONZERTE'  && <TermineKonzerteForm content={content} onChange={setContent} />}
-          {section.type === 'INTERN_CHANGELOG' && <InternChangelogForm content={content} onChange={setContent} />}
-        </div>
-      )}
+      <div className={showPreview ? 'grid grid-cols-1 gap-4 lg:grid-cols-2' : ''}>
+        <div>
+          {expertMode ? (
+            <textarea value={rawJson} onChange={e => setRawJson(e.target.value)} rows={10}
+              className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 font-mono text-xs text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
+          ) : (
+            <div className="mb-3">
+              {section.type === 'HERO'          && <HeroForm content={content} onChange={setContent} />}
+              {section.type === 'TEXT_BLOCK'    && <TextBlockForm content={content} onChange={setContent} />}
+              {section.type === 'EVENT_CARD'    && <EventCardForm content={content} onChange={setContent} />}
+              {section.type === 'PERSON_GRID'   && <PersonGridForm content={content} onChange={setContent} />}
+              {section.type === 'NEXT_CONCERT'  && <NextConcertForm content={content} onChange={setContent} />}
+              {section.type === 'BAND_GRID'     && <BandGridForm content={content} onChange={setContent} />}
+              {section.type === 'CHOIR_LIST'    && <ChoirListForm content={content} onChange={setContent} />}
+              {section.type === 'IMAGE_CAPTION' && <ImageCaptionForm content={content} onChange={setContent} />}
+              {section.type === 'TERMINE_LIST'  && <TermineListForm content={content} onChange={setContent} />}
+              {section.type === 'ACTIVITY_GRID'     && <ActivityGridForm content={content} onChange={setContent} />}
+              {section.type === 'SPONSOR_GRID'      && <SponsorGridForm content={content} onChange={setContent} />}
+              {section.type === 'TERMINE_KONZERTE'  && <TermineKonzerteForm content={content} onChange={setContent} />}
+              {section.type === 'INTERN_CHANGELOG' && <InternChangelogForm content={content} onChange={setContent} />}
+              {section.type === 'IMAGE_TEXT'    && <ImageTextForm content={content} onChange={setContent} />}
+              {section.type === 'CTA_BUTTON'    && <CtaButtonForm content={content} onChange={setContent} />}
+              {section.type === 'FAQ'           && <FaqForm content={content} onChange={setContent} />}
+              {section.type === 'SPACER'        && <SpacerForm content={content} onChange={setContent} />}
+              {section.type === 'QUOTE'         && <QuoteForm content={content} onChange={setContent} />}
+              {section.type === 'STATS'         && <StatsForm content={content} onChange={setContent} />}
+              {section.type === 'VIDEO_EMBED'   && <VideoEmbedForm content={content} onChange={setContent} />}
+            </div>
+          )}
 
-      {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
-      <button type="button" onClick={save} disabled={saving}
-        className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-        {saving ? 'Speichert…' : '✓ Speichern'}
-      </button>
+          {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
+          <button type="button" onClick={save} disabled={saving}
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
+            {saving ? 'Speichert…' : '✓ Speichern'}
+          </button>
+        </div>
+
+        {showPreview && (
+          <div>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500">Live-Vorschau</p>
+            <div className="max-h-[420px] overflow-y-auto rounded-lg border border-white/10">
+              <PreviewErrorBoundary>
+                {/* section.type ist im Admin-Bereich ein loser String (auch unbekannte Werte möglich),
+                    SectionResolver erwartet den strikten SectionType-Union aus types/page.ts - daher der Cast. */}
+                <SectionResolver section={{ id: section.id, type: section.type, position: section.position, content } as any} />
+              </PreviewErrorBoundary>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1524,6 +1737,63 @@ function normalizeAdminNavConfig(raw: Record<string, unknown>): AdminNavConfig {
   if (Array.isArray(raw.ueberUns)) dropdowns.push({ label: 'Über uns', target: undefined, items: raw.ueberUns as string[] })
   if (Array.isArray(raw.vereinsleben)) dropdowns.push({ label: 'Vereinsleben', items: raw.vereinsleben as string[] })
   return { dropdowns, hidden: raw.hidden as string[] | undefined }
+}
+
+/** Schneller Sichtbarkeits-Umschalter direkt in der Seitenliste, ohne den Umweg über
+ *  den separaten Navigations-Editor. Liest/schreibt nav_config.hidden eigenständig
+ *  (frisches Read-Modify-Write bei jedem Klick), damit nichts mit unabhängig offenen
+ *  Änderungen im Einstellungen-Tab kollidiert. "Veröffentlicht" (Entwurf/live) und
+ *  "im Menü sichtbar" sind bewusst getrennte Schalter - siehe Hilfe-Panel. */
+function PageVisibilityToggle({ slug }: { slug: string }) {
+  const { showToast } = useToast()
+  const [hidden, setHidden] = useState<boolean | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`${API_BASE}/api/admin/settings`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return
+        const cfg = normalizeAdminNavConfig(JSON.parse(data.nav_config || '{}'))
+        setHidden((cfg.hidden ?? []).includes(slug))
+      })
+      .catch(() => { if (!cancelled) setHidden(false) })
+    return () => { cancelled = true }
+  }, [slug])
+
+  const toggle = async () => {
+    setBusy(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/settings`, { credentials: 'include' })
+      const data = await res.json()
+      const cfg = normalizeAdminNavConfig(JSON.parse(data.nav_config || '{}'))
+      const nowHidden = (cfg.hidden ?? []).includes(slug)
+      const nextHidden = nowHidden ? (cfg.hidden ?? []).filter((s: string) => s !== slug) : [...(cfg.hidden ?? []), slug]
+      const nextCfg = { ...cfg, hidden: nextHidden }
+      await fetch(`${API_BASE}/api/admin/settings`, {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, nav_config: JSON.stringify(nextCfg) }),
+      })
+      setHidden(!nowHidden)
+      showToast(!nowHidden ? 'Seite im Menü versteckt.' : 'Seite im Menü sichtbar.', 'success')
+    } catch {
+      showToast('Menü-Sichtbarkeit konnte nicht geändert werden.', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (hidden === null) return <span className="text-xs text-gray-600">…</span>
+
+  return (
+    <button type="button" onClick={toggle} disabled={busy}
+      className={`rounded px-2 py-1 text-xs transition disabled:opacity-50 whitespace-nowrap ${hidden ? 'bg-slate-700 text-gray-400 hover:text-white' : 'bg-green-900/30 text-green-400 hover:bg-green-900/50'}`}
+      title={hidden ? 'Aktuell im Menü versteckt - klicken zum Anzeigen' : 'Aktuell im Menü sichtbar - klicken zum Verstecken'}>
+      {hidden ? '🚫 Versteckt' : '👁 Sichtbar'}
+    </button>
+  )
 }
 
 // ─── Ordered Dropdown Items Editor ───────────────────────────────────────────
@@ -1756,7 +2026,7 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                         ${!group.target ? 'border-green-500 bg-green-900/20 text-green-400' : 'border-white/10 bg-slate-800 text-gray-400 hover:border-white/30 hover:text-white'}`}>
                       ▾ Nur Dropdown öffnen
                     </button>
-                    <button type="button" onClick={() => { if (!group.target) updateGroup(gi, { target: pages[0]?.slug ?? '' }) }}
+                    <button type="button" onClick={() => updateGroup(gi, { target: group.target || pages[0]?.slug || '' })}
                       className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition
                         ${group.target ? 'border-blue-500 bg-blue-900/20 text-blue-400' : 'border-white/10 bg-slate-800 text-gray-400 hover:border-white/30 hover:text-white'}`}>
                       🔗 Auf Seite weiterleiten
@@ -1985,13 +2255,65 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
 }
 
 // ─── Page Editor ──────────────────────────────────────────────────────────────
+/** Macht eine SectionEditor-Karte per @dnd-kit sortierbar; der eigentliche Drag-Griff
+ *  ist der ⠿-Button in SectionEditors Kopfzeile, damit man nicht versehentlich beim
+ *  Klicken in ein Formularfeld eine Section verschiebt. */
+function SortableSectionItem({ id, children }: { id: string; children: (dragHandleProps: React.HTMLAttributes<HTMLButtonElement>) => React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ ...attributes, ...listeners } as React.HTMLAttributes<HTMLButtonElement>)}
+    </div>
+  )
+}
+
 function PageEditor({ page, onBack }: { page: PageMeta; onBack: () => void }) {
+  const { showToast } = useToast()
   const [sections, setSections] = useState<SectionResponse[]>(page.sections.sort((a, b) => a.position - b.position))
   const [addType, setAddType] = useState('HERO')
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const reload = async () => {
     const res = await fetch(`${API_BASE}/api/pages/${page.slug}`)
     if (res.ok) { const p = await res.json(); setSections(p.sections.sort((a: SectionResponse, b: SectionResponse) => a.position - b.position)) }
+  }
+
+  const persistOrder = async (ordered: SectionResponse[]) => {
+    setSections(ordered)
+    try {
+      await Promise.all(ordered.map((s, i) =>
+        fetch(`${API_BASE}/api/pages/${page.slug}/sections/${s.id}`, {
+          method: 'PUT', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: s.type, position: i + 1, content: s.content }),
+        })
+      ))
+      showToast('Reihenfolge gespeichert.', 'success')
+    } catch {
+      showToast('Reihenfolge konnte nicht gespeichert werden.', 'error')
+    }
+  }
+
+  const moveSection = (index: number, direction: -1 | 1) => {
+    const target = index + direction
+    if (target < 0 || target >= sections.length) return
+    const reordered = [...sections]
+    ;[reordered[index], reordered[target]] = [reordered[target], reordered[index]]
+    persistOrder(reordered)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = sections.findIndex(s => s.id === active.id)
+    const newIndex = sections.findIndex(s => s.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+    persistOrder(arrayMove(sections, oldIndex, newIndex))
   }
 
   const addSection = async () => {
@@ -2008,12 +2330,21 @@ function PageEditor({ page, onBack }: { page: PageMeta; onBack: () => void }) {
       : addType === 'SPONSOR_GRID' ? { heading: 'Unsere Sponsoren', intro: '', sponsors: [] }
       : addType === 'TERMINE_KONZERTE' ? { heading: 'Konzerte & Veranstaltungen', maxItems: 6 }
       : addType === 'INTERN_CHANGELOG' ? { heading: 'Was ist neu?', entries: [] }
+      : addType === 'IMAGE_TEXT' ? { heading: 'Überschrift', markdown: 'Text hier…', imageUrl: '', imagePosition: 'left' }
+      : addType === 'CTA_BUTTON' ? { heading: 'Überschrift', text: '', buttonLabel: 'Jetzt anmelden', buttonHref: '/' }
+      : addType === 'FAQ' ? { heading: 'Häufige Fragen', items: [{ question: 'Neue Frage', answer: '' }] }
+      : addType === 'SPACER' ? { size: 'md', showLine: false }
+      : addType === 'QUOTE' ? { quote: 'Zitat hier…', author: '', role: '' }
+      : addType === 'STATS' ? { heading: 'Zahlen & Fakten', items: [{ value: '100+', label: 'Mitglieder' }] }
+      : addType === 'VIDEO_EMBED' ? { heading: '', videoUrl: '', caption: '' }
       : { heading: 'Überschrift', markdown: 'Inhalt hier...' }
-    await fetch(`${API_BASE}/api/pages/${page.slug}/sections`, {
+    const res = await fetch(`${API_BASE}/api/pages/${page.slug}/sections`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: addType, position: sections.length + 1, content: defaultContent }),
     })
+    if (res.ok) showToast('Sektion hinzugefügt.', 'success')
+    else showToast('Sektion konnte nicht hinzugefügt werden.', 'error')
     reload()
   }
 
@@ -2028,7 +2359,22 @@ function PageEditor({ page, onBack }: { page: PageMeta; onBack: () => void }) {
       </div>
       <div className="flex flex-col gap-4 mb-6">
         {sections.length === 0 && <p className="text-sm text-gray-500">Keine Sektionen vorhanden.</p>}
-        {sections.map(s => <SectionEditor key={s.id} section={s} pageSlug={page.slug} onSaved={reload} onDeleted={reload} />)}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            {sections.map((s, i) => (
+              <SortableSectionItem key={s.id} id={s.id}>
+                {dragHandleProps => (
+                  <SectionEditor
+                    section={s} pageSlug={page.slug} onSaved={reload} onDeleted={reload}
+                    dragHandleProps={dragHandleProps}
+                    onMoveUp={() => moveSection(i, -1)} onMoveDown={() => moveSection(i, 1)}
+                    canMoveUp={i > 0} canMoveDown={i < sections.length - 1}
+                  />
+                )}
+              </SortableSectionItem>
+            ))}
+          </SortableContext>
+        </DndContext>
       </div>
       <div className="flex gap-3 items-center border-t border-white/10 pt-5">
         <select value={addType} onChange={e => setAddType(e.target.value)}
@@ -3285,6 +3631,7 @@ function SiteSettingsEditor() {
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { user, loading } = useAuth()
+  const { showToast } = useToast()
   const router = useRouter()
   const [tab, setTab] = useState<'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos' | 'preisgruppen' | 'antraege' | 'kalender'>(() => {
     if (typeof window !== 'undefined') {
@@ -3576,16 +3923,21 @@ export default function AdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: newSlug.trim(), title: newTitle.trim() }),
     })
-    if (!res.ok) { setPageActionError(`Seite anlegen fehlgeschlagen (${res.status})`); return }
-    setNewSlug(''); setNewTitle(''); await loadPages()
+    if (!res.ok) { setPageActionError(`Seite anlegen fehlgeschlagen (${res.status})`); showToast('Seite anlegen fehlgeschlagen.', 'error'); return }
+    const created: PageMeta = await res.json()
+    setNewSlug(''); setNewTitle('')
+    showToast('Seite angelegt - du kannst sie jetzt direkt bearbeiten.', 'success')
+    await loadPages()
+    setSelectedPage(created)
   }
 
+  const [pageToDelete, setPageToDelete] = useState<string | null>(null)
   const deletePage = async (slug: string | undefined) => {
     if (!slug) { setPageActionError('Seite hat keinen Slug – Löschen nicht möglich.'); return }
-    if (!confirm(`Seite "${slug}" wirklich löschen?`)) return
     setPageActionError(null)
     const res = await fetch(`${API_BASE}/api/pages/${slug}`, { method: 'DELETE', credentials: 'include' })
-    if (!res.ok) { setPageActionError(`Löschen fehlgeschlagen (${res.status})`); return }
+    if (!res.ok) { setPageActionError(`Löschen fehlgeschlagen (${res.status})`); showToast('Löschen fehlgeschlagen.', 'error'); return }
+    showToast('Seite gelöscht.', 'success')
     loadPages()
   }
 
@@ -3598,8 +3950,8 @@ export default function AdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: editingPage.slug.trim(), title: editingPage.title.trim() }),
     })
-    if (res.ok) { setEditingPage(null); loadPages() }
-    else { setPageActionError(`Speichern fehlgeschlagen (${res.status})`) }
+    if (res.ok) { setEditingPage(null); showToast('Seite gespeichert.', 'success'); loadPages() }
+    else { setPageActionError(`Speichern fehlgeschlagen (${res.status})`); showToast('Speichern fehlgeschlagen.', 'error') }
   }
 
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
@@ -3655,6 +4007,14 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen md:flex">
       <AdminDocsPanel open={docsOpen} onClose={() => setDocsOpen(false)} />
+      <ConfirmDialog
+        open={pageToDelete !== null}
+        title="Seite löschen"
+        message={`Seite "${pageToDelete}" wirklich löschen? Das kann nicht rückgängig gemacht werden.`}
+        confirmLabel="Löschen"
+        onConfirm={() => { const slug = pageToDelete; setPageToDelete(null); deletePage(slug ?? undefined) }}
+        onCancel={() => setPageToDelete(null)}
+      />
 
       {/* ── Sidebar (Desktop) ────────────────────────────────────────────── */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:sticky md:top-0 md:h-screen shrink-0 border-r border-white/8 bg-slate-900/60">
@@ -4238,7 +4598,12 @@ export default function AdminPage() {
                   <tr>
                     <th className="px-4 py-3 text-left font-medium">Slug</th>
                     <th className="px-4 py-3 text-left font-medium">Titel</th>
-                    <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Status</th>
+                    <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">
+                      <span className="inline-flex items-center gap-1">Veröffentlicht <HelpHint text='Entwurf ist für Besucher unter keiner URL erreichbar. "Veröffentlicht" macht die Seite live - unabhängig davon, ob sie im Menü erscheint.' /></span>
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">
+                      <span className="inline-flex items-center gap-1">Im Menü <HelpHint text="Steuert nur den Link in der Navigation oben. Eine versteckte Seite ist trotzdem über ihre Adresse erreichbar." /></span>
+                    </th>
                     <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Sektionen</th>
                     <th className="px-4 py-3 text-left font-medium">Aktionen</th>
                   </tr>
@@ -4258,6 +4623,7 @@ export default function AdminPage() {
                               onChange={e => setEditingPage({ ...editingPage, title: e.target.value })}
                               className="w-full rounded border border-white/10 bg-slate-800 px-2 py-1 text-sm text-white focus:border-green-500 focus:outline-none" />
                           </td>
+                          <td className="px-4 py-3 text-gray-400 hidden sm:table-cell" />
                           <td className="px-4 py-3 text-gray-400 hidden sm:table-cell" />
                           <td className="px-4 py-3 text-gray-400 hidden sm:table-cell">{p.sections?.length ?? 0}</td>
                           <td className="px-4 py-2">
@@ -4294,6 +4660,9 @@ export default function AdminPage() {
                               {p.published === false ? '⊘ Entwurf' : '✓ Veröffentlicht'}
                             </button>
                           </td>
+                          <td className="px-4 py-3 hidden sm:table-cell">
+                            {p.slug ? <PageVisibilityToggle slug={p.slug} /> : <span className="text-gray-600">–</span>}
+                          </td>
                           <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{p.sections?.length ?? 0}</td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1.5 flex-wrap">
@@ -4303,7 +4672,7 @@ export default function AdminPage() {
                                 className="rounded px-2.5 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition">✏️ Umbenennen</button>
                               {p.slug && <a href={`/${p.slug}`} target="_blank" rel="noopener noreferrer"
                                 className="rounded px-2.5 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition">↗</a>}
-                              <button onClick={() => deletePage(p.slug)}
+                              <button onClick={() => setPageToDelete(p.slug ?? null)}
                                 className="rounded px-2.5 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">✕</button>
                             </div>
                           </td>

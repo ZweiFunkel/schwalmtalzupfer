@@ -13,5 +13,12 @@ public enum SectionType {
     ACTIVITY_GRID,
     SPONSOR_GRID,
     TERMINE_KONZERTE,
-    INTERN_CHANGELOG
+    INTERN_CHANGELOG,
+    IMAGE_TEXT,
+    CTA_BUTTON,
+    FAQ,
+    SPACER,
+    QUOTE,
+    STATS,
+    VIDEO_EMBED
 }

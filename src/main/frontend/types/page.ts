@@ -1,4 +1,4 @@
-export type SectionType = 'HERO' | 'EVENT_CARD' | 'PERSON_GRID' | 'TEXT_BLOCK' | 'NEXT_CONCERT' | 'BAND_GRID' | 'CHOIR_LIST' | 'IMAGE_CAPTION' | 'TERMINE_LIST' | 'ACTIVITY_GRID' | 'SPONSOR_GRID' | 'TERMINE_KONZERTE' | 'INTERN_CHANGELOG'
+export type SectionType = 'HERO' | 'EVENT_CARD' | 'PERSON_GRID' | 'TEXT_BLOCK' | 'NEXT_CONCERT' | 'BAND_GRID' | 'CHOIR_LIST' | 'IMAGE_CAPTION' | 'TERMINE_LIST' | 'ACTIVITY_GRID' | 'SPONSOR_GRID' | 'TERMINE_KONZERTE' | 'INTERN_CHANGELOG' | 'IMAGE_TEXT' | 'CTA_BUTTON' | 'FAQ' | 'SPACER' | 'QUOTE' | 'STATS' | 'VIDEO_EMBED'
 
 // ---------- HERO ----------
 export interface HeroContent {
@@ -177,6 +177,63 @@ export interface InternChangelogContent {
   entries?: InternChangelogEntry[]
 }
 
+// ---------- IMAGE_TEXT ----------
+export interface ImageTextContent {
+  heading?: string
+  markdown: string
+  imageUrl: string
+  imagePosition?: 'left' | 'right'  // Standard: 'left'
+}
+
+// ---------- CTA_BUTTON ----------
+export interface CtaButtonContent {
+  heading?: string
+  text?: string
+  buttonLabel: string
+  buttonHref: string
+}
+
+// ---------- FAQ ----------
+export interface FaqItem {
+  question: string
+  answer: string
+}
+export interface FaqContent {
+  heading?: string
+  items: FaqItem[]
+}
+
+// ---------- SPACER ----------
+export type SpacerSize = 'sm' | 'md' | 'lg'
+export interface SpacerContent {
+  size?: SpacerSize   // Standard 'md'
+  showLine?: boolean  // dünne Trennlinie mittig anzeigen
+}
+
+// ---------- QUOTE ----------
+export interface QuoteContent {
+  quote: string
+  author?: string
+  role?: string   // z.B. "Vorstand" oder "Mitglied seit 1998"
+}
+
+// ---------- STATS ----------
+export interface StatItem {
+  value: string
+  label: string
+}
+export interface StatsContent {
+  heading?: string
+  items: StatItem[]
+}
+
+// ---------- VIDEO_EMBED ----------
+export interface VideoEmbedContent {
+  heading?: string
+  videoUrl: string   // volle YouTube- oder Vimeo-URL
+  caption?: string
+}
+
 // ---------- Generic Section ----------
 export type SectionContent =
   | HeroContent
@@ -192,6 +249,13 @@ export type SectionContent =
   | SponsorGridContent
   | TermineKonzerteContent
   | InternChangelogContent
+  | ImageTextContent
+  | CtaButtonContent
+  | FaqContent
+  | SpacerContent
+  | QuoteContent
+  | StatsContent
+  | VideoEmbedContent
 
 export interface PageSection {
   id: string
