@@ -38,7 +38,7 @@ export default function AdminMembersPage() {
   // Redirect if not admin/board
   useEffect(() => { document.title = 'Mitglieder – Schwalmtalzupfer' }, [])
   useEffect(() => {
-    if (!loading && (!user || (user.role !== 'ROLE_ADMIN' && user.role !== 'ROLE_BOARD'))) {
+    if (!loading && (!user || (user.role !== 'ROLE_ADMIN' && user.role !== 'ROLE_CHEF'))) {
       router.push('/')
     }
   }, [user, loading, router])
@@ -60,7 +60,7 @@ export default function AdminMembersPage() {
   }, [debouncedSearch])
 
   useEffect(() => {
-    if (user && (user.role === 'ROLE_ADMIN' || user.role === 'ROLE_BOARD')) {
+    if (user && (user.role === 'ROLE_ADMIN' || user.role === 'ROLE_CHEF')) {
       fetchMembers()
     }
   }, [user, fetchMembers])
@@ -78,7 +78,7 @@ export default function AdminMembersPage() {
   if (!user) return null
 
   const roleLabel: Record<string, string> = {
-    GUEST: 'Gast', MEMBER: 'Mitglied', BOARD: 'Vorstand', ADMIN: 'Administrator',
+    GUEST: 'Gast', MEMBER: 'Mitglied', BOARD: 'Vorstand', CHEF: 'Chef', ADMIN: 'Administrator',
   }
 
   const filtered = members.filter(m => showArchive ? !m.istAktiv : m.istAktiv)

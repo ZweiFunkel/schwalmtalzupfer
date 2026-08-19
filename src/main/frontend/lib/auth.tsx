@@ -87,8 +87,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export const useAuth = () => useContext(AuthContext)
 
 export const isAdmin = (user: AuthUser | null) => user?.role === 'ROLE_ADMIN'
+export const isChef = (user: AuthUser | null) => ['ROLE_ADMIN', 'ROLE_CHEF'].includes(user?.role ?? '')
 export const isBoard = (user: AuthUser | null) => ['ROLE_ADMIN', 'ROLE_BOARD'].includes(user?.role ?? '')
-export const isMember = (user: AuthUser | null) => ['ROLE_ADMIN', 'ROLE_BOARD', 'ROLE_MEMBER'].includes(user?.role ?? '')
+export const isMember = (user: AuthUser | null) => ['ROLE_ADMIN', 'ROLE_BOARD', 'ROLE_CHEF', 'ROLE_MEMBER'].includes(user?.role ?? '')
 export const isGuest = (user: AuthUser | null) => user !== null
 export const isGuestOnly = (user: AuthUser | null) => user?.role === 'ROLE_GUEST'
 

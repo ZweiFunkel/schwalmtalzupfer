@@ -63,7 +63,7 @@ export default function NotenBrowser() {
       .then(p => { if (!cancelled) setRootPrefix(p); })
       .catch(() => { if (!cancelled) setRootPrefix(''); });
     fetchMe()
-      .then(p => { if (!cancelled) setIsBoard(p?.role === 'ROLE_BOARD' || p?.role === 'ROLE_ADMIN'); })
+      .then(p => { if (!cancelled) setIsBoard(p?.role === 'ROLE_BOARD' || p?.role === 'ROLE_CHEF' || p?.role === 'ROLE_ADMIN'); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);

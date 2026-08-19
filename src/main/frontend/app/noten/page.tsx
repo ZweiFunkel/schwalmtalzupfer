@@ -3,7 +3,7 @@ import { getApiBase } from '@/lib/api'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useAuth, isBoard } from '@/lib/auth'
+import { useAuth, isBoard, isChef } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/lib/ThemeProvider'
 
@@ -481,7 +481,7 @@ export default function NotenPage() {
   const router = useRouter()
   const { theme } = useTheme()
   const dk = theme === 'dark'
-  const canUpload = isBoard(user)
+  const canUpload = isBoard(user) || isChef(user)
 
   // Theme-abhängige Klassen
   const pageBg      = dk ? '' : 'bg-white'

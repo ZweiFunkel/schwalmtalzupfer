@@ -81,13 +81,13 @@ function MemberDetailContent() {
 
   useEffect(() => { document.title = 'Mitglied – Schwalmtalzupfer' }, [])
   useEffect(() => {
-    if (!loading && (!user || (user.role !== 'ROLE_ADMIN' && user.role !== 'ROLE_BOARD'))) {
+    if (!loading && (!user || (user.role !== 'ROLE_ADMIN' && user.role !== 'ROLE_CHEF'))) {
       router.push('/')
     }
   }, [user, loading, router])
 
   useEffect(() => {
-    if (!user || (user.role !== 'ROLE_ADMIN' && user.role !== 'ROLE_BOARD') || !memberId) return
+    if (!user || (user.role !== 'ROLE_ADMIN' && user.role !== 'ROLE_CHEF') || !memberId) return
 
     fetch(`${API_BASE}/api/member/${memberId}`, { credentials: 'include' })
       .then(r => r.json()).then((data: Member) => {
@@ -138,7 +138,7 @@ function MemberDetailContent() {
   }
 
   const saveRolle = async () => {
-    if (!memberId || user?.role !== 'ROLE_ADMIN') return
+    if (!memberId || (user?.role !== 'ROLE_ADMIN' && user?.role !== 'ROLE_CHEF')) return
     setSaving(true)
     await fetch(`${API_BASE}/api/member/${memberId}/rolle`, {
       method: 'PATCH',
@@ -158,7 +158,7 @@ function MemberDetailContent() {
   if (loading || !member) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
 
   const roleLabel: Record<string, string> = {
-    GUEST: 'Gast', MEMBER: 'Mitglied', BOARD: 'Vorstand', ADMIN: 'Administrator',
+    GUEST: 'Gast', MEMBER: 'Mitglied', BOARD: 'Vorstand', CHEF: 'Chef', ADMIN: 'Administrator',
   }
 
   const displayName = [member.vorname, member.nachname].filter(Boolean).join(' ') || member.username || member.email
@@ -340,8 +340,8 @@ function MemberDetailContent() {
         )}
       </div>
 
-      {/* Rolle ändern (nur ADMIN) */}
-      {user?.role === 'ROLE_ADMIN' && (
+      {/* Rolle ändern (CHEF/ADMIN - die Admin-Rolle selbst darf nur ein bestehender Admin vergeben) */}
+      {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_CHEF') && (
         <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6">
           <h2 className="mb-3 text-lg font-semibold text-white">Rolle ändern</h2>
           <div className="flex gap-3">
@@ -353,7 +353,8 @@ function MemberDetailContent() {
               <option value="GUEST">Gast</option>
               <option value="MEMBER">Mitglied</option>
               <option value="BOARD">Vorstand</option>
-              <option value="ADMIN">Administrator</option>
+              <option value="CHEF">Chef</option>
+              {user?.role === 'ROLE_ADMIN' && <option value="ADMIN">Administrator</option>}
             </select>
             <button
               onClick={saveRolle}

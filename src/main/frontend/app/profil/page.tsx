@@ -81,6 +81,7 @@ export default function ProfilPage() {
     ROLE_GUEST: 'Gast',
     ROLE_MEMBER: 'Mitglied',
     ROLE_BOARD: 'Vorstand',
+    ROLE_CHEF: 'Chef',
     ROLE_ADMIN: 'Administrator',
   }
 

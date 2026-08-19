@@ -9,11 +9,11 @@ import UpdateBanner from '../../components/UpdateBanner';
 
 export default function TabsLayout() {
   const { colors } = useAppTheme();
-  const [isBoard, setIsBoard] = useState(false);
+  const [isChef, setIsChef] = useState(false);
 
   useEffect(() => {
     fetchMe().then(profile => {
-      setIsBoard(profile?.role === 'ROLE_BOARD' || profile?.role === 'ROLE_ADMIN');
+      setIsChef(profile?.role === 'ROLE_CHEF' || profile?.role === 'ROLE_ADMIN');
     });
   }, []);
 
@@ -59,7 +59,7 @@ export default function TabsLayout() {
           name="antraege"
           options={{
             title: 'Anträge',
-            href: isBoard ? undefined : null,
+            href: isChef ? undefined : null,
             tabBarIcon: ({ color, size }) => <Ionicons name="clipboard" size={size} color={color} />,
           }}
         />

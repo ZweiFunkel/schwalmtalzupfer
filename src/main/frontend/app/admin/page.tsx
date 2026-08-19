@@ -2,7 +2,7 @@
 import { getApiBase } from '@/lib/api'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { useAuth, isAdmin, isBoard } from '@/lib/auth'
+import { useAuth, isAdmin, isBoard, isChef } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import KalenderTab from './components/KalenderTab'
 
@@ -3541,11 +3541,11 @@ export default function AdminPage() {
 
   useEffect(() => { document.title = 'Admin – Schwalmtalzupfer' }, [])
 
-  useEffect(() => { if (!loading && (!user || !isBoard(user))) router.push('/') }, [user, loading, router])
+  useEffect(() => { if (!loading && (!user || (!isBoard(user) && !isChef(user)))) router.push('/') }, [user, loading, router])
 
-  // Redirect board users to members tab by default
+  // Redirect board/chef users (non-admin) to members tab by default
   useEffect(() => {
-    if (!loading && user && !isAdmin(user) && isBoard(user) && !boardTabInit) {
+    if (!loading && user && !isAdmin(user) && (isBoard(user) || isChef(user)) && !boardTabInit) {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('admin_tab') : null
       if (!saved || saved === 'pages' || saved === 'assets' || saved === 'settings' || saved === 'videos') {
         setTab('members')
@@ -3594,7 +3594,7 @@ export default function AdminPage() {
   }
 
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
-  if (!user || !isBoard(user)) return null
+  if (!user || (!isBoard(user) && !isChef(user))) return null
 
   const TAB_DEFS = [
     ...(isAdmin(user) ? [
@@ -3602,12 +3602,16 @@ export default function AdminPage() {
       { key: 'meldungen' as const, icon: '📣', label: 'Meldungen',     desc: 'Banner & Infos zu Terminen' },
       { key: 'assets'    as const, icon: '🗂', label: 'Assets',        desc: 'Bilder & Dateien (R2)' },
       { key: 'settings'  as const, icon: '⚙️', label: 'Einstellungen', desc: 'Logo, Noten, Navigation' },
+    ] : []),
+    ...(isChef(user) ? [
       { key: 'preisgruppen' as const, icon: '💶', label: 'Preisgruppen', desc: 'Beiträge & Preishistorie' },
     ] : []),
     { key: 'kalender' as const, icon: '🗓️', label: 'Kalender',   desc: 'Termine, Unterricht & Ferien' },
     { key: 'videos'  as const, icon: '🎬', label: 'Videos',     desc: 'YouTube-Videos verwalten' },
     { key: 'members' as const, icon: '👥', label: 'Mitglieder', desc: 'Einladungen & Gruppen' },
-    { key: 'antraege' as const, icon: '📝', label: 'Beitrittsanträge', desc: 'Anträge prüfen & zuweisen' },
+    ...(isChef(user) ? [
+      { key: 'antraege' as const, icon: '📝', label: 'Beitrittsanträge', desc: 'Anträge prüfen & zuweisen' },
+    ] : []),
   ]
 
   return (
@@ -3622,12 +3626,12 @@ export default function AdminPage() {
             <div className="hidden sm:block">
               <p className="text-sm font-semibold text-white leading-none">{user.username || user.email}</p>
               <p className="text-[10px] text-gray-500 mt-0.5">
-                {user.role === 'ROLE_ADMIN' ? 'Administrator' : user.role === 'ROLE_BOARD' ? 'Vorstand' : user.role}
+                {user.role === 'ROLE_ADMIN' ? 'Administrator' : user.role === 'ROLE_CHEF' ? 'Chef' : user.role === 'ROLE_BOARD' ? 'Vorstand' : user.role}
               </p>
             </div>
           </div>
           <h1 className="text-sm font-bold text-white absolute left-1/2 -translate-x-1/2 hidden sm:block">
-            {isAdmin(user) ? '⚡ Admin' : '🏛 Vorstand'}
+            {isAdmin(user) ? '⚡ Admin' : user.role === 'ROLE_CHEF' ? '🎸 Chef' : '🏛 Vorstand'}
           </h1>
           <a href="/" target="_blank"
             className="text-xs text-gray-500 hover:text-white transition flex items-center gap-1">
@@ -3692,20 +3696,23 @@ export default function AdminPage() {
         <div className="space-y-6">
           <SectionHeader icon="👥" title="Mitgliederverwaltung" desc="Einladungen versenden, Gruppen verwalten" />
 
-          {/* Link zur Mitgliederverwaltung */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <a href="/admin/members"
-              className="group flex items-center gap-4 rounded-xl border border-white/10 bg-slate-900 p-5 hover:border-green-500/40 hover:bg-slate-800/60 transition">
-              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-green-900/30 text-2xl">👥</div>
-              <div>
-                <p className="font-semibold text-white group-hover:text-green-400 transition">Mitglieder verwalten</p>
-                <p className="mt-0.5 text-xs text-gray-400">Suchen, deaktivieren, Gruppen zuweisen, Verlauf</p>
-              </div>
-              <span className="ml-auto text-gray-500 group-hover:text-green-400 transition text-lg">→</span>
-            </a>
-          </div>
+          {/* Link zur Mitgliederverwaltung (nur Chef/Admin - kümmern sich um die Mitglieder) */}
+          {isChef(user) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <a href="/admin/members"
+                className="group flex items-center gap-4 rounded-xl border border-white/10 bg-slate-900 p-5 hover:border-green-500/40 hover:bg-slate-800/60 transition">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-green-900/30 text-2xl">👥</div>
+                <div>
+                  <p className="font-semibold text-white group-hover:text-green-400 transition">Mitglieder verwalten</p>
+                  <p className="mt-0.5 text-xs text-gray-400">Suchen, deaktivieren, Gruppen zuweisen, Verlauf</p>
+                </div>
+                <span className="ml-auto text-gray-500 group-hover:text-green-400 transition text-lg">→</span>
+              </a>
+            </div>
+          )}
 
-          {/* Einladungsformular */}
+          {/* Einladungsformular (nur Vorstand/Admin) */}
+          {isBoard(user) && (
           <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
             <div className="border-b border-white/10 px-6 py-4">
               <h3 className="font-semibold text-white">✉️ Mitglied einladen</h3>
@@ -3721,6 +3728,7 @@ export default function AdminPage() {
                   className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none">
                   <option value="MEMBER">Mitglied</option>
                   <option value="BOARD">Vorstand</option>
+                  {user.role === 'ROLE_ADMIN' && <option value="CHEF">Chef</option>}
                   {user.role === 'ROLE_ADMIN' && <option value="ADMIN">Administrator</option>}
                 </select>
                 <button type="submit"
@@ -3745,6 +3753,7 @@ export default function AdminPage() {
               )}
             </div>
           </div>
+          )}
 
           {/* Gitarrengruppen */}
           <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">

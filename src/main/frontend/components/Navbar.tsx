@@ -4,7 +4,7 @@ import { getApiBase } from '@/lib/api'
 import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useAuth, isAdmin, isBoard, isGuestOnly } from '@/lib/auth'
+import { useAuth, isAdmin, isBoard, isChef, isGuestOnly } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/lib/ThemeProvider'
 import { usePageLoad } from '@/lib/AppLoadingContext'
@@ -300,9 +300,9 @@ export default function Navbar() {
                       👤 Profil
                     </Link>
                   )}
-                  {isBoard(user) && (
+                  {(isBoard(user) || isChef(user)) && (
                     <Link href="/admin" className="block px-4 py-2.5 text-sm text-yellow-600 dark:text-yellow-400/80 hover:bg-yellow-500/10 hover:text-yellow-600 dark:hover:text-yellow-400 transition" onClick={() => setUserOpen(false)}>
-                      {isAdmin(user) ? '⚙️ Admin' : '👥 Vorstand'}
+                      {isAdmin(user) ? '⚙️ Admin' : user.role === 'ROLE_CHEF' ? '🎸 Chef' : '👥 Vorstand'}
                     </Link>
                   )}
                   <div className="my-1 border-t border-gray-100 dark:border-white/10" />
@@ -364,7 +364,7 @@ export default function Navbar() {
                 )}
               </li>
             ))}
-            {user && isBoard(user) && <li><Link href="/admin" className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 transition" onClick={() => setMenuOpen(false)}>{isAdmin(user) ? 'Admin' : 'Vorstand'}</Link></li>}
+            {user && (isBoard(user) || isChef(user)) && <li><Link href="/admin" className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 transition" onClick={() => setMenuOpen(false)}>{isAdmin(user) ? 'Admin' : user.role === 'ROLE_CHEF' ? 'Chef' : 'Vorstand'}</Link></li>}
             <li className="border-t border-gray-100 dark:border-white/5 pt-3">
               <button onClick={toggleTheme} className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition">
                 {theme === 'dark' ? (
