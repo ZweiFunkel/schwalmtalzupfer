@@ -17,7 +17,7 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequestMapping("/api/pricing/groups")
-@PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
+@PreAuthorize("hasAnyRole('BOARD', 'CHEF', 'ADMIN')")
 @RequiredArgsConstructor
 public class PriceGroupController {
 
@@ -32,7 +32,7 @@ public class PriceGroupController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> create(@RequestBody CreateGroupRequest req) {
         if (req.name() == null || req.name().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Name ist Pflichtfeld"));
@@ -45,7 +45,7 @@ public class PriceGroupController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> delete(@PathVariable UUID id) {
         try {
             priceGroupRepository.deleteById(id);

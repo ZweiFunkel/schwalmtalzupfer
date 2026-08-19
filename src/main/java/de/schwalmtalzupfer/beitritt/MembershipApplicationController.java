@@ -53,7 +53,7 @@ public class MembershipApplicationController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF', 'ADMIN')")
     public List<Map<String, Object>> list(@RequestParam(required = false) String status) {
         List<MembershipApplication> applications = status != null
                 ? applicationRepository.findByStatusOrderByCreatedAtDesc(MembershipApplicationStatus.valueOf(status))
@@ -62,7 +62,7 @@ public class MembershipApplicationController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF', 'ADMIN')")
     public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody UpdateRequest req) {
         MembershipApplication application = applicationRepository.findById(id).orElse(null);
         if (application == null) {
@@ -98,7 +98,7 @@ public class MembershipApplicationController {
      * Vertrag entsteht erst, wenn die Person die Einladung annimmt und eine Zahlungsart hinterlegt.
      */
     @PostMapping("/{id}/annehmen")
-    @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF', 'ADMIN')")
     public ResponseEntity<?> annehmen(@PathVariable UUID id) {
         MembershipApplication application = applicationRepository.findById(id).orElse(null);
         if (application == null) {
@@ -130,7 +130,7 @@ public class MembershipApplicationController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF', 'ADMIN')")
     public ResponseEntity<?> delete(@PathVariable UUID id) {
         if (!applicationRepository.existsById(id)) {
             return ResponseEntity.notFound().build();

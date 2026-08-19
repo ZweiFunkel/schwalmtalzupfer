@@ -20,13 +20,13 @@ public class GruppeController {
     private final PriceGroupRepository priceGroupRepository;
 
     @GetMapping("/gruppen")
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('BOARD','CHEF','ADMIN')")
     public List<Map<String, Object>> allGruppen() {
         return gitarrengruppeRepository.findAll().stream().map(this::toDto).toList();
     }
 
     @PostMapping("/gruppen")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> createGruppe(@RequestBody CreateGruppeRequest req) {
         Location location = locationRepository.findById(UUID.fromString(req.locationId()))
                 .orElseThrow(() -> new IllegalArgumentException("Location nicht gefunden"));
@@ -43,7 +43,7 @@ public class GruppeController {
     }
 
     @PatchMapping("/gruppen/{id}/preisgruppe")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> updatePreisgruppe(@PathVariable UUID id, @RequestBody UpdatePreisgruppeRequest req) {
         Gitarrengruppe g = gitarrengruppeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Gruppe nicht gefunden"));
@@ -54,28 +54,28 @@ public class GruppeController {
     }
 
     @DeleteMapping("/gruppen/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> deleteGruppe(@PathVariable UUID id) {
         gitarrengruppeRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/locations")
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('BOARD','CHEF','ADMIN')")
     public List<Map<String, Object>> allLocations() {
         return locationRepository.findAll().stream().map(this::locationToDto).toList();
     }
 
     @PostMapping("/locations")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> createLocation(@RequestBody CreateLocationRequest req) {
         Location l = Location.builder().name(req.name()).adresse(req.adresse()).parkplatzInfo(req.parkplatzInfo()).build();
         return ResponseEntity.ok(locationToDto(locationRepository.save(l)));
     }
 
-    /** Adresse/Parkplatz-Hinweis einer Location ändern (nur BOARD/ADMIN). */
+    /** Adresse/Parkplatz-Hinweis einer Location ändern (BOARD/CHEF/ADMIN). */
     @PatchMapping("/locations/{id}")
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('BOARD','CHEF','ADMIN')")
     public ResponseEntity<?> updateLocation(@PathVariable UUID id, @RequestBody UpdateLocationRequest req) {
         Location l = locationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Location nicht gefunden"));
@@ -86,7 +86,7 @@ public class GruppeController {
     }
 
     @DeleteMapping("/locations/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> deleteLocation(@PathVariable UUID id) {
         locationRepository.deleteById(id);
         return ResponseEntity.noContent().build();

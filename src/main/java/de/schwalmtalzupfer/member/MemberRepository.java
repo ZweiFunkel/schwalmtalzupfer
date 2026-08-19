@@ -18,6 +18,7 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
     boolean existsByRole(MemberRole role);
+    long countByRole(MemberRole role);
 
     @Query("SELECT m FROM Member m WHERE " +
            "(:search IS NULL OR :search = '' OR " +

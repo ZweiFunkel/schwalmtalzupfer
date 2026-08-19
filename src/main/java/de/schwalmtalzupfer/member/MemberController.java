@@ -75,9 +75,9 @@ public class MemberController {
 
     public record ChangePasswordRequest(String aktuellesPasswort, String neuesPasswort) {}
 
-    /** Alle Mitglieder suchen (nur BOARD/ADMIN) */
+    /** Alle Mitglieder suchen (nur CHEF/ADMIN) */
     @GetMapping
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public List<Map<String, Object>> allMembers(@RequestParam(required = false) String search) {
         List<Member> members = (search != null && !search.isBlank())
                 ? memberRepository.searchMembers(search)
@@ -85,11 +85,15 @@ public class MemberController {
         return members.stream().map(this::toDto).toList();
     }
 
-    /** Mitglied deaktivieren (nur BOARD/ADMIN) */
+    /** Mitglied deaktivieren (nur CHEF/ADMIN) - bei Admins nicht möglich, wenn es der letzte wäre. */
     @PatchMapping("/{id}/deaktivieren")
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> deactivate(@PathVariable UUID id) {
         return memberRepository.findById(id).map(m -> {
+            if (m.getRole() == MemberRole.ADMIN && memberRepository.countByRole(MemberRole.ADMIN) <= 1) {
+                return ResponseEntity.status(409).body(Map.of("error",
+                        "Es muss mindestens ein Admin-Account aktiv bleiben. Bitte zuerst einen weiteren Admin bestimmen."));
+            }
             m.setIstAktiv(false);
             memberRepository.save(m);
             userHistoryRepository.save(UserHistory.builder()
@@ -102,9 +106,9 @@ public class MemberController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    /** Mitglied reaktivieren (nur BOARD/ADMIN) */
+    /** Mitglied reaktivieren (nur CHEF/ADMIN) */
     @PatchMapping("/{id}/reaktivieren")
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> reactivate(@PathVariable UUID id) {
         return memberRepository.findById(id).map(m -> {
             m.setIstAktiv(true);
@@ -120,13 +124,14 @@ public class MemberController {
     }
 
     /**
-     * Gruppe (+ optional individueller Preis) eines Mitglieds ändern (nur BOARD/ADMIN).
+     * Gruppe (+ optional individueller Preis) eines Mitglieds ändern (nur CHEF/ADMIN - fachlich
+     * Sache des Chefs, der den Unterricht durchführt).
      * Ohne gueltigAb wird die Änderung sofort (heute) wirksam - wie bisher. Mit einem Datum in
      * der Zukunft bleibt die bisherige Gruppe/der bisherige Preis bis dahin sichtbar und die
      * neuen Werte greifen automatisch ab dem Stichtag (siehe {@link GruppenHistorieService}).
      */
     @PatchMapping("/{id}/gruppe")
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> updateGruppe(@PathVariable UUID id, @RequestBody UpdateGruppeRequest req, Principal principal) {
         return memberRepository.findById(id).map(m -> {
             String alterWert = gruppeLabel(m.getGitarrengruppe());
@@ -162,9 +167,9 @@ public class MemberController {
 
     public record UpdateGruppeRequest(String gruppeId, Integer monatsbeitragCents, String gueltigAb, String notiz) {}
 
-    /** Verlauf der Gruppen-/Preis-Zuordnung eines Mitglieds (nur BOARD/ADMIN) - inkl. bereits geplanter, zukünftiger Wechsel. */
+    /** Verlauf der Gruppen-/Preis-Zuordnung eines Mitglieds (nur CHEF/ADMIN) - inkl. bereits geplanter, zukünftiger Wechsel. */
     @GetMapping("/{id}/gruppen-historie")
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> getGruppenHistorie(@PathVariable UUID id) {
         return memberRepository.findById(id).map(m -> {
             List<Map<String, Object>> historie = gruppenHistorieService.history(m).stream().map(h -> {
@@ -184,9 +189,9 @@ public class MemberController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    /** Mitglied-Details (nur BOARD/ADMIN) */
+    /** Mitglied-Details (nur CHEF/ADMIN) */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> getMember(@PathVariable UUID id) {
         return memberRepository.findById(id)
                 .map(m -> {
@@ -209,9 +214,9 @@ public class MemberController {
         return map;
     }
 
-    /** UserHistory eines Mitglieds (nur BOARD/ADMIN) */
+    /** UserHistory eines Mitglieds (nur CHEF/ADMIN) */
     @GetMapping("/{id}/history")
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> getHistory(@PathVariable UUID id) {
         List<Map<String, Object>> history = userHistoryRepository.findByUserIdOrderByTimestampDesc(id)
                 .stream().map(h -> {
@@ -226,13 +231,29 @@ public class MemberController {
         return ResponseEntity.ok(history);
     }
 
-    /** Rolle eines Mitglieds ändern (nur ADMIN) */
+    /**
+     * Rolle eines Mitglieds ändern (CHEF/ADMIN). Zwei Sicherheitsregeln, die nicht per
+     * @PreAuthorize allein abbildbar sind: (1) die ADMIN-Rolle selbst darf nur ein bereits
+     * bestehender Admin vergeben - ein Chef kann also niemanden zum Admin machen; (2) der letzte
+     * verbleibende Admin-Account darf nicht herabgestuft werden, damit die Anwendung nie ohne
+     * Admin dasteht (der aktuelle Admin muss erst selbst einen Nachfolger befördern).
+     */
     @PatchMapping("/{id}/rolle")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updateRolle(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
+    public ResponseEntity<?> updateRolle(@PathVariable UUID id, @RequestBody Map<String, String> body, Principal principal) {
         return memberRepository.findById(id).map(m -> {
             String rolleStr = body.get("rolle");
             MemberRole neueRolle = MemberRole.valueOf(rolleStr);
+
+            boolean requesterIstAdmin = currentMember(principal).map(r -> r.getRole() == MemberRole.ADMIN).orElse(false);
+            if (neueRolle == MemberRole.ADMIN && !requesterIstAdmin) {
+                return ResponseEntity.status(403).body(Map.of("error", "Nur ein bestehender Admin kann die Admin-Rolle vergeben."));
+            }
+            if (m.getRole() == MemberRole.ADMIN && neueRolle != MemberRole.ADMIN && memberRepository.countByRole(MemberRole.ADMIN) <= 1) {
+                return ResponseEntity.status(409).body(Map.of("error",
+                        "Es muss mindestens ein Admin-Account verbleiben. Bitte zuerst einen weiteren Admin bestimmen."));
+            }
+
             String alterWert = m.getRole().name();
             m.setRole(neueRolle);
             memberRepository.save(m);
@@ -246,9 +267,9 @@ public class MemberController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    /** Mitglied anlegen (nur BOARD/ADMIN) */
+    /** Mitglied anlegen (nur CHEF/ADMIN) */
     @PostMapping
-    @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
     public ResponseEntity<?> createMember(@RequestBody CreateMemberRequest req) {
         if (memberRepository.existsByEmail(req.email())) {
             return ResponseEntity.badRequest().body(Map.of("error", "E-Mail bereits registriert"));
