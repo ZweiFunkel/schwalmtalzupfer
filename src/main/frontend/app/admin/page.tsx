@@ -3555,20 +3555,27 @@ export default function AdminPage() {
   }, [user, loading, boardTabInit])
 
   const loadPages = useCallback(async () => {
-    const res = await fetch(`${API_BASE}/api/pages`)
-    if (res.ok) setPages(await res.json())
+    try {
+      const res = await fetch(`${API_BASE}/api/pages`, { credentials: 'include' })
+      if (res.ok) { setPages(await res.json()); setPageActionError(null) }
+      else setPageActionError(`Seiten konnten nicht geladen werden (${res.status})`)
+    } catch {
+      setPageActionError('Seiten konnten nicht geladen werden (Netzwerkfehler)')
+    }
   }, [])
 
   useEffect(() => { if (tab === 'pages') loadPages() }, [tab, loadPages])
 
   const createPage = async () => {
     if (!newSlug.trim() || !newTitle.trim()) return
-    await fetch(`${API_BASE}/api/pages`, {
+    setPageActionError(null)
+    const res = await fetch(`${API_BASE}/api/pages`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: newSlug.trim(), title: newTitle.trim() }),
     })
-    setNewSlug(''); setNewTitle(''); loadPages()
+    if (!res.ok) { setPageActionError(`Seite anlegen fehlgeschlagen (${res.status})`); return }
+    setNewSlug(''); setNewTitle(''); await loadPages()
   }
 
   const deletePage = async (slug: string | undefined) => {

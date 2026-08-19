@@ -77,6 +77,7 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/pages/**").permitAll()
+                .requestMatchers("/api/pages/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/termine/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/kalender/termine").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/kalender/ics").permitAll()

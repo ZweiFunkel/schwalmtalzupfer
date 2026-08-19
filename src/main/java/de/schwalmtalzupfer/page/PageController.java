@@ -3,6 +3,7 @@ package de.schwalmtalzupfer.page;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -62,6 +63,7 @@ public class PageController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public PageDto.PageResponse createPage(@RequestBody PageDto.UpsertPageRequest request) {
         Page page = Page.builder()
                 .slug(request.slug())
@@ -71,6 +73,7 @@ public class PageController {
     }
 
     @PostMapping("/**/sections")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PageDto.PageResponse> addSection(
             HttpServletRequest request,
             @RequestBody PageDto.UpsertSectionRequest body) {
@@ -88,6 +91,7 @@ public class PageController {
     }
 
     @PutMapping("/**/sections/{sectionId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateSection(
             HttpServletRequest request,
             @PathVariable UUID sectionId,
@@ -107,6 +111,7 @@ public class PageController {
     }
 
     @DeleteMapping("/**/sections/{sectionId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteSection(
             HttpServletRequest request,
             @PathVariable UUID sectionId) {
@@ -118,6 +123,7 @@ public class PageController {
     }
 
     @PatchMapping("/**")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> renamePage(
             HttpServletRequest request,
             @RequestBody PageDto.UpsertPageRequest body) {
@@ -131,6 +137,7 @@ public class PageController {
     }
 
     @DeleteMapping("/**")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> deletePage(HttpServletRequest request) {
         String slug = extractSlug(request);
         return pageRepository.findBySlug(slug).map(page -> {
