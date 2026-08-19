@@ -12,8 +12,10 @@ export default function ProfilPage() {
   const router = useRouter()
   const [vorname, setVorname] = useState('')
   const [nachname, setNachname] = useState('')
+  const [username, setUsername] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const [aktuellesPasswort, setAktuellesPasswort] = useState('')
   const [neuesPasswort, setNeuesPasswort] = useState('')
@@ -31,20 +33,31 @@ export default function ProfilPage() {
     if (user && user.role !== 'ROLE_GUEST') {
       setVorname(user.vorname || '')
       setNachname(user.nachname || '')
+      setUsername(user.username || '')
     }
   }, [user, loading, router])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    await fetch(`${API_BASE}/api/member/me`, {
+    setSaveError(null)
+    const body: Record<string, string> = { vorname, nachname }
+    // Nur mitschicken, wenn ausgefüllt - leer senden würde serverseitig als ungültiger
+    // Löschversuch abgelehnt (Username ist einmal gesetzt kein Pflichtfeld zum Entfernen).
+    if (username.trim()) body.username = username.trim()
+    const res = await fetch(`${API_BASE}/api/member/me`, {
       method: 'PATCH',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ vorname, nachname }),
+      body: JSON.stringify(body),
     })
-    await refresh()
     setSaving(false)
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setSaveError(data.error ?? 'Speichern fehlgeschlagen.')
+      return
+    }
+    await refresh()
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -194,14 +207,16 @@ export default function ProfilPage() {
       {/* Daten bearbeiten */}
       <form onSubmit={handleSave} className="rounded-xl border border-white/10 bg-slate-900 p-6 flex flex-col gap-4">
         <h2 className="text-lg font-semibold text-white mb-2">Daten bearbeiten</h2>
-        {user.username && (
-          <div>
-            <label className="mb-1 block text-sm text-gray-400">Benutzername</label>
-            <input value={user.username} readOnly
-              className="w-full rounded-lg border border-white/10 bg-slate-700/50 px-3 py-2 text-gray-300 cursor-not-allowed" />
-            <p className="mt-1 text-xs text-gray-500">Der Benutzername kann nicht geändert werden.</p>
-          </div>
+        {saveError && (
+          <div className="rounded-lg bg-red-900/30 px-4 py-2 text-sm text-red-400">{saveError}</div>
         )}
+        <div>
+          <label className="mb-1 block text-sm text-gray-400">Benutzername</label>
+          <input value={username} onChange={e => setUsername(e.target.value)}
+            placeholder="z.B. max.mustermann"
+            className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
+          <p className="mt-1 text-xs text-gray-500">Damit kannst du dich alternativ zur E-Mail-Adresse einloggen. 3–50 Zeichen, nur Buchstaben, Zahlen, Punkt, Unterstrich oder Bindestrich.</p>
+        </div>
         <div>
           <label className="mb-1 block text-sm text-gray-400">Vorname</label>
           <input value={vorname} onChange={e => setVorname(e.target.value)}

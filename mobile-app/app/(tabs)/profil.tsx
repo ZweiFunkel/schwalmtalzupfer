@@ -56,6 +56,7 @@ export default function ProfilScreen() {
 
   const [vorname, setVorname] = useState('');
   const [nachname, setNachname] = useState('');
+  const [username, setUsername] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
 
@@ -69,7 +70,7 @@ export default function ProfilScreen() {
       setLoading(true);
       fetchMe().then(p => {
         setProfile(p);
-        if (p) { setVorname(p.vorname ?? ''); setNachname(p.nachname ?? ''); }
+        if (p) { setVorname(p.vorname ?? ''); setNachname(p.nachname ?? ''); setUsername(p.username ?? ''); }
       }).finally(() => setLoading(false));
       fetchPaymentStatus().then(setPaymentStatus).catch(() => setPaymentStatus(null));
     }, [])
@@ -109,7 +110,11 @@ export default function ProfilScreen() {
   async function handleSaveProfile() {
     setSavingProfile(true);
     try {
-      await updateMyProfile({ vorname, nachname });
+      const patch: { vorname: string; nachname: string; username?: string } = { vorname, nachname };
+      // Nur mitschicken, wenn ausgefüllt - leer senden würde serverseitig als ungültiger
+      // Löschversuch abgelehnt (Username ist einmal gesetzt kein Pflichtfeld zum Entfernen).
+      if (username.trim()) patch.username = username.trim();
+      await updateMyProfile(patch);
       const updated = await fetchMe();
       setProfile(updated);
       setProfileSaved(true);
@@ -266,6 +271,19 @@ export default function ProfilScreen() {
             <Text style={styles.sectionTitle}>Daten bearbeiten</Text>
             <View style={styles.sectionCard}>
               <View>
+                <Text style={styles.fieldLabel}>Benutzername</Text>
+                <TextInput
+                  style={styles.input}
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholder="z.B. max.mustermann"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholderTextColor={colors.textFaint}
+                />
+                <Text style={styles.fieldHint}>Damit kannst du dich alternativ zur E-Mail-Adresse anmelden.</Text>
+              </View>
+              <View>
                 <Text style={styles.fieldLabel}>Vorname</Text>
                 <TextInput
                   style={styles.input}
@@ -374,6 +392,7 @@ function createStyles(colors: ColorTokens) {
   noticeText: { fontFamily: font.regular, fontSize: 13, color: '#a16207' },
   noticeBold: { fontFamily: font.bold },
   fieldLabel: { fontFamily: font.medium, fontSize: 13, color: colors.textMuted, marginBottom: 4 },
+  fieldHint: { fontFamily: font.regular, fontSize: 11, color: colors.textFaint, marginTop: 4 },
   input: {
     borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm,
     paddingHorizontal: spacing.sm, paddingVertical: 10, fontFamily: font.regular,

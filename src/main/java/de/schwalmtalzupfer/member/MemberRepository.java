@@ -17,6 +17,7 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
     Optional<Member> findByUsernameIgnoreCase(String username);
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
+    boolean existsByUsernameIgnoreCase(String username);
     boolean existsByRole(MemberRole role);
     long countByRole(MemberRole role);
 

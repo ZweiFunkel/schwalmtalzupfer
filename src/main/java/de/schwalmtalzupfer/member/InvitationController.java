@@ -98,17 +98,29 @@ public class InvitationController {
      */
     @PostMapping("/accept")
     public ResponseEntity<?> accept(@Valid @RequestBody AcceptRequest request) {
-        InvitationToken invitation = invitationService.peekToken(request.token());
+        InvitationToken invitation;
+        try {
+            invitation = invitationService.peekToken(request.token());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(Map.of("error", "Ungültiges Token"));
+        }
 
         if (invitation.getPriceGroupRate() != null
                 && (request.stripeCustomerId() == null || request.stripePaymentMethodId() == null)) {
             return ResponseEntity.badRequest().body(Map.of("error", "Zahlungsart fehlt - bitte zuerst den Zahlungsschritt abschließen."));
         }
 
-        Member member = invitationService.accept(
-                request.token(), request.password(),
-                request.vorname(), request.nachname(),
-                request.username(), request.iban());
+        Member member;
+        try {
+            member = invitationService.accept(
+                    request.token(), request.password(),
+                    request.vorname(), request.nachname(),
+                    request.username(), request.iban());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(410).body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(409).body(Map.of("error", e.getMessage()));
+        }
 
         if (invitation.getPriceGroupRate() != null) {
             try {

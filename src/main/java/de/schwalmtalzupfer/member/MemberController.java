@@ -33,7 +33,9 @@ public class MemberController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /** Eigenes Profil aktualisieren (nur Vor-/Nachname) - Gäste dürfen ihre Daten nicht ändern. */
+    private static final java.util.regex.Pattern USERNAME_PATTERN = java.util.regex.Pattern.compile("^[a-zA-Z0-9._-]{3,50}$");
+
+    /** Eigenes Profil aktualisieren (Vor-/Nachname, Username) - Gäste dürfen ihre Daten nicht ändern. */
     @PatchMapping("/me")
     public ResponseEntity<?> updateProfile(Principal principal, @RequestBody Map<String, String> body) {
         return memberRepository.findByEmail(principal.getName())
@@ -44,6 +46,22 @@ public class MemberController {
                     }
                     if (body.containsKey("vorname")) m.setVorname(body.get("vorname"));
                     if (body.containsKey("nachname")) m.setNachname(body.get("nachname"));
+                    if (body.containsKey("username")) {
+                        String neuerUsername = body.get("username");
+                        if (neuerUsername == null || neuerUsername.isBlank()) {
+                            return ResponseEntity.badRequest().body(Map.of("error", "Username darf nicht leer sein."));
+                        }
+                        neuerUsername = neuerUsername.trim();
+                        if (!USERNAME_PATTERN.matcher(neuerUsername).matches()) {
+                            return ResponseEntity.badRequest().body(Map.of("error",
+                                    "Username muss 3-50 Zeichen lang sein und darf nur Buchstaben, Zahlen, Punkt, Unterstrich oder Bindestrich enthalten."));
+                        }
+                        boolean unveraendert = neuerUsername.equalsIgnoreCase(m.getUsername());
+                        if (!unveraendert && memberRepository.existsByUsernameIgnoreCase(neuerUsername)) {
+                            return ResponseEntity.status(409).body(Map.of("error", "Dieser Username ist bereits vergeben."));
+                        }
+                        m.setUsername(neuerUsername);
+                    }
                     return ResponseEntity.ok(toDto(memberRepository.save(m)));
                 }).orElse(ResponseEntity.notFound().build());
     }

@@ -147,7 +147,7 @@ public class InvitationService {
         if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Token abgelaufen");
         }
-        if (username != null && !username.isBlank() && memberRepository.existsByUsername(username)) {
+        if (username != null && !username.isBlank() && memberRepository.existsByUsernameIgnoreCase(username)) {
             throw new IllegalArgumentException("Username bereits vergeben");
         }
 
