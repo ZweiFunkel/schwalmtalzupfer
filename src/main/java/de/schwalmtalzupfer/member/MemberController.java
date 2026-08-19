@@ -129,7 +129,7 @@ public class MemberController {
     @PreAuthorize("hasAnyRole('BOARD','ADMIN')")
     public ResponseEntity<?> updateGruppe(@PathVariable UUID id, @RequestBody UpdateGruppeRequest req, Principal principal) {
         return memberRepository.findById(id).map(m -> {
-            String alterWert = m.getGitarrengruppe() != null ? m.getGitarrengruppe().getId().toString() : "keine";
+            String alterWert = gruppeLabel(m.getGitarrengruppe());
 
             Gitarrengruppe gruppe = null;
             if (req.gruppeId() != null && !req.gruppeId().isBlank()) {
@@ -143,15 +143,21 @@ public class MemberController {
 
             gruppenHistorieService.addEntry(m, gruppe, req.monatsbeitragCents(), gueltigAb, req.notiz(), erstelltVon);
 
-            String neuerWert = gruppe != null ? gruppe.getId().toString() : "keine";
+            String neuerWert = gruppeLabel(gruppe) + (gueltigAb.isAfter(LocalDate.now()) ? " (ab " + gueltigAb + ")" : "");
             userHistoryRepository.save(UserHistory.builder()
                     .userId(id)
                     .aenderungsTyp("GRUPPENWECHSEL")
                     .alterWert(alterWert)
-                    .neuerWert(neuerWert + (gueltigAb.isAfter(LocalDate.now()) ? " (ab " + gueltigAb + ")" : ""))
+                    .neuerWert(neuerWert)
                     .build());
             return ResponseEntity.ok(toDto(memberRepository.findById(id).orElse(m)));
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Menschenlesbares Label statt der internen UUID, für die Änderungshistorie. */
+    private String gruppeLabel(Gitarrengruppe g) {
+        if (g == null) return "keine";
+        return g.getWochentag() + " " + g.getVonUhrzeit() + "–" + g.getBisUhrzeit();
     }
 
     public record UpdateGruppeRequest(String gruppeId, Integer monatsbeitragCents, String gueltigAb, String notiz) {}
