@@ -9,9 +9,11 @@ const API_BASE = getApiBase()
 
 // Routen mit eigenem app/<name>/page.tsx – nicht über [slug] statisch exportieren,
 // sonst überschreibt der CMS-Slug die dedizierte Seite im Production-Build.
+// 'page-shell-x7f2' ist die generische Lade-Shell für WebConfig.java's
+// PathResourceResolver-Fallback (unbekannte Slugs) – siehe app/page-shell-x7f2/page.tsx.
 const RESERVED_SLUGS = new Set([
   'galerie', 'intern', 'kontakt', 'login', 'register', 'admin',
-  'impressum', 'noten', 'profil',
+  'impressum', 'noten', 'profil', 'page-shell-x7f2',
 ])
 
 function filterReservedSlugs(slugs: { slug: string }[]) {

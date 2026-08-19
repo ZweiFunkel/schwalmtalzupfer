@@ -14,7 +14,11 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * Leitet alle Nicht-API-Routen an index.html weiter, damit das Next.js SPA-Routing funktioniert.
+ * Leitet alle Nicht-API-Routen an die passende statische Next.js-Export-Datei weiter.
+ * Unbekannte Routen (z.B. eine erst nach dem letzten Build im Admin angelegte CMS-Seite)
+ * fallen zuletzt auf die generische Lade-Shell ({@code /static/page-shell-x7f2.html}) zurück,
+ * die den Seiteninhalt zur Laufzeit per Client-Fetch nachlädt, statt fälschlich die Startseite
+ * auszuliefern.
  * Erlaubt im Dev-Modus CORS von localhost:3000.
  */
 @Configuration
@@ -83,6 +87,16 @@ public class WebConfig implements WebMvcConfigurer {
                             }
                         }
 
+                        // 5. Kein bekannter Pfad gefunden: generische Lade-Shell statt der Startseite.
+                        //    Sie ermittelt den angeforderten Slug zur Laufzeit selbst aus der Browser-URL
+                        //    (SlugPageClient liest usePathname()) und lädt die Seite per Client-Fetch nach -
+                        //    funktioniert auch für CMS-Seiten, die erst NACH dem letzten Build angelegt wurden.
+                        Resource shell = new ClassPathResource("/static/page-shell-x7f2.html");
+                        if (isServeableFile(shell)) {
+                            return shell;
+                        }
+
+                        // Letzter Notanker, falls die Shell aus irgendeinem Grund fehlt (sollte nicht vorkommen).
                         return new ClassPathResource("/static/index.html");
                     }
 

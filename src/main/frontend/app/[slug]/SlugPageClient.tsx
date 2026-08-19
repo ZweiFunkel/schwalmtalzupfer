@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { PageData } from '@/types/page'
 import { getApiBase } from '@/lib/api'
 import { usePageLoad } from '@/lib/AppLoadingContext'
@@ -16,7 +17,19 @@ function slugify(text: string) {
     .replace(/[^a-z0-9-]/g, '')
 }
 
-export default function SlugPageClient({ slug }: { slug: string }) {
+// Ermittelt den CMS-Slug aus dem tatsächlichen Browser-Pfad (erstes Segment).
+// Wird als primäre Quelle genutzt, damit die Komponente auch dann den
+// richtigen Slug lädt, wenn sie über die generische Lade-Shell (unbekannter,
+// zur Build-Zeit nicht existenter Slug – siehe WebConfig.java Fallback)
+// ausgeliefert wurde, statt über die dedizierte [slug]/page.tsx-Route.
+function slugFromPathname(pathname: string | null): string {
+  const trimmed = (pathname ?? '').replace(/^\/+|\/+$/g, '')
+  return trimmed.split('/')[0] ?? ''
+}
+
+export default function SlugPageClient({ slug: slugProp }: { slug?: string }) {
+  const pathname = usePathname()
+  const slug = slugFromPathname(pathname) || slugProp || ''
   const [page, setPage] = useState<PageData | null | undefined>(undefined)
   const pageDone = usePageLoad('slug-page')
 
