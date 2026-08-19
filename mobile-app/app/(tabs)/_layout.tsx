@@ -4,16 +4,16 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { font } from '../../lib/theme';
 import { useAppTheme } from '../../lib/ThemeContext';
-import { fetchMe } from '../../lib/auth';
+import { fetchMe, isChef } from '../../lib/auth';
 import UpdateBanner from '../../components/UpdateBanner';
 
 export default function TabsLayout() {
   const { colors } = useAppTheme();
-  const [isChef, setIsChef] = useState(false);
+  const [canManage, setCanManage] = useState(false);
 
   useEffect(() => {
     fetchMe().then(profile => {
-      setIsChef(profile?.role === 'ROLE_CHEF' || profile?.role === 'ROLE_ADMIN');
+      setCanManage(isChef(profile));
     });
   }, []);
 
@@ -56,10 +56,11 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="antraege"
+          name="verwaltung"
           options={{
-            title: 'Anträge',
-            href: isChef ? undefined : null,
+            title: 'Verwaltung',
+            headerShown: false,
+            href: canManage ? undefined : null,
             tabBarIcon: ({ color, size }) => <Ionicons name="clipboard" size={size} color={color} />,
           }}
         />

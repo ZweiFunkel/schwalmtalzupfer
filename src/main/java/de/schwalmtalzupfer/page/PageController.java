@@ -1,5 +1,9 @@
 package de.schwalmtalzupfer.page;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.schwalmtalzupfer.config.SiteSettings;
+import de.schwalmtalzupfer.config.SiteSettingsRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -7,7 +11,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -16,6 +23,9 @@ import java.util.UUID;
 public class PageController {
 
     private final PageRepository pageRepository;
+    private final SiteSettingsRepository siteSettingsRepository;
+    private static final String NAV_CONFIG_KEY = "nav_config";
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final String API_PREFIX = "/api/pages/";
 
@@ -121,6 +131,60 @@ public class PageController {
             return ResponseEntity.ok(toDto(pageRepository.save(page)));
         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    /**
+     * Schaltet ausschließlich die Menü-Sichtbarkeit (nav_config.hidden) einer Seite um,
+     * ohne den restlichen Settings-Blob (Logo, Meldungen, Navigation-Dropdowns, ...)
+     * anzufassen - im Gegensatz zu PUT /api/admin/settings, das den kompletten Blob per
+     * Read-Modify-Write überschreibt und deshalb bewusst ADMIN-only bleibt. Für CHEF/ADMIN
+     * gedacht, z.B. als schnelle Aktion aus der Mobile-App.
+     * Einschränkung: erfasst nur einfache, einteilige Slugs (kein "/" im Slug) - für
+     * verschachtelte Seiten-Slugs (selten) müsste man die {@code /**}-Extraktion wie bei
+     * den übrigen Endpunkten hier nutzen; für den Anwendungsfall "Seite im Menü
+     * verstecken" ist das nicht nötig.
+     */
+    @PatchMapping("/{slug}/menu-visibility")
+    @PreAuthorize("hasAnyRole('CHEF','ADMIN')")
+    public ResponseEntity<?> updateMenuVisibility(@PathVariable String slug, @RequestBody MenuVisibilityRequest body) {
+        if (body.hidden() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Feld 'hidden' ist Pflicht."));
+        }
+        SiteSettings setting = siteSettingsRepository.findBySettingKey(NAV_CONFIG_KEY)
+                .orElseGet(() -> SiteSettings.builder().id(System.currentTimeMillis()).settingKey(NAV_CONFIG_KEY).build());
+
+        Map<String, Object> config;
+        try {
+            String raw = setting.getSettingValue();
+            config = (raw == null || raw.isBlank())
+                    ? new LinkedHashMap<>()
+                    : objectMapper.readValue(raw, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "nav_config konnte nicht gelesen werden."));
+        }
+
+        List<String> hidden = new ArrayList<>();
+        if (config.get("hidden") instanceof List<?> list) {
+            for (Object o : list) {
+                if (o != null) hidden.add(o.toString());
+            }
+        }
+        if (body.hidden()) {
+            if (!hidden.contains(slug)) hidden.add(slug);
+        } else {
+            hidden.remove(slug);
+        }
+        config.put("hidden", hidden);
+
+        try {
+            setting.setSettingValue(objectMapper.writeValueAsString(config));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "nav_config konnte nicht gespeichert werden."));
+        }
+        siteSettingsRepository.save(setting);
+        return ResponseEntity.ok(Map.of("slug", slug, "hidden", body.hidden()));
+    }
+
+    public record MenuVisibilityRequest(Boolean hidden) {}
 
     @PatchMapping("/**")
     @PreAuthorize("hasRole('ADMIN')")

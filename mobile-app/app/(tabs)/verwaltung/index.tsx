@@ -11,12 +11,12 @@ import {
   Modal,
   Alert,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchAntraege, updateAntrag, deleteAntrag, MembershipApplication } from '../../lib/beitritt';
-import { fetchGruppen, Gruppe } from '../../lib/gruppen';
-import { font, radius, spacing, type ColorTokens } from '../../lib/theme';
-import { useAppTheme } from '../../lib/ThemeContext';
+import { fetchAntraege, updateAntrag, deleteAntrag, annehmenAntrag, MembershipApplication } from '../../../lib/beitritt';
+import { fetchGruppen, Gruppe } from '../../../lib/gruppen';
+import { font, radius, spacing, type ColorTokens } from '../../../lib/theme';
+import { useAppTheme } from '../../../lib/ThemeContext';
 
 const STATUS_FILTERS: Array<{ key: 'ALLE' | MembershipApplication['status']; label: string }> = [
   { key: 'ALLE', label: 'Alle' },
@@ -42,7 +42,7 @@ function statusColor(colors: ColorTokens): Record<MembershipApplication['status'
   };
 }
 
-export default function AntraegeScreen() {
+export default function VerwaltungScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const STATUS_COLOR = useMemo(() => statusColor(colors), [colors]);
@@ -101,6 +101,26 @@ export default function AntraegeScreen() {
     }
   }
 
+  async function annehmen(id: string) {
+    try {
+      await annehmenAntrag(id);
+      load();
+    } catch (e) {
+      Alert.alert('Fehler', e instanceof Error ? e.message : 'Antrag konnte nicht angenommen werden');
+    }
+  }
+
+  function confirmAccept(id: string) {
+    Alert.alert(
+      'Antrag annehmen?',
+      'Der Antragsteller erhält eine Einladungsmail mit Unterrichtsdetails und Preis.',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Annehmen', onPress: () => annehmen(id) },
+      ]
+    );
+  }
+
   function confirmReject(id: string) {
     Alert.alert('Antrag ablehnen?', 'Diese Aktion kann nicht rückgängig gemacht werden.', [
       { text: 'Abbrechen', style: 'cancel' },
@@ -128,6 +148,17 @@ export default function AntraegeScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.quickLinksRow}>
+        <Pressable style={styles.quickLink} onPress={() => router.push('/verwaltung/mitglieder')}>
+          <Ionicons name="people" size={18} color={colors.primary700} />
+          <Text style={styles.quickLinkText}>Mitglieder</Text>
+        </Pressable>
+        <Pressable style={styles.quickLink} onPress={() => router.push('/verwaltung/seiten')}>
+          <Ionicons name="document-text" size={18} color={colors.primary700} />
+          <Text style={styles.quickLinkText}>Seiten</Text>
+        </Pressable>
+      </View>
+
       <FlatList
         horizontal
         data={STATUS_FILTERS}
@@ -202,6 +233,11 @@ export default function AntraegeScreen() {
                     <Text style={styles.actionButtonYellowText}>Kontakt aufgenommen</Text>
                   </Pressable>
                 )}
+                {item.status !== 'ABGELEHNT' && item.status !== 'ANGENOMMEN' && item.gitarrengruppe && (
+                  <Pressable style={styles.actionButtonGreen} onPress={() => confirmAccept(item.id)}>
+                    <Text style={styles.actionButtonGreenText}>✓ Annehmen</Text>
+                  </Pressable>
+                )}
                 {item.status !== 'ABGELEHNT' && item.status !== 'ANGENOMMEN' && (
                   <Pressable style={styles.actionButtonRed} onPress={() => confirmReject(item.id)}>
                     <Text style={styles.actionButtonRedText}>Ablehnen</Text>
@@ -242,6 +278,9 @@ function createStyles(colors: ColorTokens) {
   return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceMuted },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surfaceMuted },
+  quickLinksRow: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.md, paddingTop: spacing.md },
+  quickLink: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingVertical: 10 },
+  quickLinkText: { fontFamily: font.semiBold, fontSize: 13, color: colors.primary700 },
   filterRow: { padding: spacing.md, gap: spacing.sm, alignItems: 'center' },
   filterChip: { paddingHorizontal: spacing.md, paddingVertical: 8, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, marginRight: spacing.sm },
   filterChipActive: { backgroundColor: colors.primary600, borderColor: colors.primary600 },
@@ -258,9 +297,11 @@ function createStyles(colors: ColorTokens) {
   gruppeButton: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.sm, alignSelf: 'flex-start', backgroundColor: colors.primary50, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: radius.sm },
   gruppeButtonText: { fontFamily: font.medium, fontSize: 13, color: colors.primary700 },
   notizInput: { marginTop: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 8, fontFamily: font.regular, fontSize: 13, color: colors.text },
-  actionRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  actionRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, flexWrap: 'wrap' },
   actionButtonYellow: { backgroundColor: '#fef3c7', paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: radius.sm },
   actionButtonYellowText: { color: '#92400e', fontFamily: font.semiBold, fontSize: 12 },
+  actionButtonGreen: { backgroundColor: colors.primary600, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: radius.sm },
+  actionButtonGreenText: { color: '#fff', fontFamily: font.semiBold, fontSize: 12 },
   actionButtonRed: { backgroundColor: colors.dangerMuted, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: radius.sm },
   actionButtonRedText: { color: colors.danger, fontFamily: font.semiBold, fontSize: 12 },
   actionButtonOutline: { borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: radius.sm },

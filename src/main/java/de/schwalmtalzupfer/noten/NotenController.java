@@ -186,7 +186,7 @@ public class NotenController {
      *       optionalem Feld "prefix" (Standard: der konfigurierte Noten-Prefix).
      */
     @PostMapping("/upload")
-    @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOARD', 'CHEF', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> upload(
             @RequestParam("files") List<MultipartFile> files,
             @RequestParam(defaultValue = "") String prefix

@@ -68,3 +68,15 @@ export async function deleteAntrag(id: string): Promise<void> {
   const res = await apiFetch(`/api/beitritt/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Antrag konnte nicht gelöscht werden');
 }
+
+/** Nimmt den Antrag an - erfordert vorher zugewiesene Gitarrengruppe mit hinterlegtem
+ *  Preis, sonst antwortet das Backend mit 400 und einem Klartext-Fehler (z.B. "Bitte
+ *  zuerst eine Unterrichtsgruppe zuweisen." oder "kein Preis hinterlegt"), der 1:1
+ *  angezeigt werden soll statt eine eigene Vorab-Prüfung nachzubauen. */
+export async function annehmenAntrag(id: string): Promise<void> {
+  const res = await apiFetch(`/api/beitritt/${id}/annehmen`, { method: 'POST' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? 'Antrag konnte nicht angenommen werden');
+  }
+}

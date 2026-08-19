@@ -66,3 +66,9 @@ export async function fetchMe(): Promise<MemberProfile | null> {
   const text = await res.text();
   return text ? JSON.parse(text) : null;
 }
+
+// Rollen-Helper analog src/main/frontend/lib/auth.tsx - ersetzt die bisher pro Screen
+// duplizierten inline-Checks (z.B. `profile?.role === 'ROLE_CHEF' || ...`).
+export const isAdmin = (profile: MemberProfile | null) => profile?.role === 'ROLE_ADMIN';
+export const isChef = (profile: MemberProfile | null) => ['ROLE_ADMIN', 'ROLE_CHEF'].includes(profile?.role ?? '');
+export const isBoard = (profile: MemberProfile | null) => ['ROLE_ADMIN', 'ROLE_BOARD'].includes(profile?.role ?? '');

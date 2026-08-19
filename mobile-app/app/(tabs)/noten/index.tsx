@@ -22,7 +22,7 @@ import {
   NotenBrowseResult,
 } from '../../../lib/noten';
 import { getCachedUri, listCachedNoten, downloadMany } from '../../../lib/notenCache';
-import { fetchMe } from '../../../lib/auth';
+import { fetchMe, isBoard, isChef } from '../../../lib/auth';
 import { font, radius, spacing, columnsForWidth, type ColorTokens } from '../../../lib/theme';
 import { useAppTheme } from '../../../lib/ThemeContext';
 
@@ -48,7 +48,7 @@ export default function NotenBrowser() {
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState('');
   const [offline, setOffline] = useState(false);
-  const [isBoard, setIsBoard] = useState(false);
+  const [canUpload, setCanUpload] = useState(false);
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -63,7 +63,7 @@ export default function NotenBrowser() {
       .then(p => { if (!cancelled) setRootPrefix(p); })
       .catch(() => { if (!cancelled) setRootPrefix(''); });
     fetchMe()
-      .then(p => { if (!cancelled) setIsBoard(p?.role === 'ROLE_BOARD' || p?.role === 'ROLE_CHEF' || p?.role === 'ROLE_ADMIN'); })
+      .then(p => { if (!cancelled) setCanUpload(isBoard(p) || isChef(p)); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
@@ -296,7 +296,7 @@ export default function NotenBrowser() {
                 <Ionicons name="cloud-download-outline" size={20} color={bulkBusy ? colors.textFaint : colors.primary600} />
               </Pressable>
             )}
-            {isBoard && !isSearching && !offline && (
+            {canUpload && !isSearching && !offline && (
               <Pressable
                 onPress={() => router.push({ pathname: '/(tabs)/noten/upload', params: { prefix } })}
                 hitSlop={8}

@@ -77,6 +77,7 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/pages/**").permitAll()
+                .requestMatchers(HttpMethod.PATCH, "/api/pages/*/menu-visibility").hasAnyRole("CHEF", "ADMIN")
                 .requestMatchers("/api/pages/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/termine/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/kalender/termine").authenticated()
