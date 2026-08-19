@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth, isAdmin, isBoard, isChef } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import KalenderTab from './components/KalenderTab'
+import { AdminDocsPanel } from './components/AdminDocsPanel'
 
 const API_BASE = getApiBase()
 
@@ -3296,6 +3297,7 @@ export default function AdminPage() {
   // Dark mode is enforced by admin/layout.tsx — no useEffect needed here
   // For BOARD users, default to members tab (set after user loads)
   const [boardTabInit, setBoardTabInit] = useState(false)
+  const [docsOpen, setDocsOpen] = useState(false)
   // Einladung
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRolle, setInviteRolle] = useState('MEMBER')
@@ -3603,71 +3605,132 @@ export default function AdminPage() {
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
   if (!user || (!isBoard(user) && !isChef(user))) return null
 
-  const TAB_DEFS = [
-    ...(isAdmin(user) ? [
-      { key: 'pages'     as const, icon: '📄', label: 'Seiten',        desc: 'CMS-Seiten & Sektionen' },
-      { key: 'meldungen' as const, icon: '📣', label: 'Meldungen',     desc: 'Banner & Infos zu Terminen' },
-      { key: 'assets'    as const, icon: '🗂', label: 'Assets',        desc: 'Bilder & Dateien (R2)' },
-      { key: 'settings'  as const, icon: '⚙️', label: 'Einstellungen', desc: 'Logo, Noten, Navigation' },
-    ] : []),
-    ...(isChef(user) ? [
-      { key: 'preisgruppen' as const, icon: '💶', label: 'Preisgruppen', desc: 'Beiträge & Preishistorie' },
-    ] : []),
-    { key: 'kalender' as const, icon: '🗓️', label: 'Kalender',   desc: 'Termine, Unterricht & Ferien' },
-    { key: 'videos'  as const, icon: '🎬', label: 'Videos',     desc: 'YouTube-Videos verwalten' },
-    { key: 'members' as const, icon: '👥', label: 'Mitglieder', desc: 'Einladungen & Gruppen' },
-    ...(isChef(user) ? [
-      { key: 'antraege' as const, icon: '📝', label: 'Beitrittsanträge', desc: 'Anträge prüfen & zuweisen' },
-    ] : []),
-  ]
+  type TabKey = 'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos' | 'preisgruppen' | 'antraege' | 'kalender'
+  interface TabDef { key: TabKey; icon: string; label: string; desc: string }
+  interface TabGroup { group: string; items: TabDef[] }
+  const tabDef = (key: TabKey, icon: string, label: string, desc: string): TabDef => ({ key, icon, label, desc })
+
+  const TAB_GROUPS: TabGroup[] = [
+    {
+      group: 'Inhalte',
+      items: isAdmin(user) ? [
+        tabDef('pages', '📄', 'Seiten', 'CMS-Seiten & Sektionen'),
+        tabDef('meldungen', '📣', 'Meldungen', 'Banner & Infos zu Terminen'),
+      ] : [],
+    },
+    {
+      group: 'Medien',
+      items: [
+        ...(isAdmin(user) ? [tabDef('assets', '🗂', 'Assets', 'Bilder & Dateien (R2)')] : []),
+        tabDef('videos', '🎬', 'Videos', 'YouTube-Videos verwalten'),
+      ],
+    },
+    {
+      group: 'Mitglieder',
+      items: [
+        tabDef('members', '👥', 'Mitglieder', 'Einladungen & Gruppen'),
+        ...(isChef(user) ? [
+          tabDef('antraege', '📝', 'Beitrittsanträge', 'Anträge prüfen & zuweisen'),
+          tabDef('preisgruppen', '💶', 'Preisgruppen', 'Beiträge & Preishistorie'),
+        ] : []),
+      ],
+    },
+    {
+      group: 'Verwaltung',
+      items: [
+        tabDef('kalender', '🗓️', 'Kalender', 'Termine, Unterricht & Ferien'),
+        ...(isAdmin(user) ? [tabDef('settings', '⚙️', 'Einstellungen', 'Logo, Noten, Navigation')] : []),
+      ],
+    },
+  ].filter(g => g.items.length > 0)
+
+  const flatTabs = TAB_GROUPS.flatMap(g => g.items)
+  const activeTabDef = flatTabs.find(t => t.key === tab)
+  const roleLabel = user.role === 'ROLE_ADMIN' ? 'Administrator' : user.role === 'ROLE_CHEF' ? 'Chef' : user.role === 'ROLE_BOARD' ? 'Vorstand' : user.role
+
+  const navButtonClass = (active: boolean) =>
+    `flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition whitespace-nowrap
+     ${active ? 'bg-green-600/15 text-green-400' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`
 
   return (
-    <div className="min-h-screen">
-      {/* ── Top bar ─────────────────────────────────────────────────────────── */}
-      <div className="border-b border-white/8 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex items-center justify-between h-14 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white shrink-0">
-              {(user.username || user.email || '?')[0].toUpperCase()}
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-sm font-semibold text-white leading-none">{user.username || user.email}</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">
-                {user.role === 'ROLE_ADMIN' ? 'Administrator' : user.role === 'ROLE_CHEF' ? 'Chef' : user.role === 'ROLE_BOARD' ? 'Vorstand' : user.role}
-              </p>
-            </div>
+    <div className="min-h-screen md:flex">
+      <AdminDocsPanel open={docsOpen} onClose={() => setDocsOpen(false)} />
+
+      {/* ── Sidebar (Desktop) ────────────────────────────────────────────── */}
+      <aside className="hidden md:flex md:w-64 md:flex-col md:sticky md:top-0 md:h-screen shrink-0 border-r border-white/8 bg-slate-900/60">
+        <div className="flex items-center gap-3 h-16 px-5 border-b border-white/8">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white shrink-0">
+            {(user.username || user.email || '?')[0].toUpperCase()}
           </div>
-          <h1 className="text-sm font-bold text-white absolute left-1/2 -translate-x-1/2 hidden sm:block">
-            {isAdmin(user) ? '⚡ Admin' : user.role === 'ROLE_CHEF' ? '🎸 Chef' : '🏛 Vorstand'}
-          </h1>
-          <a href="/" target="_blank"
-            className="text-xs text-gray-500 hover:text-white transition flex items-center gap-1">
-            Website ↗
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white leading-none truncate">{user.username || user.email}</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">{roleLabel}</p>
+          </div>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+          {TAB_GROUPS.map(g => (
+            <div key={g.group}>
+              <p className="px-2.5 mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500">{g.group}</p>
+              <div className="space-y-0.5">
+                {g.items.map(t => (
+                  <button key={t.key} onClick={() => switchTab(t.key)} className={navButtonClass(tab === t.key)}>
+                    <span>{t.icon}</span>
+                    <span>{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+        <div className="border-t border-white/8 p-3 space-y-0.5">
+          <button onClick={() => setDocsOpen(true)} className={navButtonClass(false)}>
+            <span>❓</span><span>Hilfe &amp; Doku</span>
+          </button>
+          <a href="/" target="_blank" className={navButtonClass(false)}>
+            <span>🔗</span><span>Website ansehen</span>
           </a>
         </div>
-      </div>
+      </aside>
 
-      {/* ── Tab navigation ────────────────────────────────────────────────── */}
-      <div className="border-b border-white/8 bg-slate-950 overflow-x-auto">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex">
-          {TAB_DEFS.map(t => (
-            <button key={t.key} onClick={() => switchTab(t.key)}
-              className={`relative flex items-center gap-2 px-4 py-3.5 text-sm font-medium transition-colors whitespace-nowrap
-                ${tab === t.key
-                  ? 'text-white'
-                  : 'text-gray-500 hover:text-gray-300'}`}>
-              <span>{t.icon}</span>
-              <span>{t.label}</span>
-              {tab === t.key && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />
-              )}
-            </button>
-          ))}
+      <div className="flex-1 min-w-0">
+        {/* ── Mobile tab navigation ──────────────────────────────────────── */}
+        <div className="md:hidden border-b border-white/8 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
+          <div className="px-4 flex items-center justify-between h-14 gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-green-600 text-[11px] font-bold text-white shrink-0">
+                {(user.username || user.email || '?')[0].toUpperCase()}
+              </div>
+              <p className="text-sm font-semibold text-white truncate">{user.username || user.email}</p>
+            </div>
+            <button onClick={() => setDocsOpen(true)} className="text-xs text-gray-400 hover:text-white transition shrink-0">❓ Hilfe</button>
+          </div>
+          <div className="overflow-x-auto flex px-2 pb-1">
+            {flatTabs.map(t => (
+              <button key={t.key} onClick={() => switchTab(t.key)}
+                className={`relative flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors whitespace-nowrap
+                  ${tab === t.key ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                <span>{t.icon}</span>
+                <span>{t.label}</span>
+                {tab === t.key && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* ── Content ─────────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
+        {/* ── Desktop header ─────────────────────────────────────────────── */}
+        <div className="hidden md:flex items-center justify-between h-16 px-6 border-b border-white/8 bg-slate-900/40 backdrop-blur-md sticky top-0 z-30">
+          <div>
+            <h1 className="text-sm font-bold text-white">{activeTabDef?.icon} {activeTabDef?.label}</h1>
+            {activeTabDef?.desc && <p className="text-xs text-gray-500 mt-0.5">{activeTabDef.desc}</p>}
+          </div>
+          <button onClick={() => setDocsOpen(true)}
+            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-gray-400 hover:text-white hover:border-white/20 transition">
+            ❓ Hilfe
+          </button>
+        </div>
+
+        {/* ── Content ─────────────────────────────────────────────────────── */}
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8">
 
       {tab === 'assets' && (
         <div className="space-y-6">
@@ -4266,6 +4329,7 @@ export default function AdminPage() {
       )}
 
       </div>
+    </div>
     </div>
   )
 }
