@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { ToastProvider } from './components/ui/Toast'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   // Der Adminbereich ist bewusst IMMER dunkel (siehe CLAUDE.md), unabhängig vom
@@ -26,7 +27,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="dark">
       <div className="min-h-screen bg-slate-950">
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </div>
     </div>
   )
