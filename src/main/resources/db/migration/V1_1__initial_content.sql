@@ -69,7 +69,7 @@ VALUES (
     1,
     '{
         "heading": "Unsere Geschichte",
-        "markdown": "## Vom kleinen Ensemble zum Verein\n\nDie **Schwalmtaler Zupfer** wurden in den 1980er Jahren von einer Handvoll musikbegeisterter Jugendlicher und Erwachsener gegründet, die eine gemeinsame Leidenschaft für Zupfinstrumente – Gitarre, Mandoline und Laute – teilten.\n\nIn den Anfangsjahren probte die Gruppe noch in Wohnzimmern und Gemeindesälen. Der erste öffentliche Auftritt fand im Jahr 1984 auf dem Waldnieler Pfarrfest statt und begeisterte das Publikum so sehr, dass der Wunsch nach einer formellen Vereinsstruktur schnell wuchs.\n\n> *„Musik ist die Sprache, die jeder versteht."* – Gründungsmitglied Hans Müller"
+        "markdown": "## Vom kleinen Ensemble zum Verein\n\nDie **Schwalmtaler Zupfer** wurden in den 1980er Jahren von einer Handvoll musikbegeisterter Jugendlicher und Erwachsener gegründet, die eine gemeinsame Leidenschaft für Zupfinstrumente – Gitarre, Mandoline und Laute – teilten.\n\nIn den Anfangsjahren probte die Gruppe noch in Wohnzimmern und Gemeindesälen. Der erste öffentliche Auftritt fand im Jahr 1984 auf dem Waldnieler Pfarrfest statt und begeisterte das Publikum so sehr, dass der Wunsch nach einer formellen Vereinsstruktur schnell wuchs.\n\n> *„Musik ist die Sprache, die jeder versteht.“* – Gründungsmitglied Hans Müller"
     }'::jsonb
 );
 
