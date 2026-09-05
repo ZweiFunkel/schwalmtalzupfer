@@ -23,6 +23,13 @@ spring:
   threads:
     virtual:
       enabled: true
+  mvc:
+    pathmatch:
+      # PageController nutzt Multi-Segment-Wildcards in Endpunkt-Mitte (z.B. /**/sections),
+      # damit Seiten-Slugs mit Schrägstrichen möglich sind. Der neue PathPatternParser
+      # erlaubt ** nur am Anfang/Ende und lehnt das beim Start komplett ab - legacy Matcher
+      # zurück, um das ursprünglich beabsichtigte Routing beizubehalten.
+      matching-strategy: ant_path_matcher
   mail:
     host: smtp.gmail.com
     port: 587
