@@ -7,6 +7,7 @@ import Link from 'next/link'
 import YouTubePlayer from '@/components/YouTubePlayer'
 
 const API_BASE = getApiBase()
+const SIDEBAR_COLLAPSED_KEY = 'stz-videos-sidebar-collapsed'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -121,6 +122,19 @@ function isSel(sel: Selection | null, item: Selection): boolean {
   return false
 }
 
+// Videos für eine Auswahl, in derselben Reihenfolge wie in Konzert-/Weitere-Content
+// gezeigt (Backend liefert bereits nach position/title sortiert). Wird sowohl für
+// die Anzeige als auch fürs automatische Öffnen des ersten Videos genutzt (wie bei
+// YouTube: Playlist auswählen → erstes Video spielt sofort, Rest steht rechts).
+function videosForSelection(videos: VideoEntry[], sel: Selection): VideoEntry[] {
+  if (sel.cat === 'WEITERE') {
+    return videos
+      .filter(v => v.category === 'WEITERE' && v.subcategory === sel.sub)
+      .sort((a, b) => a.position - b.position)
+  }
+  return videos.filter(v => v.category === sel.cat && v.year === sel.year && (sel.day ? v.day === sel.day : true))
+}
+
 // ─── Icons (klein gehalten, wiederverwendet) ─────────────────────────────────
 
 function PlaylistIcon({ className = 'h-4 w-4' }: { className?: string }) {
@@ -177,6 +191,15 @@ function PipIcon({ className = 'h-4 w-4' }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <rect x="3" y="5" width="18" height="14" rx="1.5" />
       <rect x="12" y="12" width="6.5" height="4.5" rx="1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function SidebarToggleIcon({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <rect x="3" y="4.5" width="18" height="15" rx="2" />
+      <path strokeLinecap="round" d="M9.5 4.5v15" />
     </svg>
   )
 }
@@ -291,13 +314,34 @@ function SplitVideos({ items, onOpen }: { items: VideoEntry[]; onOpen: (v: Video
   )
 }
 
-// ─── Watch-Bereich: normale Ansicht → Kinomodus → Mini-Player ────────────────
+// ─── Watch-Bereich: normale Ansicht → Kinomodus → Miniplayer ─────────────────
 // Vollbild wird bewusst NICHT mehr selbst verwaltet, sondern komplett YouTube
 // überlassen (dessen eigener Steuerungsbutton, dank controls:1 immer sichtbar):
 // eigenes Vollbild hätte den WRAPPER (nicht das Iframe) zum Fullscreen-Element
 // gemacht - YouTubes eigener "Verkleinern"-Button im Iframe wusste davon nichts
 // und konnte dadurch nicht mehr rauswechseln, nur ESC hat funktioniert.
-// "Kinomodus" verbreitert den Player weiterhin innerhalb der Spalte.
+// "Kinomodus" verbreitert den Player wie bei YouTube (Playlist bleibt rechts,
+// nur die Archiv-Seitenleiste klappt automatisch ein) statt ihn nur innerhalb
+// der Spalte zu verbreitern.
+//
+// Miniplayer gibt es in zwei Varianten:
+// 1. In-Page-Miniplayer (bisheriges Verhalten): erscheint unten rechts IM
+//    Browserfenster, sobald der Player beim Scrollen den Viewport verlässt.
+//    Funktioniert überall, bleibt aber auf das Browserfenster beschränkt.
+// 2. Systemweiter Miniplayer (Document Picture-in-Picture API, Chrome/Edge):
+//    ein echtes eigenes Fenster, das frei über alle Bildschirme verschoben
+//    werden kann, sogar außerhalb des Browsers. Wird per Button aktiv
+//    angefordert; wo die API fehlt (Firefox/Safari) bleibt Variante 1 die
+//    einzige Option - eine echte Browser-Grenze, kein technisches Versäumnis.
+
+declare global {
+  interface Window {
+    documentPictureInPicture?: {
+      requestWindow: (options?: { width?: number; height?: number }) => Promise<Window>
+      window: Window | null
+    }
+  }
+}
 
 function WatchArea({
   initialVideo, pool, onClose,
@@ -307,9 +351,11 @@ function WatchArea({
   onClose: () => void
 }) {
   const wrapperRef = React.useRef<HTMLDivElement>(null)
+  const placeholderParentRef = React.useRef<HTMLDivElement>(null)
   const sentinelRef = React.useRef<HTMLDivElement>(null)
   const lastHeightRef = React.useRef(0)
   const dragStateRef = React.useRef<{ startX: number; startY: number; startLeft: number; startTop: number } | null>(null)
+  const pipWindowRef = React.useRef<Window | null>(null)
   const [activeVideo, setActiveVideo] = useState(initialVideo)
   const [playlistItems, setPlaylistItems] = useState<PlaylistItem[]>([])
   const [playlistLoading, setPlaylistLoading] = useState(initialVideo.type === 'PLAYLIST')
@@ -318,20 +364,30 @@ function WatchArea({
   const [manualMiniOpen, setManualMiniOpen] = useState(false)
   const [scrolledAway, setScrolledAway] = useState(false)
   const [miniPos, setMiniPos] = useState<{ left: number; top: number } | null>(null)
+  const [systemPipActive, setSystemPipActive] = useState(false)
+  const [systemPipSupported, setSystemPipSupported] = useState(false)
 
-  // Automatisches Verkleinern zum Mini-Player, sobald der Player-Bereich beim
-  // Runterscrollen den Viewport verlässt - "sentinel" markiert dessen Ursprungsposition,
-  // damit die Erkennung auch funktioniert, während der Player selbst per position:fixed
-  // aus dem normalen Textfluss genommen ist.
   useEffect(() => {
+    setSystemPipSupported(typeof window !== 'undefined' && !!window.documentPictureInPicture)
+  }, [])
+
+  // Automatisches Verkleinern zum In-Page-Miniplayer, sobald der Player-Bereich
+  // beim Runterscrollen den Viewport verlässt - "sentinel" markiert dessen
+  // Ursprungsposition, damit die Erkennung auch funktioniert, während der
+  // Player selbst per position:fixed aus dem normalen Textfluss genommen ist.
+  // Während der systemweite Miniplayer aktiv ist, bleibt der Bereich an Ort
+  // und Stelle (kein zusätzliches Verkleinern nötig, das eigentliche Fenster
+  // übernimmt das schon).
+  useEffect(() => {
+    if (systemPipActive) { setScrolledAway(false); return }
     const el = sentinelRef.current
     if (!el) return
     const obs = new IntersectionObserver(([entry]) => setScrolledAway(!entry.isIntersecting), { threshold: 0 })
     obs.observe(el)
     return () => obs.disconnect()
-  }, [])
+  }, [systemPipActive])
 
-  const mini = manualMiniOpen || scrolledAway
+  const mini = !systemPipActive && (manualMiniOpen || scrolledAway)
 
   useEffect(() => {
     if (!mini) setMiniPos(null)
@@ -380,6 +436,37 @@ function WatchArea({
     sentinelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  // Systemweiter Miniplayer: verschiebt den Player-Wrapper physisch in ein
+  // eigenständiges Document-Picture-in-Picture-Fenster (echtes Browser-Fenster,
+  // frei über alle Bildschirme verschiebbar). Stylesheets werden mitkopiert,
+  // damit Tailwind-Klassen im neuen Fenster (eigenes Document!) weiter greifen.
+  async function openSystemPip() {
+    if (!window.documentPictureInPicture || !wrapperRef.current) return
+    try {
+      const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 400, height: 225 })
+      pipWindowRef.current = pipWindow
+      document.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+        pipWindow.document.head.appendChild(node.cloneNode(true))
+      })
+      pipWindow.document.body.style.margin = '0'
+      pipWindow.document.body.style.background = '#000'
+      pipWindow.document.body.appendChild(wrapperRef.current)
+      setSystemPipActive(true)
+      pipWindow.addEventListener('pagehide', () => {
+        if (placeholderParentRef.current && wrapperRef.current) {
+          placeholderParentRef.current.appendChild(wrapperRef.current)
+        }
+        pipWindowRef.current = null
+        setSystemPipActive(false)
+      })
+    } catch (e) {
+      console.error('Systemweiter Miniplayer konnte nicht geöffnet werden:', e)
+    }
+  }
+  function closeSystemPip() {
+    pipWindowRef.current?.close()
+  }
+
   // Playlist-Inhalte laden, sobald ein Playlist-Eintrag aktiv wird
   useEffect(() => {
     if (activeVideo.type === 'VIDEO') {
@@ -426,6 +513,76 @@ function WatchArea({
 
   const related = pool.filter(v => v.id !== activeVideo.id)
 
+  const sideRail = (isPlaylist || related.length > 0) && !mini && (
+    <div className="flex max-h-[calc(100vh-8rem)] flex-col gap-6 overflow-y-auto lg:sticky lg:top-24">
+      {isPlaylist && (
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Playlist</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">{playlistItems.length} Videos</span>
+          </div>
+          <div className="flex flex-col gap-1.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-2">
+            {playlistLoading ? (
+              [1, 2, 3, 4].map(i => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-100 dark:bg-white/5" />)
+            ) : playlistItems.length === 0 ? (
+              <p className="px-2 py-4 text-center text-xs text-gray-400 dark:text-gray-500">Keine Videos gefunden</p>
+            ) : playlistItems.map((item, idx) => (
+              <button
+                key={item.videoId}
+                onClick={() => setCurrentVideoId(item.videoId)}
+                className={`flex gap-2 rounded-lg p-2 text-left transition ${
+                  currentVideoId === item.videoId
+                    ? 'bg-green-600 text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
+                }`}
+              >
+                <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded bg-gray-200 dark:bg-slate-800">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.thumbnail} alt="" className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <span className="text-[10px] font-bold text-white">{idx + 1}</span>
+                  </div>
+                </div>
+                <p className="min-w-0 flex-1 line-clamp-2 text-xs font-medium">{item.title}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {related.length > 0 && (
+        <div>
+          <span className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-200">Weitere Videos</span>
+          <div className="flex flex-col gap-3">
+            {related.map(v => {
+              const thumb = thumbnailFor(v)
+              return (
+                <button key={v.id} onClick={() => switchTo(v)} className="group flex gap-2 text-left">
+                  <div className="relative aspect-video w-36 shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-slate-800">
+                    {thumb ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={thumb} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <PlaylistIcon className="h-6 w-6 text-gray-400 dark:text-slate-600" />
+                      </div>
+                    )}
+                    {v.type === 'PLAYLIST' && (
+                      <div className="absolute bottom-1 right-1 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                        Playlist
+                      </div>
+                    )}
+                  </div>
+                  <p className="min-w-0 flex-1 line-clamp-3 text-xs font-medium text-gray-700 dark:text-gray-200">{v.title}</p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <>
       {/* Markiert die ursprüngliche Position des Players für IntersectionObserver + Zurückspringen aus dem Mini-Player */}
@@ -434,14 +591,15 @@ function WatchArea({
           nicht abrupt springt (der eigentliche Wrapper wird beim Mini-Player aus dem Textfluss
           genommen, siehe lastHeightRef oben). */}
       {mini && <div style={{ height: lastHeightRef.current }} aria-hidden />}
-      <div
-        ref={wrapperRef}
-        className={mini
-          ? 'fixed z-50 w-72 select-none rounded-xl bg-black shadow-2xl ring-1 ring-black/20 sm:w-80'
-          : `mx-auto mb-10 transition-all duration-300 ${theaterMode ? 'max-w-none' : 'max-w-3xl'}`
-        }
-        style={mini ? (miniPos ? { left: miniPos.left, top: miniPos.top } : { right: 16, bottom: 16 }) : undefined}
-      >
+      <div ref={placeholderParentRef} className={mini ? undefined : 'mb-10'}>
+        <div
+          ref={wrapperRef}
+          className={mini
+            ? 'fixed z-50 w-72 select-none rounded-xl bg-black shadow-2xl ring-1 ring-black/20 sm:w-80'
+            : `grid gap-6 transition-all duration-300 ${theaterMode ? 'lg:grid-cols-[1fr_360px]' : 'mx-auto max-w-5xl lg:mx-0 lg:max-w-none lg:grid-cols-[1fr_340px]'}`
+          }
+          style={mini ? (miniPos ? { left: miniPos.left, top: miniPos.top } : { right: 16, bottom: 16 }) : undefined}
+        >
         {mini && (
           <div
             onPointerDown={onDragPointerDown}
@@ -469,151 +627,97 @@ function WatchArea({
             </button>
           </div>
         )}
-        <div
-          className={`relative w-full overflow-hidden bg-black ${mini ? 'rounded-b-xl' : 'shadow-2xl rounded-xl'}`}
-          style={{ aspectRatio: '16/9' }}
-        >
-        {useIframeFallback ? (
-          <iframe
-            src={playlistEmbedSrc(activeVideo.youtubeId)}
-            title={currentTitle}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 h-full w-full border-0"
-          />
-        ) : currentVideoId ? (
-          <YouTubePlayer
-            key={currentVideoId}
-            videoId={currentVideoId}
-            title={currentTitle}
-            thumbnailUrl={currentThumb}
-            autoplay
-            onEnded={handleEnded}
-            className="absolute inset-0 h-full w-full"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
-            {playlistLoading ? 'Lade Playlist…' : 'Keine Videos gefunden'}
+
+        <div className={mini ? undefined : 'min-w-0'}>
+          <div
+            className={`relative w-full overflow-hidden bg-black ${mini ? 'rounded-b-xl' : 'shadow-2xl rounded-xl'}`}
+            style={{ aspectRatio: '16/9' }}
+          >
+          {useIframeFallback ? (
+            <iframe
+              src={playlistEmbedSrc(activeVideo.youtubeId)}
+              title={currentTitle}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="absolute inset-0 h-full w-full border-0"
+            />
+          ) : currentVideoId ? (
+            <YouTubePlayer
+              videoId={currentVideoId}
+              title={currentTitle}
+              thumbnailUrl={currentThumb}
+              autoplay
+              onEnded={handleEnded}
+              className="absolute inset-0 h-full w-full"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
+              {playlistLoading ? 'Lade Playlist…' : 'Keine Videos gefunden'}
+            </div>
+          )}
           </div>
+
+        {!mini && (
+          <>
+            {/* Titel + Normal/Theater/Mini-Steuerung */}
+            <div className="mt-3 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">{currentTitle}</h2>
+                {isPlaylist && (
+                  <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Playlist · {activeVideo.title}</p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  onClick={() => setTheaterMode(v => !v)}
+                  title={theaterMode ? 'Standardansicht' : 'Kinomodus'}
+                  aria-pressed={theaterMode}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                    theaterMode
+                      ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10'
+                  }`}
+                >
+                  <TheaterIcon />
+                </button>
+                {systemPipSupported && (
+                  <button
+                    onClick={systemPipActive ? closeSystemPip : openSystemPip}
+                    title={systemPipActive ? 'Systemweiten Miniplayer schließen' : 'Systemweiter Miniplayer (frei über alle Bildschirme verschiebbar)'}
+                    aria-pressed={systemPipActive}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                      systemPipActive
+                        ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10'
+                    }`}
+                  >
+                    <PipIcon />
+                  </button>
+                )}
+                <a
+                  href={currentVideoId ? `https://www.youtube.com/watch?v=${currentVideoId}` : ytUrl(activeVideo)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Auf YouTube ansehen"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-red-500 dark:hover:text-red-400"
+                >
+                  <YouTubeIcon className="h-4 w-4" />
+                </a>
+                <button
+                  onClick={onClose}
+                  title="Schließen"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+            </div>
+          </>
         )}
         </div>
 
-      {!mini && (
-        <>
-          {/* Titel + Normal/Theater/Vollbild-Steuerung */}
-          <div className="mt-3 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">{currentTitle}</h2>
-              {isPlaylist && (
-                <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Playlist · {activeVideo.title}</p>
-              )}
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                onClick={() => setTheaterMode(v => !v)}
-                title={theaterMode ? 'Standardansicht' : 'Kinomodus'}
-                aria-pressed={theaterMode}
-                className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
-                  theaterMode
-                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10'
-                }`}
-              >
-                <TheaterIcon />
-              </button>
-              <button
-                onClick={() => setManualMiniOpen(true)}
-                title="Mini-Player öffnen"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
-              >
-                <PipIcon />
-              </button>
-              <a
-                href={currentVideoId ? `https://www.youtube.com/watch?v=${currentVideoId}` : ytUrl(activeVideo)}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Auf YouTube ansehen"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-red-500 dark:hover:text-red-400"
-              >
-                <YouTubeIcon className="h-4 w-4" />
-              </a>
-              <button
-                onClick={onClose}
-                title="Schließen"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
-              >
-                <CloseIcon />
-              </button>
-            </div>
-          </div>
-
-          {isPlaylist && (
-            <div className="mt-5">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Playlist</span>
-                <span className="text-xs text-gray-400 dark:text-gray-500">{playlistItems.length} Videos</span>
-              </div>
-              <div className="flex max-h-[420px] flex-col gap-1.5 overflow-y-auto rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-2">
-                {playlistLoading ? (
-                  [1, 2, 3, 4].map(i => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-100 dark:bg-white/5" />)
-                ) : playlistItems.length === 0 ? (
-                  <p className="px-2 py-4 text-center text-xs text-gray-400 dark:text-gray-500">Keine Videos gefunden</p>
-                ) : playlistItems.map((item, idx) => (
-                  <button
-                    key={item.videoId}
-                    onClick={() => setCurrentVideoId(item.videoId)}
-                    className={`flex gap-2 rounded-lg p-2 text-left transition ${
-                      currentVideoId === item.videoId
-                        ? 'bg-green-600 text-white'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
-                    }`}
-                  >
-                    <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded bg-gray-200 dark:bg-slate-800">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={item.thumbnail} alt="" className="h-full w-full object-cover" />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <span className="text-[10px] font-bold text-white">{idx + 1}</span>
-                      </div>
-                    </div>
-                    <p className="min-w-0 flex-1 line-clamp-2 text-xs font-medium">{item.title}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {related.length > 0 && (
-            <div className="mt-6">
-              <span className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-200">Weitere Videos</span>
-              <div className={`grid gap-4 ${theaterMode ? 'sm:grid-cols-3 xl:grid-cols-5' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
-                {related.map(v => {
-                  const thumb = thumbnailFor(v)
-                  return (
-                    <button key={v.id} onClick={() => switchTo(v)} className="group text-left">
-                      <div className="relative aspect-video overflow-hidden rounded-lg bg-gray-200 dark:bg-slate-800">
-                        {thumb ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={thumb} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <PlaylistIcon className="h-6 w-6 text-gray-400 dark:text-slate-600" />
-                          </div>
-                        )}
-                        {v.type === 'PLAYLIST' && (
-                          <div className="absolute bottom-1.5 right-1.5 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                            Playlist
-                          </div>
-                        )}
-                      </div>
-                      <p className="mt-2 line-clamp-2 text-xs font-medium text-gray-700 dark:text-gray-200">{v.title}</p>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </>
-      )}
+        {sideRail}
+        </div>
       </div>
     </>
   )
@@ -694,7 +798,6 @@ function WeitereContent({ videos, sub, onOpen }: {
 
 // ─── Sidebar nav ──────────────────────────────────────────────────────────────
 
-// Kleine, ruhige Linien-Icons statt der vorherigen bunten Punkte pro Sektion.
 function SunIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -717,6 +820,14 @@ function StarIcon({ className = 'h-4 w-4' }: { className?: string }) {
   )
 }
 
+function ChevronIcon({ open, className = 'h-3.5 w-3.5' }: { open: boolean; className?: string }) {
+  return (
+    <svg className={`${className} shrink-0 transition-transform duration-150 ${open ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  )
+}
+
 function NavItem({ active, onClick, children, indent = false }: {
   active: boolean; onClick: () => void; children: React.ReactNode; indent?: boolean
 }) {
@@ -725,7 +836,7 @@ function NavItem({ active, onClick, children, indent = false }: {
       onClick={onClick}
       className={`w-full text-left text-sm transition-colors duration-150 rounded-lg px-3 py-1.5 flex items-center gap-2 ${indent ? 'pl-6' : ''}
         ${active
-          ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 font-medium'
+          ? 'bg-green-600 text-white font-medium'
           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
         }`}
     >
@@ -751,6 +862,26 @@ function SidebarNav({ nav, selection, onSelect }: {
   selection: Selection | null
   onSelect: (s: Selection) => void
 }) {
+  // Jahre mit Tage-Aufschlüsselung sind standardmäßig eingeklappt (nur das
+  // Jahr der aktuellen Auswahl ist sichtbar aufgeklappt) - wie bei YouTubes
+  // eigener Seitenleiste, statt alles auf einmal auszubreiten.
+  const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (selection && selection.cat !== 'WEITERE') {
+      const key = `${selection.cat}__${selection.year}`
+      setExpandedYears(prev => prev.has(key) ? prev : new Set(prev).add(key))
+    }
+  }, [selection])
+
+  function toggleYear(key: string) {
+    setExpandedYears(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
+      return next
+    })
+  }
+
   function KonzertSection({ cat, label, icon, years }: {
     cat: 'SOMMER' | 'WINTER'; label: string; icon: React.ReactNode; years: KonzertNavYear[]
   }) {
@@ -760,28 +891,46 @@ function SidebarNav({ nav, selection, onSelect }: {
           <p className="px-3 pb-1 text-xs italic text-gray-400 dark:text-gray-600">Keine Videos</p>
         ) : (
           <div className="flex flex-col gap-0.5">
-            {years.map(({ year, days }) =>
-              days.length === 0 ? (
-                <NavItem key={year} active={isSel(selection, { cat, year, day: null })} onClick={() => onSelect({ cat, year, day: null })}>
-                  {year}
-                </NavItem>
-              ) : (
-                <div key={year}>
-                  <NavItem active={isSel(selection, { cat, year, day: null })} onClick={() => onSelect({ cat, year, day: null })}>
-                    <span>{year}</span>
-                    <span className="ml-auto text-[10px] text-gray-400 dark:text-gray-500">{days.length}d</span>
+            {years.map(({ year, days }) => {
+              if (days.length === 0) {
+                return (
+                  <NavItem key={year} active={isSel(selection, { cat, year, day: null })} onClick={() => onSelect({ cat, year, day: null })}>
+                    {year}
                   </NavItem>
-                  <div className="relative ml-3.5 mt-0.5 mb-1 flex flex-col gap-0.5">
-                    <div className="absolute left-0 top-1 bottom-1 w-px bg-gray-200 dark:bg-white/10" />
-                    {days.map(day => (
-                      <NavItem key={day} active={isSel(selection, { cat, year, day })} onClick={() => onSelect({ cat, year, day })} indent>
-                        {day}
+                )
+              }
+              const key = `${cat}__${year}`
+              const open = expandedYears.has(key)
+              return (
+                <div key={year}>
+                  <div className="flex items-center gap-0.5">
+                    <div className="flex-1">
+                      <NavItem active={isSel(selection, { cat, year, day: null })} onClick={() => onSelect({ cat, year, day: null })}>
+                        <span>{year}</span>
+                        <span className="ml-auto text-[10px] text-gray-400 dark:text-gray-500">{days.length}d</span>
                       </NavItem>
-                    ))}
+                    </div>
+                    <button
+                      onClick={() => toggleYear(key)}
+                      title={open ? 'Tage einklappen' : 'Tage anzeigen'}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-gray-200"
+                    >
+                      <ChevronIcon open={open} />
+                    </button>
                   </div>
+                  {open && (
+                    <div className="relative ml-3.5 mt-0.5 mb-1 flex flex-col gap-0.5">
+                      <div className="absolute left-0 top-1 bottom-1 w-px bg-gray-200 dark:bg-white/10" />
+                      {days.map(day => (
+                        <NavItem key={day} active={isSel(selection, { cat, year, day })} onClick={() => onSelect({ cat, year, day })} indent>
+                          {day}
+                        </NavItem>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
-            )}
+            })}
           </div>
         )}
       </SidebarSection>
@@ -822,8 +971,18 @@ function VideosPageInner() {
   const [selection, setSelection] = useState<Selection | null>(null)
   const [navOpen, setNavOpen] = useState(false)
   const [watch, setWatch] = useState<{ video: VideoEntry; pool: VideoEntry[] } | null>(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   useEffect(() => { document.title = 'Videos – Schwalmtalzupfer' }, [])
+
+  // Einklappzustand der Archiv-Seitenleiste merken (wie bei YouTube).
+  useEffect(() => {
+    const stored = window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY)
+    if (stored === '1') setSidebarCollapsed(true)
+  }, [])
+  useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, sidebarCollapsed ? '1' : '0')
+  }, [sidebarCollapsed])
 
   useEffect(() => {
     if (!loading && !user) router.push('/login')
@@ -836,19 +995,23 @@ function VideosPageInner() {
       .then((data: VideoEntry[]) => {
         setVideos(data)
         const fromParam = decodeSelection(searchParams.get('v'))
-        if (fromParam) {
-          setSelection(fromParam)
-        } else {
+        let initialSel: Selection | null = fromParam
+        if (!initialSel) {
           const nav = buildNav(data)
           if (nav.sommer.length > 0) {
             const first = nav.sommer[0]
-            setSelection({ cat: 'SOMMER', year: first.year, day: first.days[0] ?? null })
+            initialSel = { cat: 'SOMMER', year: first.year, day: first.days[0] ?? null }
           } else if (nav.winter.length > 0) {
             const first = nav.winter[0]
-            setSelection({ cat: 'WINTER', year: first.year, day: first.days[0] ?? null })
+            initialSel = { cat: 'WINTER', year: first.year, day: first.days[0] ?? null }
           } else if (nav.weitere.length > 0) {
-            setSelection({ cat: 'WEITERE', sub: nav.weitere[0] })
+            initialSel = { cat: 'WEITERE', sub: nav.weitere[0] }
           }
+        }
+        setSelection(initialSel)
+        if (initialSel) {
+          const list = videosForSelection(data, initialSel)
+          if (list.length > 0) setWatch({ video: list[0], pool: list })
         }
       })
       .catch(() => setVideos([]))
@@ -861,7 +1024,11 @@ function VideosPageInner() {
     const params = new URLSearchParams()
     params.set('v', encodeSelection(s))
     router.replace(`?${params.toString()}`, { scroll: false })
-  }, [router])
+    // Wie bei YouTube: Auswahl links klicken → rechts sofort das erste Video
+    // der Playlist spielen, Rest steht als Liste daneben.
+    const list = videosForSelection(videos, s)
+    setWatch(list.length > 0 ? { video: list[0], pool: list } : null)
+  }, [router, videos])
 
   const openWatch = useCallback((video: VideoEntry, pool: VideoEntry[]) => setWatch({ video, pool }), [])
   const closeWatch = useCallback(() => setWatch(null), [])
@@ -871,30 +1038,27 @@ function VideosPageInner() {
 
   const nav = buildNav(videos)
 
-  const catColor = selection
-    ? selection.cat === 'SOMMER' ? 'from-amber-500/10 to-transparent border-amber-200 dark:border-amber-500/20'
-    : selection.cat === 'WINTER' ? 'from-sky-500/10 to-transparent border-sky-200 dark:border-sky-500/20'
-    : 'from-purple-500/10 to-transparent border-purple-200 dark:border-purple-500/20'
-    : 'from-gray-100 to-transparent border-gray-200 dark:from-white/5 dark:border-white/10'
-
-  const catAccent = selection
-    ? selection.cat === 'SOMMER' ? 'bg-amber-400'
-    : selection.cat === 'WINTER' ? 'bg-sky-400'
-    : 'bg-purple-400'
-    : 'bg-gray-300'
-
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className={`mx-auto px-4 py-8 sm:px-6 transition-all duration-300 ${watch ? 'max-w-[1800px]' : 'max-w-7xl'}`}>
       {/* Page header */}
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-            <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition">Intern</Link>
-            <span>/</span>
-            <span className="text-gray-500 dark:text-gray-300">Videos</span>
+        <div className="flex items-start gap-3">
+          <button
+            onClick={() => setSidebarCollapsed(v => !v)}
+            title={sidebarCollapsed ? 'Archiv einblenden' : 'Archiv ausblenden'}
+            className="mt-1 hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10 md:flex"
+          >
+            <SidebarToggleIcon />
+          </button>
+          <div>
+            <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+              <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition">Intern</Link>
+              <span>/</span>
+              <span className="text-gray-500 dark:text-gray-300">Videos</span>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Video-Archiv</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Konzerte & Auftritte der Schwalmtalzupfer</p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Video-Archiv</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Konzerte & Auftritte der Schwalmtalzupfer</p>
         </div>
         {isBoard(user) && (
           <Link href="/admin?tab=videos"
@@ -914,7 +1078,7 @@ function VideosPageInner() {
           className="flex w-full items-center justify-between rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 px-4 py-3 text-sm shadow-sm"
         >
           <div className="flex items-center gap-2.5">
-            <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${catAccent}`} />
+            <PlaylistIcon className="h-4 w-4 text-gray-400" />
             <span className="font-medium text-gray-700 dark:text-gray-200">{selectionLabel(selection)}</span>
           </div>
           <svg className={`h-4 w-4 text-gray-400 transition-transform ${navOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -931,22 +1095,23 @@ function VideosPageInner() {
         )}
       </div>
 
-      {/* Desktop: 2-col layout */}
+      {/* Desktop: 2-col layout (Seitenleiste ein-/ausblendbar) */}
       <div className="flex gap-6">
-        {/* Sidebar */}
-        <aside className="hidden md:block w-56 shrink-0">
-          <div className="sticky top-28 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/80 shadow-sm overflow-hidden">
-            <div className="border-b border-gray-100 dark:border-white/5 px-4 py-3">
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Archiv</span>
+        {!sidebarCollapsed && (
+          <aside className="hidden md:block w-56 shrink-0">
+            <div className="sticky top-28 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/80 shadow-sm overflow-hidden">
+              <div className="border-b border-gray-100 dark:border-white/5 px-4 py-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Archiv</span>
+              </div>
+              <div className="p-3">
+                {videosLoading
+                  ? <div className="flex flex-col gap-2">{[1,2,3,4,5,6].map(i => <div key={i} className="h-7 animate-pulse rounded-lg bg-gray-100 dark:bg-slate-800" />)}</div>
+                  : <SidebarNav nav={nav} selection={selection} onSelect={handleSelect} />
+                }
+              </div>
             </div>
-            <div className="p-3">
-              {videosLoading
-                ? <div className="flex flex-col gap-2">{[1,2,3,4,5,6].map(i => <div key={i} className="h-7 animate-pulse rounded-lg bg-gray-100 dark:bg-slate-800" />)}</div>
-                : <SidebarNav nav={nav} selection={selection} onSelect={handleSelect} />
-              }
-            </div>
-          </div>
-        </aside>
+          </aside>
+        )}
 
         {/* Content */}
         <main className="flex-1 min-w-0">
@@ -964,19 +1129,20 @@ function VideosPageInner() {
             </div>
           ) : selection ? (
             <>
-              {watch && (
-                <WatchArea initialVideo={watch.video} pool={watch.pool} onClose={closeWatch} />
-              )}
-
               {/* Section header */}
-              <div className={`mb-6 flex items-center gap-3 rounded-xl border bg-gradient-to-r px-4 py-3 ${catColor}`}>
-                <div className={`h-7 w-1 rounded-full shrink-0 ${catAccent}`} />
+              <div className="mb-6 flex items-center gap-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-3">
+                <div className="h-7 w-1 rounded-full shrink-0 bg-green-500" />
                 <span className="font-semibold text-gray-800 dark:text-white">{selectionLabel(selection)}</span>
               </div>
-              {selection.cat === 'WEITERE'
-                ? <WeitereContent videos={videos} sub={selection.sub} onOpen={openWatch} />
-                : <KonzertContent videos={videos} cat={selection.cat} year={selection.year} day={selection.day} onOpen={openWatch} />
-              }
+              {watch ? (
+                // Wie bei YouTubes Playlist-Ansicht: Player + Playlist-Liste IST die
+                // Übersicht, kein zusätzliches Grid mit denselben Videos darunter.
+                <WatchArea key={watch.video.id} initialVideo={watch.video} pool={watch.pool} onClose={closeWatch} />
+              ) : (
+                selection.cat === 'WEITERE'
+                  ? <WeitereContent videos={videos} sub={selection.sub} onOpen={openWatch} />
+                  : <KonzertContent videos={videos} cat={selection.cat} year={selection.year} day={selection.day} onOpen={openWatch} />
+              )}
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-24 gap-4 rounded-2xl border border-dashed border-gray-200 dark:border-white/10">

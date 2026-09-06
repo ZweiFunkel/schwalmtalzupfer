@@ -74,17 +74,20 @@ export default function YouTubePlayer({
 }: YouTubePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
+  const playerReadyRef = useRef(false)
   const elementIdRef = useRef(`yt-player-${Math.random().toString(36).slice(2, 11)}`)
+  const initialVideoIdRef = useRef(videoId)
   const [error, setError] = useState<{ code: number; message: string } | null>(null)
 
-  // Hinweis: Diese Komponente initialisiert den Player nur EINMAL pro Mount.
-  // Zum Wechseln des Videos (z.B. beim Weiterklicken in einer Playlist) muss
-  // der Aufrufer `key={videoId}` setzen, damit React sauber neu montiert –
-  // die YT-API ersetzt beim Erstellen das Container-Element durch ein
-  // <iframe>, ein erneutes `new YT.Player()` auf derselben (dann nicht mehr
-  // existierenden) Element-ID würde sonst fehlschlagen.
+  // Der Player wird nur EINMAL pro Mount erstellt (leeres Dependency-Array).
+  // Ein Video-Wechsel läuft über `loadVideoById` im zweiten Effekt unten,
+  // NICHT über Neuerstellung - würde die YT-API bei jedem Wechsel das
+  // Container-Element durch ein neues <iframe> ersetzen, verlöre der Browser
+  // automatisch einen aktiven Vollbildmodus (das Fullscreen-Element wird ja
+  // aus dem DOM entfernt). So bleibt z.B. beim automatischen Weiterspringen
+  // in einer Playlist der Vollbildmodus erhalten, genau wie bei YouTube selbst.
   useEffect(() => {
-    if (!videoId || videoId.trim() === '') return
+    if (!initialVideoIdRef.current || initialVideoIdRef.current.trim() === '') return
 
     let cancelled = false
     let poll: ReturnType<typeof setTimeout> | null = null
@@ -100,7 +103,7 @@ export default function YouTubePlayer({
 
       try {
         playerRef.current = new window.YT.Player(elementIdRef.current, {
-          videoId,
+          videoId: initialVideoIdRef.current,
           // Privacy-enhanced mode: weniger Tracking, bessere Kompatibilität
           // mit Brave/Firefox-Schutz und strengen Cookie-Einstellungen.
           host: 'https://www.youtube-nocookie.com',
@@ -114,6 +117,7 @@ export default function YouTubePlayer({
           },
           events: {
             onReady: (event: any) => {
+              playerReadyRef.current = true
               if (onReady) onReady(event.target)
             },
             onStateChange: (event: any) => {
@@ -124,7 +128,7 @@ export default function YouTubePlayer({
             },
             onError: (event: any) => {
               const code = typeof event?.data === 'number' ? event.data : -1
-              console.error(`YouTube-Player-Fehler (Code ${code}) für Video ${videoId}`)
+              console.error(`YouTube-Player-Fehler (Code ${code}) für Video ${initialVideoIdRef.current}`)
               setError({ code, message: errorMessage(code) })
             },
           },
@@ -138,6 +142,7 @@ export default function YouTubePlayer({
 
     return () => {
       cancelled = true
+      playerReadyRef.current = false
       if (poll) clearTimeout(poll)
       if (playerRef.current && playerRef.current.destroy) {
         try {
@@ -148,6 +153,33 @@ export default function YouTubePlayer({
       }
       playerRef.current = null
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Reagiert auf spätere videoId-Änderungen (Playlist-Weitersprung, Klick auf
+  // ein verwandtes Video) durch Laden ins BESTEHENDE Player-Objekt statt
+  // Neuerstellung - erhält Vollbild/Fenstergröße/Lautstärke.
+  useEffect(() => {
+    if (videoId === initialVideoIdRef.current) return
+    if (!videoId || videoId.trim() === '') return
+    setError(null)
+
+    let cancelled = false
+    function tryLoad() {
+      if (cancelled) return
+      if (!playerReadyRef.current || !playerRef.current?.loadVideoById) {
+        setTimeout(tryLoad, 100)
+        return
+      }
+      try {
+        playerRef.current.loadVideoById(videoId)
+        if (!autoplay) playerRef.current.pauseVideo?.()
+      } catch (e) {
+        console.error('Fehler beim Laden des Videos in den bestehenden Player:', e)
+      }
+    }
+    tryLoad()
+    return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId])
 
