@@ -344,11 +344,13 @@ declare global {
 }
 
 function WatchArea({
-  initialVideo, pool, onClose,
+  initialVideo, pool, onClose, theaterMode, onTheaterModeChange,
 }: {
   initialVideo: VideoEntry
   pool: VideoEntry[]
   onClose: () => void
+  theaterMode: boolean
+  onTheaterModeChange: (v: boolean) => void
 }) {
   const wrapperRef = React.useRef<HTMLDivElement>(null)
   const placeholderParentRef = React.useRef<HTMLDivElement>(null)
@@ -360,7 +362,6 @@ function WatchArea({
   const [playlistItems, setPlaylistItems] = useState<PlaylistItem[]>([])
   const [playlistLoading, setPlaylistLoading] = useState(initialVideo.type === 'PLAYLIST')
   const [currentVideoId, setCurrentVideoId] = useState(activeVideo.type === 'VIDEO' ? activeVideo.youtubeId : '')
-  const [theaterMode, setTheaterMode] = useState(false)
   const [manualMiniOpen, setManualMiniOpen] = useState(false)
   const [scrolledAway, setScrolledAway] = useState(false)
   const [miniPos, setMiniPos] = useState<{ left: number; top: number } | null>(null)
@@ -596,7 +597,7 @@ function WatchArea({
           ref={wrapperRef}
           className={mini
             ? 'fixed z-50 w-72 select-none rounded-xl bg-black shadow-2xl ring-1 ring-black/20 sm:w-80'
-            : `grid gap-6 transition-all duration-300 ${theaterMode ? 'lg:grid-cols-[1fr_360px]' : 'mx-auto max-w-5xl lg:mx-0 lg:max-w-none lg:grid-cols-[1fr_340px]'}`
+            : `mx-auto max-w-5xl lg:mx-0 lg:max-w-none grid gap-6 transition-all duration-300 lg:grid-cols-[1fr_360px]`
           }
           style={mini ? (miniPos ? { left: miniPos.left, top: miniPos.top } : { right: 16, bottom: 16 }) : undefined}
         >
@@ -669,7 +670,7 @@ function WatchArea({
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <button
-                  onClick={() => setTheaterMode(v => !v)}
+                  onClick={() => onTheaterModeChange(!theaterMode)}
                   title={theaterMode ? 'Standardansicht' : 'Kinomodus'}
                   aria-pressed={theaterMode}
                   className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
@@ -972,6 +973,16 @@ function VideosPageInner() {
   const [navOpen, setNavOpen] = useState(false)
   const [watch, setWatch] = useState<{ video: VideoEntry; pool: VideoEntry[] } | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [theaterMode, setTheaterMode] = useState(false)
+
+  // Wie bei YouTube: Kinomodus klappt automatisch die (bei uns: Archiv-)
+  // Seitenleiste ein, damit dem Video maximale Breite bleibt. Beim Verlassen
+  // des Kinomodus bleibt der Zustand bewusst so, wie er zuletzt manuell
+  // gesetzt wurde (kein automatisches Wiederausklappen - genau wie bei YouTube).
+  function handleTheaterModeChange(next: boolean) {
+    setTheaterMode(next)
+    if (next) setSidebarCollapsed(true)
+  }
 
   useEffect(() => { document.title = 'Videos – Schwalmtalzupfer' }, [])
 
@@ -1009,10 +1020,6 @@ function VideosPageInner() {
           }
         }
         setSelection(initialSel)
-        if (initialSel) {
-          const list = videosForSelection(data, initialSel)
-          if (list.length > 0) setWatch({ video: list[0], pool: list })
-        }
       })
       .catch(() => setVideos([]))
       .finally(() => setVideosLoading(false))
@@ -1021,14 +1028,11 @@ function VideosPageInner() {
   const handleSelect = useCallback((s: Selection) => {
     setSelection(s)
     setNavOpen(false)
+    setWatch(null)
     const params = new URLSearchParams()
     params.set('v', encodeSelection(s))
     router.replace(`?${params.toString()}`, { scroll: false })
-    // Wie bei YouTube: Auswahl links klicken → rechts sofort das erste Video
-    // der Playlist spielen, Rest steht als Liste daneben.
-    const list = videosForSelection(videos, s)
-    setWatch(list.length > 0 ? { video: list[0], pool: list } : null)
-  }, [router, videos])
+  }, [router])
 
   const openWatch = useCallback((video: VideoEntry, pool: VideoEntry[]) => setWatch({ video, pool }), [])
   const closeWatch = useCallback(() => setWatch(null), [])
@@ -1039,7 +1043,7 @@ function VideosPageInner() {
   const nav = buildNav(videos)
 
   return (
-    <div className={`mx-auto px-4 py-8 sm:px-6 transition-all duration-300 ${watch ? 'max-w-[1800px]' : 'max-w-7xl'}`}>
+    <div className={`mx-auto px-4 py-8 sm:px-6 transition-all duration-300 ${theaterMode ? 'max-w-[1800px]' : watch ? 'max-w-6xl' : 'max-w-7xl'}`}>
       {/* Page header */}
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-start gap-3">
@@ -1137,7 +1141,7 @@ function VideosPageInner() {
               {watch ? (
                 // Wie bei YouTubes Playlist-Ansicht: Player + Playlist-Liste IST die
                 // Übersicht, kein zusätzliches Grid mit denselben Videos darunter.
-                <WatchArea key={watch.video.id} initialVideo={watch.video} pool={watch.pool} onClose={closeWatch} />
+                <WatchArea key={watch.video.id} initialVideo={watch.video} pool={watch.pool} onClose={closeWatch} theaterMode={theaterMode} onTheaterModeChange={handleTheaterModeChange} />
               ) : (
                 selection.cat === 'WEITERE'
                   ? <WeitereContent videos={videos} sub={selection.sub} onOpen={openWatch} />
