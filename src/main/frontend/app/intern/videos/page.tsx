@@ -195,6 +195,14 @@ function PipIcon({ className = 'h-4 w-4' }: { className?: string }) {
   )
 }
 
+function LinkIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+    </svg>
+  )
+}
+
 function SidebarToggleIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -382,7 +390,7 @@ declare global {
 }
 
 function WatchArea({
-  initialVideo, pool, onClose, theaterMode, onTheaterModeChange, initialPlaylistVideoId,
+  initialVideo, pool, onClose, theaterMode, onTheaterModeChange, initialPlaylistVideoId, selectionParam,
 }: {
   initialVideo: VideoEntry
   pool: VideoEntry[]
@@ -393,6 +401,8 @@ function WatchArea({
    *  statt immer beim ersten Eintrag zu starten (z.B. wenn aus der direkten
    *  Playlist-Übersicht ein bestimmtes Video angeklickt wurde). */
   initialPlaylistVideoId?: string
+  /** Kodierte aktuelle Auswahl (wie im v=-Parameter), für den "Link kopieren"-Button. */
+  selectionParam: string
 }) {
   const wrapperRef = React.useRef<HTMLDivElement>(null)
   const placeholderParentRef = React.useRef<HTMLDivElement>(null)
@@ -408,6 +418,7 @@ function WatchArea({
   const [miniPos, setMiniPos] = useState<{ left: number; top: number } | null>(null)
   const [systemPipActive, setSystemPipActive] = useState(false)
   const [systemPipSupported, setSystemPipSupported] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   useEffect(() => {
     setSystemPipSupported(typeof window !== 'undefined' && !!window.documentPictureInPicture)
@@ -493,6 +504,18 @@ function WatchArea({
   }
   function closeSystemPip() {
     pipWindowRef.current?.close()
+  }
+
+  // Baut einen direkten Link auf genau dieses Video (auch innerhalb einer
+  // Playlist), damit man z.B. im "Was ist neu?"-Eintrag gezielt hierher
+  // verlinken kann, statt nur auf die Kategorie im Allgemeinen.
+  function copyDeepLink() {
+    if (!currentVideoId || !selectionParam) return
+    const url = `${window.location.origin}/intern/videos?v=${selectionParam}&video=${currentVideoId}`
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    }).catch(() => {})
   }
 
   // Playlist-Inhalte laden, sobald ein Playlist-Eintrag aktiv wird
@@ -715,6 +738,17 @@ function WatchArea({
                   }`}
                 >
                   <TheaterIcon />
+                </button>
+                <button
+                  onClick={copyDeepLink}
+                  title={linkCopied ? 'Link kopiert!' : 'Link zu diesem Video kopieren'}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
+                >
+                  {linkCopied ? (
+                    <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  ) : <LinkIcon />}
                 </button>
                 {systemPipSupported && (
                   <button
@@ -1048,9 +1082,11 @@ function VideosPageInner() {
 
   useEffect(() => {
     if (!user) return
+    let cancelled = false
     fetch(`${API_BASE}/api/intern/videos`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
-      .then((data: VideoEntry[]) => {
+      .then(async (data: VideoEntry[]) => {
+        if (cancelled) return
         setVideos(data)
         const fromParam = decodeSelection(searchParams.get('v'))
         let initialSel: Selection | null = fromParam
@@ -1067,9 +1103,35 @@ function VideosPageInner() {
           }
         }
         setSelection(initialSel)
+
+        // Direkter Link auf ein konkretes Video (?v=...&video=<youtube-id>):
+        // in der Auswahl nachschlagen, ob es ein Einzelvideo ist oder in einer
+        // der enthaltenen Playlists steckt, und direkt dort öffnen - anders
+        // als beim normalen Durchklicken (kein Auto-Play), weil ein gezielter
+        // Link genau dorthin führen soll, wohin er zeigt.
+        const videoParam = searchParams.get('video')
+        if (fromParam && videoParam) {
+          const pool = videosForSelection(data, fromParam)
+          const directHit = pool.find(v => v.type === 'VIDEO' && v.youtubeId === videoParam)
+          if (directHit) {
+            if (!cancelled) setWatch({ video: directHit, pool })
+          } else {
+            for (const entry of pool.filter(v => v.type === 'PLAYLIST')) {
+              try {
+                const r = await fetch(`${API_BASE}/api/intern/videos/playlist/${entry.youtubeId}`, { credentials: 'include' })
+                const items: PlaylistItem[] = r.ok ? await r.json() : []
+                if (items.some(i => i.videoId === videoParam)) {
+                  if (!cancelled) setWatch({ video: entry, pool, startVideoId: videoParam })
+                  break
+                }
+              } catch { /* nächste Playlist versuchen */ }
+            }
+          }
+        }
       })
       .catch(() => setVideos([]))
-      .finally(() => setVideosLoading(false))
+      .finally(() => { if (!cancelled) setVideosLoading(false) })
+    return () => { cancelled = true }
   }, [user, searchParams])
 
   const handleSelect = useCallback((s: Selection) => {
@@ -1189,7 +1251,7 @@ function VideosPageInner() {
               {watch ? (
                 // Wie bei YouTubes Playlist-Ansicht: Player + Playlist-Liste IST die
                 // Übersicht, kein zusätzliches Grid mit denselben Videos darunter.
-                <WatchArea key={`${watch.video.id}__${watch.startVideoId ?? ''}`} initialVideo={watch.video} pool={watch.pool} initialPlaylistVideoId={watch.startVideoId} onClose={closeWatch} theaterMode={theaterMode} onTheaterModeChange={handleTheaterModeChange} />
+                <WatchArea key={`${watch.video.id}__${watch.startVideoId ?? ''}`} initialVideo={watch.video} pool={watch.pool} initialPlaylistVideoId={watch.startVideoId} onClose={closeWatch} theaterMode={theaterMode} onTheaterModeChange={handleTheaterModeChange} selectionParam={selection ? encodeSelection(selection) : ''} />
               ) : (
                 selection.cat === 'WEITERE'
                   ? <WeitereContent videos={videos} sub={selection.sub} onOpen={openWatch} />
