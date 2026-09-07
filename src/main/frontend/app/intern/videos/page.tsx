@@ -405,7 +405,6 @@ function WatchArea({
   const [playlistLoading, setPlaylistLoading] = useState(initialVideo.type === 'PLAYLIST')
   const [currentVideoId, setCurrentVideoId] = useState(activeVideo.type === 'VIDEO' ? activeVideo.youtubeId : '')
   const [manualMiniOpen, setManualMiniOpen] = useState(false)
-  const [scrolledAway, setScrolledAway] = useState(false)
   const [miniPos, setMiniPos] = useState<{ left: number; top: number } | null>(null)
   const [systemPipActive, setSystemPipActive] = useState(false)
   const [systemPipSupported, setSystemPipSupported] = useState(false)
@@ -414,23 +413,9 @@ function WatchArea({
     setSystemPipSupported(typeof window !== 'undefined' && !!window.documentPictureInPicture)
   }, [])
 
-  // Automatisches Verkleinern zum In-Page-Miniplayer, sobald der Player-Bereich
-  // beim Runterscrollen den Viewport verlässt - "sentinel" markiert dessen
-  // Ursprungsposition, damit die Erkennung auch funktioniert, während der
-  // Player selbst per position:fixed aus dem normalen Textfluss genommen ist.
-  // Während der systemweite Miniplayer aktiv ist, bleibt der Bereich an Ort
-  // und Stelle (kein zusätzliches Verkleinern nötig, das eigentliche Fenster
-  // übernimmt das schon).
-  useEffect(() => {
-    if (systemPipActive) { setScrolledAway(false); return }
-    const el = sentinelRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(([entry]) => setScrolledAway(!entry.isIntersecting), { threshold: 0 })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [systemPipActive])
-
-  const mini = !systemPipActive && (manualMiniOpen || scrolledAway)
+  // Miniplayer nur noch per Klick auf den Auslöser, nicht mehr automatisch
+  // beim Runterscrollen.
+  const mini = !systemPipActive && manualMiniOpen
 
   useEffect(() => {
     if (!mini) setMiniPos(null)

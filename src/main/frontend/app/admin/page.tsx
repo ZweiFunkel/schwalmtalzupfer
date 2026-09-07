@@ -1279,8 +1279,26 @@ function InternChangelogForm({ content, onChange }: { content: Record<string, un
               placeholder="Was wurde hinzugefügt, geändert oder behoben?"
               className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
           </div>
-          <Field label="Link (optional)" value={e.link ?? ''} onChange={v => update(i, { link: v })}
-            placeholder="z.B. /intern/videos?v=SOMMER__2025 oder https://…" />
+          <div>
+            <label className="mb-1 block text-xs text-gray-400">Link (optional)</label>
+            <select
+              value=""
+              onChange={ev => { if (ev.target.value) update(i, { link: ev.target.value }); ev.target.value = '' }}
+              className="mb-1.5 w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-xs text-gray-300 focus:border-green-500 focus:outline-none"
+            >
+              <option value="">Interne Seite auswählen…</option>
+              <option value="/intern">Intern → Übersicht</option>
+              <option value="/intern/videos">Intern → Videos</option>
+              <option value="/intern/kalender">Intern → Kalender</option>
+              <option value="/intern/merch">Intern → Merch</option>
+            </select>
+            <input value={e.link ?? ''} onChange={ev => update(i, { link: ev.target.value })}
+              placeholder="z.B. /intern/videos?v=SOMMER__2025 oder https://…"
+              className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none" />
+            <p className="mt-1 text-[10px] text-gray-500">
+              Bei "Intern → Videos" kannst du hinten noch <code className="text-gray-400">?v=SOMMER__2025</code> (Kategorie+Jahr, optional <code className="text-gray-400">__Tag</code>) anhängen, um direkt zu einem Konzert zu verlinken.
+            </p>
+          </div>
         </div>
       ))}
       {entries.length === 0 && (
