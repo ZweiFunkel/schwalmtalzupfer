@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 import { InternChangelogContent, InternChangelogEntryType } from '@/types/page'
 
 interface TypeCfg {
@@ -53,13 +54,36 @@ export default function InternChangelogSection({ content }: { content: InternCha
                     <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${cfg.badge} ${cfg.badgeText}`}>
                       {cfg.label}
                     </span>
-                    <span className="font-semibold text-gray-900 dark:text-white text-sm leading-snug">{entry.title}</span>
+                    {entry.link ? (
+                      entry.link.startsWith('http://') || entry.link.startsWith('https://') ? (
+                        <a href={entry.link} target="_blank" rel="noopener noreferrer"
+                          className="font-semibold text-gray-900 dark:text-white text-sm leading-snug hover:text-green-600 dark:hover:text-green-400 hover:underline transition">
+                          {entry.title}
+                        </a>
+                      ) : (
+                        <Link href={entry.link}
+                          className="font-semibold text-gray-900 dark:text-white text-sm leading-snug hover:text-green-600 dark:hover:text-green-400 hover:underline transition">
+                          {entry.title}
+                        </Link>
+                      )
+                    ) : (
+                      <span className="font-semibold text-gray-900 dark:text-white text-sm leading-snug">{entry.title}</span>
+                    )}
                     <span className="ml-auto text-xs text-gray-400 dark:text-gray-500 shrink-0">{entry.date}</span>
                   </div>
                   {entry.content && (
                     <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
                       {entry.content}
                     </p>
+                  )}
+                  {entry.link && (
+                    <Link href={entry.link}
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400 hover:underline">
+                      Ansehen
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                      </svg>
+                    </Link>
                   )}
                 </div>
               </div>

@@ -171,6 +171,8 @@ export interface InternChangelogEntry {
   title: string
   content: string
   type?: InternChangelogEntryType
+  /** Optionaler Link - interner Pfad (z.B. /intern/videos?v=SOMMER__2025) oder externe URL. */
+  link?: string
 }
 export interface InternChangelogContent {
   heading?: string

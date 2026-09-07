@@ -1229,7 +1229,7 @@ function TermineKonzerteForm({ content, onChange }: { content: Record<string, un
 
 // ─── InternChangelog Form ─────────────────────────────────────────────────────
 function InternChangelogForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
-  interface EntryItem { date: string; title: string; content: string; type: string }
+  interface EntryItem { date: string; title: string; content: string; type: string; link?: string }
   const entries: EntryItem[] = (content.entries as EntryItem[]) ?? []
   const TYPES = ['new', 'update', 'fix', 'info']
   const TYPE_ICONS: Record<string, string> = { new: '🆕', update: '🔄', fix: '🔧', info: 'ℹ️' }
@@ -1239,7 +1239,7 @@ function InternChangelogForm({ content, onChange }: { content: Record<string, un
     onChange({ ...content, entries: entries.map((e, idx) => idx === i ? { ...e, ...patch } : e) })
   const add = () => onChange({
     ...content,
-    entries: [{ date: new Date().toLocaleDateString('de-DE'), title: 'Neuer Eintrag', content: '', type: 'new' }, ...entries],
+    entries: [{ date: new Date().toLocaleDateString('de-DE'), title: 'Neuer Eintrag', content: '', type: 'new', link: '' }, ...entries],
   })
   const remove = (i: number) => onChange({ ...content, entries: entries.filter((_, idx) => idx !== i) })
 
@@ -1279,6 +1279,8 @@ function InternChangelogForm({ content, onChange }: { content: Record<string, un
               placeholder="Was wurde hinzugefügt, geändert oder behoben?"
               className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
           </div>
+          <Field label="Link (optional)" value={e.link ?? ''} onChange={v => update(i, { link: v })}
+            placeholder="z.B. /intern/videos?v=SOMMER__2025 oder https://…" />
         </div>
       ))}
       {entries.length === 0 && (
