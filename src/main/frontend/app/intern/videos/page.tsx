@@ -272,31 +272,69 @@ function VideoGrid({ videos, onOpen }: { videos: VideoEntry[]; onOpen: (v: Video
   )
 }
 
-function PlaylistShelf({ playlists, onOpen }: { playlists: VideoEntry[]; onOpen: (v: VideoEntry) => void }) {
-  if (playlists.length === 0) return null
+// Zeigt den Inhalt einer Playlist direkt als Grid (lädt selbst über die
+// Playlist-API), statt nur eine Karte zu zeigen, die man erst anklicken muss,
+// um die enthaltenen Videos überhaupt zu sehen - wie YouTubes eigene
+// Playlist-Seite: man sieht sofort, was drin ist, und wählt gezielt aus.
+function InlinePlaylistItems({ playlist, onOpen }: {
+  playlist: VideoEntry
+  onOpen: (v: VideoEntry, startVideoId?: string) => void
+}) {
+  const [items, setItems] = useState<PlaylistItem[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setItems(null)
+    fetch(`${API_BASE}/api/intern/videos/playlist/${playlist.youtubeId}`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: PlaylistItem[]) => { if (!cancelled) setItems(data) })
+      .catch(() => { if (!cancelled) setItems([]) })
+    return () => { cancelled = true }
+  }, [playlist.youtubeId])
+
   return (
     <div className="mb-8">
       <div className="mb-3 flex items-center gap-2">
         <PlaylistIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Playlists</h3>
+        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{playlist.title}</h3>
+        {items && <span className="text-xs text-gray-400 dark:text-gray-500">· {items.length} Videos</span>}
       </div>
-      <div className="-mx-1 flex gap-5 overflow-x-auto px-1 pb-3">
-        {playlists.map(v => (
-          <div key={v.id} className="w-52 shrink-0 sm:w-56">
-            <VideoCard video={v} onOpen={onOpen} />
-          </div>
-        ))}
-      </div>
+      {items === null ? (
+        <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3].map(i => <div key={i} className="aspect-video animate-pulse rounded-xl bg-gray-100 dark:bg-slate-800" />)}
+        </div>
+      ) : items.length === 0 ? (
+        <p className="text-sm text-gray-400 dark:text-gray-500">Keine Videos in dieser Playlist gefunden.</p>
+      ) : (
+        <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
+          {items.map(item => (
+            <div key={item.videoId} className="group cursor-pointer" onClick={() => onOpen(playlist, item.videoId)}>
+              <div className="relative aspect-video overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-slate-800 shadow-md">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={item.thumbnail} alt={item.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10 transition-all duration-200 group-hover:bg-black/50">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 shadow-2xl transition-all duration-200 scale-90 opacity-70 group-hover:scale-100 group-hover:opacity-100">
+                    <PlayIcon className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </div>
+              <p className="px-0.5 pt-3 text-sm font-medium text-gray-700 dark:text-gray-200 line-clamp-2 group-hover:text-gray-900 dark:group-hover:text-white transition">
+                {item.title}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-function SplitVideos({ items, onOpen }: { items: VideoEntry[]; onOpen: (v: VideoEntry) => void }) {
+function SplitVideos({ items, onOpen }: { items: VideoEntry[]; onOpen: (v: VideoEntry, startVideoId?: string) => void }) {
   const playlists = items.filter(v => v.type === 'PLAYLIST')
   const singles = items.filter(v => v.type === 'VIDEO')
   return (
     <div>
-      <PlaylistShelf playlists={playlists} onOpen={onOpen} />
+      {playlists.map(p => <InlinePlaylistItems key={p.id} playlist={p} onOpen={onOpen} />)}
       {singles.length > 0 && (
         <>
           {playlists.length > 0 && (
@@ -344,13 +382,17 @@ declare global {
 }
 
 function WatchArea({
-  initialVideo, pool, onClose, theaterMode, onTheaterModeChange,
+  initialVideo, pool, onClose, theaterMode, onTheaterModeChange, initialPlaylistVideoId,
 }: {
   initialVideo: VideoEntry
   pool: VideoEntry[]
   onClose: () => void
   theaterMode: boolean
   onTheaterModeChange: (v: boolean) => void
+  /** Springt beim ersten Laden direkt zu diesem Video innerhalb der Playlist,
+   *  statt immer beim ersten Eintrag zu starten (z.B. wenn aus der direkten
+   *  Playlist-Übersicht ein bestimmtes Video angeklickt wurde). */
+  initialPlaylistVideoId?: string
 }) {
   const wrapperRef = React.useRef<HTMLDivElement>(null)
   const placeholderParentRef = React.useRef<HTMLDivElement>(null)
@@ -483,7 +525,12 @@ function WatchArea({
       .then((items: PlaylistItem[]) => {
         if (cancelled) return
         setPlaylistItems(items)
-        if (items.length > 0) setCurrentVideoId(items[0].videoId)
+        if (items.length > 0) {
+          const wanted = initialPlaylistVideoId && items.some(i => i.videoId === initialPlaylistVideoId)
+            ? initialPlaylistVideoId
+            : items[0].videoId
+          setCurrentVideoId(wanted)
+        }
       })
       .catch(() => { if (!cancelled) setPlaylistItems([]) })
       .finally(() => { if (!cancelled) setPlaylistLoading(false) })
@@ -515,7 +562,10 @@ function WatchArea({
   const related = pool.filter(v => v.id !== activeVideo.id)
 
   const sideRail = (isPlaylist || related.length > 0) && !mini && (
-    <div className="flex max-h-[calc(100vh-8rem)] flex-col gap-6 overflow-y-auto lg:sticky lg:top-24">
+    <div className={theaterMode
+      ? 'flex flex-col gap-6'
+      : 'flex max-h-[calc(100vh-8rem)] flex-col gap-6 overflow-y-auto lg:sticky lg:top-24'
+    }>
       {isPlaylist && (
         <div>
           <div className="mb-3 flex items-center justify-between">
@@ -597,7 +647,7 @@ function WatchArea({
           ref={wrapperRef}
           className={mini
             ? 'fixed z-50 w-72 select-none rounded-xl bg-black shadow-2xl ring-1 ring-black/20 sm:w-80'
-            : `mx-auto max-w-5xl lg:mx-0 lg:max-w-none grid gap-6 transition-all duration-300 lg:grid-cols-[1fr_360px]`
+            : `mx-auto max-w-5xl lg:mx-0 lg:max-w-none grid gap-6 transition-all duration-300 ${theaterMode ? 'grid-cols-1' : 'lg:grid-cols-[1fr_360px]'}`
           }
           style={mini ? (miniPos ? { left: miniPos.left, top: miniPos.top } : { right: 16, bottom: 16 }) : undefined}
         >
@@ -744,21 +794,21 @@ function EmptyVideos({ label }: { label: string }) {
 
 function KonzertContent({ videos, cat, year, day, onOpen }: {
   videos: VideoEntry[]; cat: 'SOMMER' | 'WINTER'; year: string; day: string | null
-  onOpen: (v: VideoEntry, pool: VideoEntry[]) => void
+  onOpen: (v: VideoEntry, pool: VideoEntry[], startVideoId?: string) => void
 }) {
   const shown = videos.filter(v =>
     v.category === cat && v.year === year && (day ? v.day === day : true)
   )
   const label = `${cat === 'SOMMER' ? 'Sommerkonzert' : 'Winterkonzert'} ${year}${day ? ` – ${day}` : ''}`
   if (shown.length === 0) return <EmptyVideos label={label} />
-  return <SplitVideos items={shown} onOpen={v => onOpen(v, shown)} />
+  return <SplitVideos items={shown} onOpen={(v, startVideoId) => onOpen(v, shown, startVideoId)} />
 }
 
 // ─── Content: Weitere ─────────────────────────────────────────────────────────
 
 function WeitereContent({ videos, sub, onOpen }: {
   videos: VideoEntry[]; sub: string
-  onOpen: (v: VideoEntry, pool: VideoEntry[]) => void
+  onOpen: (v: VideoEntry, pool: VideoEntry[], startVideoId?: string) => void
 }) {
   const subVideos = videos
     .filter(v => v.category === 'WEITERE' && v.subcategory === sub)
@@ -766,7 +816,7 @@ function WeitereContent({ videos, sub, onOpen }: {
 
   if (subVideos.length === 0) return <EmptyVideos label={sub} />
 
-  const handleOpen = (v: VideoEntry) => onOpen(v, subVideos)
+  const handleOpen = (v: VideoEntry, startVideoId?: string) => onOpen(v, subVideos, startVideoId)
 
   // Group by year tag; '' = no year tag
   const byYear = new Map<string, VideoEntry[]>()
@@ -971,7 +1021,7 @@ function VideosPageInner() {
   const [videosLoading, setVideosLoading] = useState(true)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [navOpen, setNavOpen] = useState(false)
-  const [watch, setWatch] = useState<{ video: VideoEntry; pool: VideoEntry[] } | null>(null)
+  const [watch, setWatch] = useState<{ video: VideoEntry; pool: VideoEntry[]; startVideoId?: string } | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [theaterMode, setTheaterMode] = useState(false)
 
@@ -979,9 +1029,21 @@ function VideosPageInner() {
   // Seitenleiste ein, damit dem Video maximale Breite bleibt. Beim Verlassen
   // des Kinomodus bleibt der Zustand bewusst so, wie er zuletzt manuell
   // gesetzt wurde (kein automatisches Wiederausklappen - genau wie bei YouTube).
+  const sidebarBeforeTheaterRef = React.useRef<boolean | null>(null)
+
+  // Kinomodus klappt automatisch die Archiv-Seitenleiste ein (mehr Platz fürs
+  // Video, wie YouTubes eigene globale Seitenleiste im Kinomodus) - beim
+  // Verlassen wird genau der Zustand von davor wiederhergestellt, statt sie
+  // einfach eingeklappt zu lassen.
   function handleTheaterModeChange(next: boolean) {
     setTheaterMode(next)
-    if (next) setSidebarCollapsed(true)
+    if (next) {
+      sidebarBeforeTheaterRef.current = sidebarCollapsed
+      setSidebarCollapsed(true)
+    } else if (sidebarBeforeTheaterRef.current !== null) {
+      setSidebarCollapsed(sidebarBeforeTheaterRef.current)
+      sidebarBeforeTheaterRef.current = null
+    }
   }
 
   useEffect(() => { document.title = 'Videos – Schwalmtalzupfer' }, [])
@@ -1034,7 +1096,7 @@ function VideosPageInner() {
     router.replace(`?${params.toString()}`, { scroll: false })
   }, [router])
 
-  const openWatch = useCallback((video: VideoEntry, pool: VideoEntry[]) => setWatch({ video, pool }), [])
+  const openWatch = useCallback((video: VideoEntry, pool: VideoEntry[], startVideoId?: string) => setWatch({ video, pool, startVideoId }), [])
   const closeWatch = useCallback(() => setWatch(null), [])
 
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
@@ -1050,9 +1112,10 @@ function VideosPageInner() {
           <button
             onClick={() => setSidebarCollapsed(v => !v)}
             title={sidebarCollapsed ? 'Archiv einblenden' : 'Archiv ausblenden'}
-            className="mt-1 hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10 md:flex"
+            className="mt-1 hidden shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 shadow-sm transition hover:border-green-500/40 hover:text-green-600 dark:hover:text-green-400 md:flex"
           >
-            <SidebarToggleIcon />
+            <SidebarToggleIcon className="h-4 w-4" />
+            {sidebarCollapsed ? 'Archiv' : 'Archiv ausblenden'}
           </button>
           <div>
             <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
@@ -1141,7 +1204,7 @@ function VideosPageInner() {
               {watch ? (
                 // Wie bei YouTubes Playlist-Ansicht: Player + Playlist-Liste IST die
                 // Übersicht, kein zusätzliches Grid mit denselben Videos darunter.
-                <WatchArea key={watch.video.id} initialVideo={watch.video} pool={watch.pool} onClose={closeWatch} theaterMode={theaterMode} onTheaterModeChange={handleTheaterModeChange} />
+                <WatchArea key={`${watch.video.id}__${watch.startVideoId ?? ''}`} initialVideo={watch.video} pool={watch.pool} initialPlaylistVideoId={watch.startVideoId} onClose={closeWatch} theaterMode={theaterMode} onTheaterModeChange={handleTheaterModeChange} />
               ) : (
                 selection.cat === 'WEITERE'
                   ? <WeitereContent videos={videos} sub={selection.sub} onOpen={openWatch} />
