@@ -337,6 +337,68 @@ function InlinePlaylistItems({ playlist, onOpen }: {
   )
 }
 
+// Kachel für einen Tag (z.B. "Freitag") auf der Tage-Übersicht einer
+// Konzertreihe: zeigt das erste Video der Tages-Playlist als Titelbild
+// (manuelles thumbnailUrl hat Vorrang), Klick springt zur Playlist des Tages.
+function DayCard({ day, entries, onSelect }: { day: string; entries: VideoEntry[]; onSelect: () => void }) {
+  const representative = entries.find(v => v.type === 'PLAYLIST') ?? entries[0]
+  const manualThumb = thumbnailFor(representative)
+  const [items, setItems] = useState<PlaylistItem[] | null>(null)
+
+  useEffect(() => {
+    if (representative.type !== 'PLAYLIST') return
+    let cancelled = false
+    fetch(`${API_BASE}/api/intern/videos/playlist/${representative.youtubeId}`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: PlaylistItem[]) => { if (!cancelled) setItems(data) })
+      .catch(() => { if (!cancelled) setItems([]) })
+    return () => { cancelled = true }
+  }, [representative])
+
+  const thumb = manualThumb ?? items?.[0]?.thumbnail ?? null
+  const count = representative.type === 'PLAYLIST' ? items?.length : entries.length
+
+  return (
+    <button onClick={onSelect} className="group text-left">
+      <div className="relative aspect-video overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-slate-800 shadow-md">
+        {thumb ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumb} alt={day} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-900">
+            <PlaylistIcon className="h-8 w-8 text-gray-400 dark:text-slate-600" />
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10 transition-all duration-200 group-hover:bg-black/50">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 shadow-2xl transition-all duration-200 scale-90 opacity-70 group-hover:scale-100 group-hover:opacity-100">
+            <PlayIcon className="h-6 w-6 text-white" />
+          </div>
+        </div>
+      </div>
+      <div className="px-0.5 pt-3">
+        <p className="text-base font-semibold text-gray-800 dark:text-white transition group-hover:text-gray-900 dark:group-hover:text-white">{day}</p>
+        {count != null && <p className="text-xs text-gray-400 dark:text-gray-500">{count} {count === 1 ? 'Video' : 'Videos'}</p>}
+      </div>
+    </button>
+  )
+}
+
+// Tage-Übersicht statt geflatteter Videoliste, wenn eine Konzertreihe mehrere
+// Tage hat (z.B. Winterkonzert Freitag/Samstag/Sonntag) und noch kein
+// konkreter Tag ausgewählt ist - wie bei YouTube: erst die Playlist wählen,
+// dann die enthaltenen Videos.
+function DayPickerGrid({ videos, days, onSelectDay }: { videos: VideoEntry[]; days: string[]; onSelectDay: (day: string) => void }) {
+  return (
+    <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
+      {days.map(day => {
+        const entries = videos.filter(v => v.day === day).sort((a, b) => a.position - b.position)
+        if (entries.length === 0) return null
+        return <DayCard key={day} day={day} entries={entries} onSelect={() => onSelectDay(day)} />
+      })}
+    </div>
+  )
+}
+
 function SplitVideos({ items, onOpen }: { items: VideoEntry[]; onOpen: (v: VideoEntry, startVideoId?: string) => void }) {
   const playlists = items.filter(v => v.type === 'PLAYLIST')
   const singles = items.filter(v => v.type === 'VIDEO')
@@ -811,14 +873,22 @@ function EmptyVideos({ label }: { label: string }) {
 
 // ─── Content: Konzert ─────────────────────────────────────────────────────────
 
-function KonzertContent({ videos, cat, year, day, onOpen }: {
+function KonzertContent({ videos, cat, year, day, onOpen, onSelectDay }: {
   videos: VideoEntry[]; cat: 'SOMMER' | 'WINTER'; year: string; day: string | null
   onOpen: (v: VideoEntry, pool: VideoEntry[], startVideoId?: string) => void
+  onSelectDay: (day: string) => void
 }) {
-  const shown = videos.filter(v =>
-    v.category === cat && v.year === year && (day ? v.day === day : true)
-  )
+  const yearVideos = videos.filter(v => v.category === cat && v.year === year)
+  const days = DAYS_ORDER.filter(d => yearVideos.some(v => v.day === d))
   const label = `${cat === 'SOMMER' ? 'Sommerkonzert' : 'Winterkonzert'} ${year}${day ? ` – ${day}` : ''}`
+
+  // Mehrere Tage und noch keiner ausgewählt: erst Tage-Übersicht zeigen,
+  // statt alle Tage direkt zu einer Liste zusammenzufassen.
+  if (!day && days.length > 1) {
+    return <DayPickerGrid videos={yearVideos} days={days} onSelectDay={onSelectDay} />
+  }
+
+  const shown = yearVideos.filter(v => (day ? v.day === day : true))
   if (shown.length === 0) return <EmptyVideos label={label} />
   return <SplitVideos items={shown} onOpen={(v, startVideoId) => onOpen(v, shown, startVideoId)} />
 }
@@ -1255,7 +1325,11 @@ function VideosPageInner() {
               ) : (
                 selection.cat === 'WEITERE'
                   ? <WeitereContent videos={videos} sub={selection.sub} onOpen={openWatch} />
-                  : <KonzertContent videos={videos} cat={selection.cat} year={selection.year} day={selection.day} onOpen={openWatch} />
+                  : <KonzertContent
+                      videos={videos} cat={selection.cat} year={selection.year} day={selection.day}
+                      onOpen={openWatch}
+                      onSelectDay={d => handleSelect({ cat: selection.cat, year: selection.year, day: d })}
+                    />
               )}
             </>
           ) : (
