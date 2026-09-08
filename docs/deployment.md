@@ -249,9 +249,6 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
 
-    # Wartungsseite statt Verbindungsfehler, solange Spring Boot beim Deploy
-    # (systemctl restart) kurz nicht erreichbar ist - siehe Abschnitt 12.
-    error_page 502 503 504 /maintenance.html;
     location = /maintenance.html {
         root /var/www/maintenance;
         internal;
@@ -259,6 +256,11 @@ server {
 
     # Proxy → Spring Boot (Port aus application.yml, Schritt 5)
     location / {
+        # NUR hier, nicht server-weit: sonst wird ein kurzer 502 bei
+        # JS/CSS-Dateien beim Deploy-Neustart als "erfolgreiche" 200-Antwort
+        # ausgeliefert UND wegen Cache-Control unten 24h lang falsch gecacht
+        # (browserweit UND bei CDNs wie Cloudflare) - siehe Abschnitt 12.
+        error_page 502 503 504 =200 /maintenance.html;
         proxy_pass         http://127.0.0.1:8081;
         proxy_http_version 1.1;
         proxy_set_header   Host              $host;
@@ -427,7 +429,6 @@ server {
         root /var/www/certbot;
     }
 
-    error_page 502 503 504 /maintenance.html;
     location = /maintenance.html {
         root /var/www/maintenance;
         internal;
@@ -436,6 +437,8 @@ server {
     client_max_body_size 50M;
 
     location / {
+        # NUR hier, nicht server-weit - siehe Kommentar im Haupt-Nginx-Block oben.
+        error_page 502 503 504 =200 /maintenance.html;
         proxy_pass         http://127.0.0.1:8081;
         proxy_http_version 1.1;
         proxy_set_header   Host              $host;
