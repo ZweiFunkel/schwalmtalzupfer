@@ -36,7 +36,7 @@ export default function BandGridSection({ content }: { content: BandGridContent 
 
   return (
     <section className="bg-gradient-to-b from-gray-100 via-purple-50/30 to-gray-100 dark:from-slate-900 dark:via-purple-950/20 dark:to-slate-900 py-24">
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
         {content.heading && (
           <div className="mb-14 text-center">
             <div className="mb-3 flex items-center justify-center gap-3">

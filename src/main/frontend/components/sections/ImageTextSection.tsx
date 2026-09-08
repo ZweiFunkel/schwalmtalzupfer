@@ -11,7 +11,7 @@ export default function ImageTextSection({ content }: { content: ImageTextConten
 
   return (
     <section className="bg-white dark:bg-slate-950 py-24">
-      <div className="mx-auto max-w-4xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2 md:items-center">
           {/* Bild */}
           <div className={imageOrderClass}>

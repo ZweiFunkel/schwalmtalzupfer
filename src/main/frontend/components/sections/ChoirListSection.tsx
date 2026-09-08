@@ -14,7 +14,7 @@ function voiceColor(name: string) {
 export default function ChoirListSection({ content }: { content: ChoirListContent }) {
   return (
     <section className="bg-white dark:bg-slate-950 py-24">
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
         <div className="mb-14 text-center">
           <div className="mb-3 flex items-center justify-center gap-3">

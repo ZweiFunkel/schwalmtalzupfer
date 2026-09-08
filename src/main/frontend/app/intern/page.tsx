@@ -36,7 +36,7 @@ export default function InternPage() {
 
   return (
     <>
-    <div className="mx-auto max-w-5xl px-6 py-12">
+    <div className="mx-auto max-w-7xl px-6 py-12">
       {/* Willkommen */}
       <div className="mb-10 rounded-2xl border border-gray-200 dark:border-white/10 bg-gradient-to-br from-gray-100 to-gray-50 dark:from-slate-900 dark:to-slate-800 p-8">
         <p className="mb-1 text-sm font-medium uppercase tracking-widest text-green-600 dark:text-green-400">Interner Bereich</p>
@@ -159,7 +159,7 @@ export default function InternPage() {
 
     {/* CMS sections (e.g. INTERN_CHANGELOG) */}
     {cmsSections.length > 0 && (
-      <div className="mx-auto max-w-5xl px-6 pb-12">
+      <div className="mx-auto max-w-7xl px-6 pb-12">
         {cmsSections.map(s => (
           <SectionResolver key={s.id} section={s} />
         ))}

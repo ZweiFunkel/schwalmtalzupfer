@@ -103,7 +103,7 @@ export default function MerchPage() {
   const downloadUrl = `${API_BASE}/api/noten/download?key=${encodeURIComponent(BESTELLFORMULAR_KEY)}`
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-12">
+    <div className="mx-auto max-w-7xl px-6 py-12">
       {/* Breadcrumb */}
       <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
         <Link href="/intern" className="hover:text-green-400 transition">Intern</Link>

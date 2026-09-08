@@ -79,6 +79,18 @@ export default function YouTubePlayer({
   const initialVideoIdRef = useRef(videoId)
   const [error, setError] = useState<{ code: number; message: string } | null>(null)
 
+  // Der Player wird nur einmal erstellt (siehe Effekt unten), die onReady/
+  // onStateChange/onEnded-Callbacks werden dabei aber dauerhaft eingebunden -
+  // ohne diese Refs würden sie für immer den Stand vom allerersten Mount
+  // sehen (z.B. handleEnded mit dem damals aktuellen currentVideoId), statt
+  // bei jedem Videowechsel den aktuellen Callback des Elternteils zu nutzen.
+  const onReadyRef = useRef(onReady)
+  const onStateChangeRef = useRef(onStateChange)
+  const onEndedRef = useRef(onEnded)
+  useEffect(() => { onReadyRef.current = onReady }, [onReady])
+  useEffect(() => { onStateChangeRef.current = onStateChange }, [onStateChange])
+  useEffect(() => { onEndedRef.current = onEnded }, [onEnded])
+
   // Der Player wird nur EINMAL pro Mount erstellt (leeres Dependency-Array).
   // Ein Video-Wechsel läuft über `loadVideoById` im zweiten Effekt unten,
   // NICHT über Neuerstellung - würde die YT-API bei jedem Wechsel das
@@ -118,12 +130,12 @@ export default function YouTubePlayer({
           events: {
             onReady: (event: any) => {
               playerReadyRef.current = true
-              if (onReady) onReady(event.target)
+              onReadyRef.current?.(event.target)
             },
             onStateChange: (event: any) => {
-              if (onStateChange) onStateChange(event)
-              if (window.YT?.PlayerState && event.data === window.YT.PlayerState.ENDED && onEnded) {
-                onEnded()
+              onStateChangeRef.current?.(event)
+              if (window.YT?.PlayerState && event.data === window.YT.PlayerState.ENDED) {
+                onEndedRef.current?.()
               }
             },
             onError: (event: any) => {

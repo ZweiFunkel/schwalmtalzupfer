@@ -42,7 +42,7 @@ export default function PersonGridSection({ content }: { content: PersonGridCont
 
   return (
     <section className="bg-gray-50 dark:bg-slate-900 py-24">
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
         {content.heading && (
           <h2 className="mb-4 text-center text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
         )}

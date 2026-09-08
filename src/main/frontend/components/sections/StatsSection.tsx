@@ -15,7 +15,7 @@ export default function StatsSection({ content }: { content: StatsContent }) {
 
   return (
     <section className="bg-white dark:bg-slate-950 py-24">
-      <div className="mx-auto max-w-4xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
 
         {/* Header */}
         {content.heading && (

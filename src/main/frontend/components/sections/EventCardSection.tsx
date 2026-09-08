@@ -26,7 +26,7 @@ export default function EventCardSection({ content }: { content: EventCardConten
         ))}
       </div>
 
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
         <h2 className="mb-12 text-center text-4xl font-bold text-gray-900 dark:text-white">
           {content.heading ?? 'Konzerte'}
         </h2>

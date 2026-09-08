@@ -32,13 +32,14 @@ interface PlaylistItem {
 }
 
 type Selection =
-  | { cat: 'SOMMER' | 'WINTER'; year: string; day: string | null }
+  | { cat: 'SOMMER' | 'WINTER'; year: string; day: string | null; slot: string | null }
   | { cat: 'WEITERE'; sub: string }
 
 // ─── URL helpers ──────────────────────────────────────────────────────────────
 
 function encodeSelection(s: Selection): string {
   if (s.cat === 'WEITERE') return `WEITERE__${encodeURIComponent(s.sub)}`
+  if (s.day && s.slot) return `${s.cat}__${s.year}__${encodeURIComponent(s.day)}__${encodeURIComponent(s.slot)}`
   if (s.day) return `${s.cat}__${s.year}__${encodeURIComponent(s.day)}`
   return `${s.cat}__${s.year}`
 }
@@ -52,6 +53,7 @@ function decodeSelection(p: string | null): Selection | null {
       cat: parts[0] as 'SOMMER' | 'WINTER',
       year: parts[1],
       day: parts[2] ? decodeURIComponent(parts[2]) : null,
+      slot: parts[3] ? decodeURIComponent(parts[3]) : null,
     }
   }
   return null
@@ -112,13 +114,16 @@ function selectionLabel(sel: Selection | null): string {
   if (!sel) return 'Auswahl'
   if (sel.cat === 'WEITERE') return sel.sub
   const base = sel.cat === 'SOMMER' ? 'Sommerkonzert' : 'Winterkonzert'
-  return sel.day ? `${base} ${sel.year} – ${sel.day}` : `${base} ${sel.year}`
+  let label = `${base} ${sel.year}`
+  if (sel.day) label += ` – ${sel.day}`
+  if (sel.slot) label += ` (${sel.slot})`
+  return label
 }
 
 function isSel(sel: Selection | null, item: Selection): boolean {
   if (!sel || sel.cat !== item.cat) return false
   if (sel.cat === 'WEITERE' && item.cat === 'WEITERE') return sel.sub === item.sub
-  if (sel.cat !== 'WEITERE' && item.cat !== 'WEITERE') return sel.year === item.year && sel.day === item.day
+  if (sel.cat !== 'WEITERE' && item.cat !== 'WEITERE') return sel.year === item.year && sel.day === item.day && sel.slot === item.slot
   return false
 }
 
@@ -132,7 +137,9 @@ function videosForSelection(videos: VideoEntry[], sel: Selection): VideoEntry[] 
       .filter(v => v.category === 'WEITERE' && v.subcategory === sel.sub)
       .sort((a, b) => a.position - b.position)
   }
-  return videos.filter(v => v.category === sel.cat && v.year === sel.year && (sel.day ? v.day === sel.day : true))
+  return videos.filter(v => v.category === sel.cat && v.year === sel.year
+    && (sel.day ? v.day === sel.day : true)
+    && (sel.slot ? v.subcategory === sel.slot : true))
 }
 
 // ─── Icons (klein gehalten, wiederverwendet) ─────────────────────────────────
@@ -203,11 +210,13 @@ function LinkIcon({ className = 'h-4 w-4' }: { className?: string }) {
   )
 }
 
-function SidebarToggleIcon({ className = 'h-5 w-5' }: { className?: string }) {
+// Pfeil für Ein-/Ausblenden-Umschalter (Archiv-Seitenleiste, Playlist-Panel):
+// zeigt standardmäßig nach links (zugeklappt-Richtung), dreht sich beim
+// Umschalten sanft um 180°.
+function CollapseArrowIcon({ collapsed, className = 'h-4 w-4' }: { collapsed: boolean; className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <rect x="3" y="4.5" width="18" height="15" rx="2" />
-      <path strokeLinecap="round" d="M9.5 4.5v15" />
+    <svg className={`${className} shrink-0 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
     </svg>
   )
 }
@@ -383,17 +392,20 @@ function DayCard({ day, entries, onSelect }: { day: string; entries: VideoEntry[
   )
 }
 
-// Tage-Übersicht statt geflatteter Videoliste, wenn eine Konzertreihe mehrere
-// Tage hat (z.B. Winterkonzert Freitag/Samstag/Sonntag) und noch kein
-// konkreter Tag ausgewählt ist - wie bei YouTube: erst die Playlist wählen,
-// dann die enthaltenen Videos.
-function DayPickerGrid({ videos, days, onSelectDay }: { videos: VideoEntry[]; days: string[]; onSelectDay: (day: string) => void }) {
+// Kachel-Übersicht statt geflatteter Videoliste, wenn eine Ebene (Tage eines
+// Jahres, oder Zeitabschnitte innerhalb eines Tages wie Sonntag Morgen/Abend)
+// mehrere Kinder hat und noch keins ausgewählt ist - wie bei YouTube: erst die
+// Playlist wählen, dann die enthaltenen Videos. `groupBy` legt fest, welches
+// Feld die Ebene bildet (v.day für Tage, v.subcategory für Zeitabschnitte).
+function DayPickerGrid({ videos, keys, groupBy, onSelect }: {
+  videos: VideoEntry[]; keys: string[]; groupBy: (v: VideoEntry) => string | null; onSelect: (key: string) => void
+}) {
   return (
     <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
-      {days.map(day => {
-        const entries = videos.filter(v => v.day === day).sort((a, b) => a.position - b.position)
+      {keys.map(key => {
+        const entries = videos.filter(v => groupBy(v) === key).sort((a, b) => a.position - b.position)
         if (entries.length === 0) return null
-        return <DayCard key={day} day={day} entries={entries} onSelect={() => onSelectDay(day)} />
+        return <DayCard key={key} day={key} entries={entries} onSelect={() => onSelect(key)} />
       })}
     </div>
   )
@@ -481,6 +493,7 @@ function WatchArea({
   const [systemPipActive, setSystemPipActive] = useState(false)
   const [systemPipSupported, setSystemPipSupported] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [playlistCollapsed, setPlaylistCollapsed] = useState(false)
 
   useEffect(() => {
     setSystemPipSupported(typeof window !== 'undefined' && !!window.documentPictureInPicture)
@@ -630,48 +643,85 @@ function WatchArea({
   }
 
   const related = pool.filter(v => v.id !== activeVideo.id)
+  const playlistFullyCollapsed = isPlaylist && playlistCollapsed
+  const hasRelated = related.length > 0 && !playlistFullyCollapsed
+  // Eingeklappte Playlist blendet "Weitere Videos" mit aus (statt sie weiter
+  // stehen zu lassen) - dadurch braucht die Spalte auch keine feste 360px-
+  // Breite mehr, sondern schrumpft komplett auf reinen Icon-Platzbedarf.
+  const railNarrow = playlistFullyCollapsed
 
-  const sideRail = (isPlaylist || related.length > 0) && !mini && (
+  const sideRail = (isPlaylist || hasRelated) && !mini && (
     <div className={theaterMode
       ? 'flex flex-col gap-6'
-      : 'flex max-h-[calc(100vh-8rem)] flex-col gap-6 overflow-y-auto lg:sticky lg:top-24'
+      // lg:w-14/lg:w-[360px] + transition-[width]: die Spalte animiert selbst
+      // sanft zwischen schmal (nur Icon) und voller Breite - eine feste
+      // Pixelbreite lässt sich (anders als CSS-Grid-"auto"-Spalten) sauber
+      // animieren, und dank overflow-x-hidden reißt während der Animation
+      // nichts sichtbar aus dem Rahmen.
+      : `flex max-h-[calc(100vh-8rem)] flex-col gap-6 overflow-y-auto overflow-x-hidden lg:sticky lg:top-24 lg:shrink-0 transition-[width] duration-300 ease-in-out ${railNarrow ? 'lg:w-14' : 'lg:w-[360px]'}`
     }>
       {isPlaylist && (
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Playlist</span>
-            <span className="text-xs text-gray-400 dark:text-gray-500">{playlistItems.length} Videos</span>
+        railNarrow ? (
+          <div className="flex justify-center">
+            <button
+              onClick={() => setPlaylistCollapsed(v => !v)}
+              title="Playlist einblenden"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 dark:text-gray-500 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <ChevronIcon open={false} className="h-3.5 w-3.5" />
+            </button>
           </div>
-          <div className="flex flex-col gap-1.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-2">
-            {playlistLoading ? (
-              [1, 2, 3, 4].map(i => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-100 dark:bg-white/5" />)
-            ) : playlistItems.length === 0 ? (
-              <p className="px-2 py-4 text-center text-xs text-gray-400 dark:text-gray-500">Keine Videos gefunden</p>
-            ) : playlistItems.map((item, idx) => (
-              <button
-                key={item.videoId}
-                onClick={() => setCurrentVideoId(item.videoId)}
-                className={`flex gap-2 rounded-lg p-2 text-left transition ${
-                  currentVideoId === item.videoId
-                    ? 'bg-green-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
-                }`}
-              >
-                <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded bg-gray-200 dark:bg-slate-800">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.thumbnail} alt="" className="h-full w-full object-cover" />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                    <span className="text-[10px] font-bold text-white">{idx + 1}</span>
-                  </div>
+        ) : (
+          <div>
+            <button
+              onClick={() => setPlaylistCollapsed(v => !v)}
+              title={playlistCollapsed ? 'Playlist einblenden' : 'Playlist ausblenden'}
+              className="mb-3 flex w-full items-center justify-between gap-2 text-left"
+            >
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                <ChevronIcon open={!playlistCollapsed} className="h-3.5 w-3.5" />
+                Playlist
+              </span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">{playlistItems.length} Videos</span>
+            </button>
+            {/* Hier ist die Spaltenbreite immer fest (Weitere Videos brauchen
+                den Platz noch), daher darf die Liste hier sanft per Höhe
+                ein-/ausklappen statt komplett aus dem DOM zu verschwinden. */}
+            <div className={`grid transition-all duration-300 ease-in-out ${playlistCollapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'}`}>
+              <div className="overflow-hidden">
+                <div className="flex flex-col gap-1.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-2">
+                  {playlistLoading ? (
+                    [1, 2, 3, 4].map(i => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-100 dark:bg-white/5" />)
+                  ) : playlistItems.length === 0 ? (
+                    <p className="px-2 py-4 text-center text-xs text-gray-400 dark:text-gray-500">Keine Videos gefunden</p>
+                  ) : playlistItems.map((item, idx) => (
+                    <button
+                      key={item.videoId}
+                      onClick={() => setCurrentVideoId(item.videoId)}
+                      className={`flex gap-2 rounded-lg p-2 text-left transition ${
+                        currentVideoId === item.videoId
+                          ? 'bg-green-600 text-white'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded bg-gray-200 dark:bg-slate-800">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={item.thumbnail} alt="" className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <span className="text-[10px] font-bold text-white">{idx + 1}</span>
+                        </div>
+                      </div>
+                      <p className="min-w-0 flex-1 line-clamp-2 text-xs font-medium">{item.title}</p>
+                    </button>
+                  ))}
                 </div>
-                <p className="min-w-0 flex-1 line-clamp-2 text-xs font-medium">{item.title}</p>
-              </button>
-            ))}
+              </div>
+            </div>
           </div>
-        </div>
+        )
       )}
 
-      {related.length > 0 && (
+      {hasRelated && (
         <div>
           <span className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-200">Weitere Videos</span>
           <div className="flex flex-col gap-3">
@@ -717,7 +767,7 @@ function WatchArea({
           ref={wrapperRef}
           className={mini
             ? 'fixed z-50 w-72 select-none rounded-xl bg-black shadow-2xl ring-1 ring-black/20 sm:w-80'
-            : `mx-auto max-w-5xl lg:mx-0 lg:max-w-none grid gap-6 transition-all duration-300 ${theaterMode ? 'grid-cols-1' : 'lg:grid-cols-[1fr_360px]'}`
+            : `mx-auto max-w-5xl lg:mx-0 lg:max-w-none flex flex-col gap-6 transition-all duration-300 ${theaterMode ? '' : 'lg:flex-row'}`
           }
           style={mini ? (miniPos ? { left: miniPos.left, top: miniPos.top } : { right: 16, bottom: 16 }) : undefined}
         >
@@ -749,7 +799,7 @@ function WatchArea({
           </div>
         )}
 
-        <div className={mini ? undefined : 'min-w-0'}>
+        <div className={mini ? undefined : 'min-w-0 lg:flex-1'}>
           <div
             className={`relative w-full overflow-hidden bg-black ${mini ? 'rounded-b-xl' : 'shadow-2xl rounded-xl'}`}
             style={{ aspectRatio: '16/9' }}
@@ -873,22 +923,36 @@ function EmptyVideos({ label }: { label: string }) {
 
 // ─── Content: Konzert ─────────────────────────────────────────────────────────
 
-function KonzertContent({ videos, cat, year, day, onOpen, onSelectDay }: {
-  videos: VideoEntry[]; cat: 'SOMMER' | 'WINTER'; year: string; day: string | null
+function KonzertContent({ videos, cat, year, day, slot, onOpen, onSelectDay, onSelectSlot }: {
+  videos: VideoEntry[]; cat: 'SOMMER' | 'WINTER'; year: string; day: string | null; slot: string | null
   onOpen: (v: VideoEntry, pool: VideoEntry[], startVideoId?: string) => void
   onSelectDay: (day: string) => void
+  onSelectSlot: (slot: string) => void
 }) {
   const yearVideos = videos.filter(v => v.category === cat && v.year === year)
   const days = DAYS_ORDER.filter(d => yearVideos.some(v => v.day === d))
-  const label = `${cat === 'SOMMER' ? 'Sommerkonzert' : 'Winterkonzert'} ${year}${day ? ` – ${day}` : ''}`
 
   // Mehrere Tage und noch keiner ausgewählt: erst Tage-Übersicht zeigen,
   // statt alle Tage direkt zu einer Liste zusammenzufassen.
   if (!day && days.length > 1) {
-    return <DayPickerGrid videos={yearVideos} days={days} onSelectDay={onSelectDay} />
+    return <DayPickerGrid videos={yearVideos} keys={days} groupBy={v => v.day} onSelect={onSelectDay} />
   }
 
-  const shown = yearVideos.filter(v => (day ? v.day === day : true))
+  const dayVideos = yearVideos.filter(v => (day ? v.day === day : true))
+
+  // Dritte Ebene: ein Tag kann in mehrere Zeitabschnitte unterteilt sein
+  // (z.B. Sonntag Morgen/Abend) - subcategory wird dafür bei Sommer-/
+  // Winterkonzert-Einträgen zweckentfremdet (sonst nur für "Weitere Auftritte" genutzt).
+  const slots = day
+    ? [...new Set(dayVideos.map(v => v.subcategory).filter(Boolean) as string[])]
+    : []
+
+  if (day && !slot && slots.length > 1) {
+    return <DayPickerGrid videos={dayVideos} keys={slots} groupBy={v => v.subcategory} onSelect={onSelectSlot} />
+  }
+
+  const shown = dayVideos.filter(v => (slot ? v.subcategory === slot : true))
+  const label = `${cat === 'SOMMER' ? 'Sommerkonzert' : 'Winterkonzert'} ${year}${day ? ` – ${day}` : ''}${slot ? ` (${slot})` : ''}`
   if (shown.length === 0) return <EmptyVideos label={label} />
   return <SplitVideos items={shown} onOpen={(v, startVideoId) => onOpen(v, shown, startVideoId)} />
 }
@@ -1034,7 +1098,7 @@ function SidebarNav({ nav, selection, onSelect }: {
             {years.map(({ year, days }) => {
               if (days.length === 0) {
                 return (
-                  <NavItem key={year} active={isSel(selection, { cat, year, day: null })} onClick={() => onSelect({ cat, year, day: null })}>
+                  <NavItem key={year} active={isSel(selection, { cat, year, day: null, slot: null })} onClick={() => onSelect({ cat, year, day: null, slot: null })}>
                     {year}
                   </NavItem>
                 )
@@ -1045,7 +1109,7 @@ function SidebarNav({ nav, selection, onSelect }: {
                 <div key={year}>
                   <div className="flex items-center gap-0.5">
                     <div className="flex-1">
-                      <NavItem active={isSel(selection, { cat, year, day: null })} onClick={() => onSelect({ cat, year, day: null })}>
+                      <NavItem active={isSel(selection, { cat, year, day: null, slot: null })} onClick={() => onSelect({ cat, year, day: null, slot: null })}>
                         <span>{year}</span>
                         <span className="ml-auto text-[10px] text-gray-400 dark:text-gray-500">{days.length}d</span>
                       </NavItem>
@@ -1062,7 +1126,7 @@ function SidebarNav({ nav, selection, onSelect }: {
                     <div className="relative ml-3.5 mt-0.5 mb-1 flex flex-col gap-0.5">
                       <div className="absolute left-0 top-1 bottom-1 w-px bg-gray-200 dark:bg-white/10" />
                       {days.map(day => (
-                        <NavItem key={day} active={isSel(selection, { cat, year, day })} onClick={() => onSelect({ cat, year, day })} indent>
+                        <NavItem key={day} active={isSel(selection, { cat, year, day, slot: null })} onClick={() => onSelect({ cat, year, day, slot: null })} indent>
                           {day}
                         </NavItem>
                       ))}
@@ -1164,10 +1228,10 @@ function VideosPageInner() {
           const nav = buildNav(data)
           if (nav.sommer.length > 0) {
             const first = nav.sommer[0]
-            initialSel = { cat: 'SOMMER', year: first.year, day: first.days[0] ?? null }
+            initialSel = { cat: 'SOMMER', year: first.year, day: first.days[0] ?? null, slot: null }
           } else if (nav.winter.length > 0) {
             const first = nav.winter[0]
-            initialSel = { cat: 'WINTER', year: first.year, day: first.days[0] ?? null }
+            initialSel = { cat: 'WINTER', year: first.year, day: first.days[0] ?? null, slot: null }
           } else if (nav.weitere.length > 0) {
             initialSel = { cat: 'WEITERE', sub: nav.weitere[0] }
           }
@@ -1222,27 +1286,17 @@ function VideosPageInner() {
   const nav = buildNav(videos)
 
   return (
-    <div className={`mx-auto px-4 py-8 sm:px-6 transition-all duration-300 ${theaterMode ? 'max-w-[1800px]' : watch ? 'max-w-6xl' : 'max-w-7xl'}`}>
+    <div className={`mx-auto px-6 py-8 transition-all duration-300 ${theaterMode ? 'max-w-[1800px]' : 'max-w-7xl'}`}>
       {/* Page header */}
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-start gap-3">
-          <button
-            onClick={() => setSidebarCollapsed(v => !v)}
-            title={sidebarCollapsed ? 'Archiv einblenden' : 'Archiv ausblenden'}
-            className="mt-1 hidden shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 shadow-sm transition hover:border-green-500/40 hover:text-green-600 dark:hover:text-green-400 md:flex"
-          >
-            <SidebarToggleIcon className="h-4 w-4" />
-            {sidebarCollapsed ? 'Archiv' : 'Archiv ausblenden'}
-          </button>
-          <div>
-            <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-              <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition">Intern</Link>
-              <span>/</span>
-              <span className="text-gray-500 dark:text-gray-300">Videos</span>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Video-Archiv</h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Konzerte & Auftritte der Schwalmtalzupfer</p>
+        <div>
+          <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+            <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition">Intern</Link>
+            <span>/</span>
+            <span className="text-gray-500 dark:text-gray-300">Videos</span>
           </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Video-Archiv</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Konzerte & Auftritte der Schwalmtalzupfer</p>
         </div>
         {isBoard(user) && (
           <Link href="/admin?tab=videos"
@@ -1281,21 +1335,28 @@ function VideosPageInner() {
 
       {/* Desktop: 2-col layout (Seitenleiste ein-/ausblendbar) */}
       <div className="flex gap-6">
-        {!sidebarCollapsed && (
-          <aside className="hidden md:block w-56 shrink-0">
-            <div className="sticky top-28 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/80 shadow-sm overflow-hidden">
-              <div className="border-b border-gray-100 dark:border-white/5 px-4 py-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Archiv</span>
-              </div>
+        <aside className={`hidden md:block shrink-0 transition-all duration-300 ${sidebarCollapsed ? 'w-12' : 'w-56'}`}>
+          <div className="sticky top-28 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/80 shadow-sm overflow-hidden">
+            <button
+              onClick={() => setSidebarCollapsed(v => !v)}
+              title={sidebarCollapsed ? 'Archiv einblenden' : 'Archiv ausblenden'}
+              className={`flex w-full items-center gap-1.5 py-3 text-gray-400 dark:text-gray-500 transition hover:text-gray-600 dark:hover:text-gray-300 ${
+                sidebarCollapsed ? 'justify-center px-0' : 'justify-between border-b border-gray-100 dark:border-white/5 px-4'
+              }`}
+            >
+              {!sidebarCollapsed && <span className="text-xs font-bold uppercase tracking-widest">Archiv</span>}
+              <CollapseArrowIcon collapsed={sidebarCollapsed} className="h-3.5 w-3.5" />
+            </button>
+            {!sidebarCollapsed && (
               <div className="p-3">
                 {videosLoading
                   ? <div className="flex flex-col gap-2">{[1,2,3,4,5,6].map(i => <div key={i} className="h-7 animate-pulse rounded-lg bg-gray-100 dark:bg-slate-800" />)}</div>
                   : <SidebarNav nav={nav} selection={selection} onSelect={handleSelect} />
                 }
               </div>
-            </div>
-          </aside>
-        )}
+            )}
+          </div>
+        </aside>
 
         {/* Content */}
         <main className="flex-1 min-w-0">
@@ -1326,9 +1387,10 @@ function VideosPageInner() {
                 selection.cat === 'WEITERE'
                   ? <WeitereContent videos={videos} sub={selection.sub} onOpen={openWatch} />
                   : <KonzertContent
-                      videos={videos} cat={selection.cat} year={selection.year} day={selection.day}
+                      videos={videos} cat={selection.cat} year={selection.year} day={selection.day} slot={selection.slot}
                       onOpen={openWatch}
-                      onSelectDay={d => handleSelect({ cat: selection.cat, year: selection.year, day: d })}
+                      onSelectDay={d => handleSelect({ cat: selection.cat, year: selection.year, day: d, slot: null })}
+                      onSelectSlot={s => handleSelect({ cat: selection.cat, year: selection.year, day: selection.day, slot: s })}
                     />
               )}
             </>

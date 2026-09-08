@@ -354,7 +354,7 @@ export default function GalerieModernView({
   const hasContent = data && (data.folders.length > 0 || data.images.length > 0)
 
   return (
-    <div className="relative mx-auto max-w-7xl px-6 py-12 sm:px-8">
+    <div className="relative mx-auto max-w-7xl px-6 py-12">
 
       {/* Lade-Overlay beim Wechsel zwischen Ordnern */}
       {loading && (

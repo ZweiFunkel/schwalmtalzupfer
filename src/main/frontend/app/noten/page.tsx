@@ -596,7 +596,7 @@ export default function NotenPage() {
   const allSelected = filtered.length > 0 && selected.size === filtered.length
 
   return (
-    <div className={`mx-auto max-w-5xl px-6 py-12 ${pageBg}`}>
+    <div className={`mx-auto max-w-7xl px-6 py-12 ${pageBg}`}>
       {/* Breadcrumb */}
       <div className={`mb-6 flex items-center gap-2 text-sm ${subCl}`}>
         <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition">Intern</Link>

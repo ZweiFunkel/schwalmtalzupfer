@@ -249,6 +249,14 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
 
+    # Wartungsseite statt Verbindungsfehler, solange Spring Boot beim Deploy
+    # (systemctl restart) kurz nicht erreichbar ist - siehe Abschnitt 12.
+    error_page 502 503 504 /maintenance.html;
+    location = /maintenance.html {
+        root /var/www/maintenance;
+        internal;
+    }
+
     # Proxy → Spring Boot (Port aus application.yml, Schritt 5)
     location / {
         proxy_pass         http://127.0.0.1:8081;
@@ -363,6 +371,37 @@ sudo journalctl -u schwalmtalzupfer -f
 
 ---
 
+## 12. Wartungsseite beim Deploy (statt "Seite nicht erreichbar")
+
+`sudo systemctl restart schwalmtalzupfer` beendet den alten Prozess sofort, der neue
+braucht dann ~10-20s zum Hochfahren (siehe Boot-Logs). In diesem Fenster liefert
+Nginx sonst einen rohen 502/503/504-Fehler. Mit den `error_page`-Zeilen aus Schritt 2
+(schon in der Config oben enthalten) zeigt Nginx stattdessen automatisch eine
+Wartungsseite mit Auto-Reload an - ganz ohne App-Code-Änderung, greift bei jedem
+Ausfall (Deploy oder Crash) gleichermaßen.
+
+**Einmalig einrichten** (`docs/maintenance.html` liegt hier im Repo):
+
+```bash
+sudo mkdir -p /var/www/maintenance
+scp docs/maintenance.html user@server:/tmp/maintenance.html
+ssh user@server 'sudo mv /tmp/maintenance.html /var/www/maintenance/maintenance.html'
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Testen (Service kurz stoppen, Wartungsseite sollte erscheinen):
+
+```bash
+sudo systemctl stop schwalmtalzupfer
+curl -I https://intern.schwalmtalzupfer.de/   # → 502, liefert aber maintenance.html im Body
+sudo systemctl start schwalmtalzupfer
+```
+
+> Kein Zusatzschritt in `scripts/build.sh`/`deploy.sh` nötig - die Wartungsseite
+> greift automatisch, sobald Nginx den Upstream nicht erreicht.
+
+---
+
 ## 13. HTTPS ohne eigene Domain – via nip.io
 
 > **Zwischenlösung:** Solange der DNS von `schwalmtalzupfer.de` noch auf Typo3 zeigt,
@@ -386,6 +425,12 @@ server {
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
+    }
+
+    error_page 502 503 504 /maintenance.html;
+    location = /maintenance.html {
+        root /var/www/maintenance;
+        internal;
     }
 
     client_max_body_size 50M;

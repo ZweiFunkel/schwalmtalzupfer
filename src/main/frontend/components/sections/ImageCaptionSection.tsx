@@ -9,7 +9,7 @@ export default function ImageCaptionSection({ content }: { content: ImageCaption
 
   return (
     <section className="bg-white dark:bg-slate-900 py-16">
-      <div className="mx-auto max-w-4xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
         <figure className="overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-white/10 cursor-zoom-in group" onClick={() => setOpen(true)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

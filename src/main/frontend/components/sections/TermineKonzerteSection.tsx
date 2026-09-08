@@ -70,7 +70,7 @@ export default function TermineKonzerteSection({ content }: { content: TermineKo
 
   return (
     <section className="bg-white dark:bg-slate-950 py-24">
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
 
         <div className="mb-12">
           <div className="mb-3 flex items-center gap-3">

@@ -156,6 +156,12 @@ export default function VideosTab() {
                     <option>Sonntag</option>
                   </select>
                 </div>
+                <div className="col-span-2">
+                  <label className="mb-1 block text-xs text-gray-400">Zeitabschnitt (optional, z.B. Morgen/Abend – nur nötig, wenn ein Tag mehrere Playlists hat)</label>
+                  <input value={form.subcategory} onChange={e => set('subcategory', e.target.value)}
+                    placeholder="Morgen"
+                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
+                </div>
               </>
             )}
             {form.category === 'WEITERE' && (
