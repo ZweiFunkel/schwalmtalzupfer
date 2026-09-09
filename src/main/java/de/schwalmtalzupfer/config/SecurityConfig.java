@@ -70,7 +70,12 @@ public class SecurityConfig {
                                      "style-src 'self' 'unsafe-inline'; " +
                                      "frame-src www.youtube.com youtube.com www.youtube-nocookie.com blob: js.stripe.com hooks.stripe.com; " +
                                      "connect-src 'self' www.youtube.com www.youtube-nocookie.com s.ytimg.com api.stripe.com; " +
-                                     "img-src 'self' data: blob: www.youtube.com i.ytimg.com *.r2.dev *.r2.cloudflarestorage.com; " +
+                                     // schwalmtalzupfer.de (ohne www) explizit erlaubt: R2ProxyController baut
+                                     // Bild-URLs aus app.invitation.base-url, das serverseitig auf die Apex-
+                                     // Domain zeigen kann, während Besucher via Cloudflare-Redirect auf
+                                     // www.schwalmtalzupfer.de landen - aus Browsersicht zwei verschiedene
+                                     // Origins, 'self' allein reicht dafür nicht.
+                                     "img-src 'self' data: blob: www.youtube.com i.ytimg.com *.r2.dev *.r2.cloudflarestorage.com schwalmtalzupfer.de www.schwalmtalzupfer.de; " +
                                      "media-src 'self' blob:; " +
                                      "worker-src blob:;")
                 )
