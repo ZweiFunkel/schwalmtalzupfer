@@ -70,7 +70,7 @@ public class SecurityConfig {
                                      "style-src 'self' 'unsafe-inline'; " +
                                      "frame-src www.youtube.com youtube.com www.youtube-nocookie.com blob: js.stripe.com hooks.stripe.com; " +
                                      "connect-src 'self' www.youtube.com www.youtube-nocookie.com s.ytimg.com api.stripe.com; " +
-                                     "img-src 'self' data: blob: www.youtube.com i.ytimg.com; " +
+                                     "img-src 'self' data: blob: www.youtube.com i.ytimg.com *.r2.dev *.r2.cloudflarestorage.com; " +
                                      "media-src 'self' blob:; " +
                                      "worker-src blob:;")
                 )
