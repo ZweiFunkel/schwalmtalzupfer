@@ -63,6 +63,20 @@ function decodeSelection(p: string | null): Selection | null {
 
 const DAYS_ORDER = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
 
+// Zeitabschnitte sind Freitext, daher keine natürliche Reihenfolge - bekannte
+// Begriffe werden chronologisch sortiert, unbekannte landen danach alphabetisch
+// (statt z.B. "Abend" vor "Morgen" durch zufällige DB-Reihenfolge).
+const TIME_SLOT_ORDER = ['Morgen', 'Vormittag', 'Mittag', 'Nachmittag', 'Abend', 'Nacht']
+
+function sortSlots(slots: string[]): string[] {
+  return [...slots].sort((a, b) => {
+    const ia = TIME_SLOT_ORDER.indexOf(a)
+    const ib = TIME_SLOT_ORDER.indexOf(b)
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? TIME_SLOT_ORDER.length : ia) - (ib === -1 ? TIME_SLOT_ORDER.length : ib)
+    return a.localeCompare(b)
+  })
+}
+
 interface KonzertNavYear { year: string; days: string[] }
 interface NavStructure { sommer: KonzertNavYear[]; winter: KonzertNavYear[]; weitere: string[] }
 
@@ -944,7 +958,7 @@ function KonzertContent({ videos, cat, year, day, slot, onOpen, onSelectDay, onS
   // (z.B. Sonntag Morgen/Abend) - subcategory wird dafür bei Sommer-/
   // Winterkonzert-Einträgen zweckentfremdet (sonst nur für "Weitere Auftritte" genutzt).
   const slots = day
-    ? [...new Set(dayVideos.map(v => v.subcategory).filter(Boolean) as string[])]
+    ? sortSlots([...new Set(dayVideos.map(v => v.subcategory).filter(Boolean) as string[])])
     : []
 
   if (day && !slot && slots.length > 1) {
