@@ -8,22 +8,32 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   const [content, setContent] = useState<Record<string, string>>({})
   const [language, setLanguage] = useState<Language>('de')
+  const [initialized, setInitialized] = useState(false)
+  const [contentReady, setContentReady] = useState(false)
   useEffect(() => {
     try { if (localStorage.getItem('zupfer-language') === 'en') setLanguage('en') } catch {}
+    setInitialized(true)
   }, [])
   useEffect(() => { document.documentElement.lang = language }, [language])
   useEffect(() => {
+    let disposed = false
     const controller = new AbortController()
     setContent({})
+    setContentReady(false)
+    const timeout = window.setTimeout(() => controller.abort(), 10000)
     if (!loading) fetch(`${getApiBase()}/api/i18n`, { credentials: 'include', cache: 'no-store', signal: controller.signal })
       .then(response => response.ok ? response.json() : {})
       .then(data => { if (!controller.signal.aborted) setContent(data) })
       .catch(() => {})
-    return () => controller.abort()
+      .finally(() => { window.clearTimeout(timeout); if (!disposed) setContentReady(true) })
+    return () => { disposed = true; window.clearTimeout(timeout); controller.abort() }
   }, [user, loading])
   const change = (value: Language) => {
     setLanguage(value)
     try { localStorage.setItem('zupfer-language', value) } catch {}
+  }
+  if (!initialized || (language === 'en' && (loading || !contentReady))) {
+    return <div role="status" aria-label="Loading" className="flex min-h-screen items-center justify-center"><span className="h-6 w-6 animate-spin rounded-full border-2 border-green-600 border-t-transparent" /></div>
   }
   return <Context.Provider value={{ language, setLanguage: change, content }}>{children}</Context.Provider>
 }
