@@ -16,17 +16,23 @@ export interface Meldung {
   validUntil?: string  // dd.MM.yyyy – Ende des Zeitfensters (inkl.)
 }
 
-function parseDMY(s: string): Date {
-  const p = s.split('.')
-  return new Date(+p[2], +p[1] - 1, +p[0])
+function parseDMY(s: string): string {
+  const match = s.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
+  if (!match) return ''
+  const [, day, month, year] = match
+  const date = new Date(Date.UTC(+year, +month - 1, +day))
+  if (date.getUTCFullYear() !== +year || date.getUTCMonth() !== +month - 1 || date.getUTCDate() !== +day) return ''
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
 }
 
 /** Gibt true zurück, wenn die Meldung heute aufgrund ihres Zeitfensters aktiv ist. */
-export function isMeldungScheduledNow(m: Meldung): boolean {
+export function isMeldungScheduledNow(m: Meldung, now = new Date()): boolean {
   if (!m.validFrom && !m.validUntil) return false
-  const today = new Date(); today.setHours(0, 0, 0, 0)
-  if (m.validFrom && parseDMY(m.validFrom) > today) return false
-  if (m.validUntil && parseDMY(m.validUntil) < today) return false
+  const parts = new Intl.DateTimeFormat('en', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now)
+  const part = (type: string) => parts.find(p => p.type === type)!.value
+  const today = `${part('year')}-${part('month')}-${part('day')}`
+  if (m.validFrom && (!parseDMY(m.validFrom) || parseDMY(m.validFrom) > today)) return false
+  if (m.validUntil && (!parseDMY(m.validUntil) || parseDMY(m.validUntil) < today)) return false
   return true
 }
 

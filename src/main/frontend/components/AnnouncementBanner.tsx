@@ -134,7 +134,7 @@ export default function AnnouncementBanner() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/site/settings`)
+    fetch(`${API_BASE}/api/site/settings`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : {})
       .then((settings: Record<string, string>) => {
         // 1. Neue Meldungen-Array-Logik
@@ -153,15 +153,17 @@ export default function AnnouncementBanner() {
             if (active) {
               setAnn(active)
               timerRef.current = setTimeout(() => setMounted(true), 20)
-              return
             }
+            // The current list is authoritative, even when empty or expired.
+            // Never resurrect a legacy announcement in that case.
+            return
           } catch { /* ignore */ }
         }
         // 2. Fallback: altes announcement-Format
         if (settings.announcement) {
           try {
             const parsed = JSON.parse(settings.announcement) as Meldung & { active?: boolean }
-            if (parsed.active && !getDismissed().includes(parsed.id)) {
+            if (parsed.active && (!(parsed.validFrom || parsed.validUntil) || isMeldungScheduledNow(parsed)) && !getDismissed().includes(parsed.id)) {
               setAnn(parsed)
               timerRef.current = setTimeout(() => setMounted(true), 20)
             }
@@ -171,6 +173,25 @@ export default function AnnouncementBanner() {
       .catch(() => {})
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [])
+
+  useEffect(() => {
+    const checkExpiry = () => {
+      if (ann && (ann.validFrom || ann.validUntil) && !isMeldungScheduledNow(ann)) {
+        setAnn(null)
+        setMounted(false)
+        setShowModal(false)
+      }
+    }
+    checkExpiry()
+    const interval = window.setInterval(checkExpiry, 1000)
+    window.addEventListener('focus', checkExpiry)
+    document.addEventListener('visibilitychange', checkExpiry)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', checkExpiry)
+      document.removeEventListener('visibilitychange', checkExpiry)
+    }
+  }, [ann])
 
   if (!ann) return null
 
