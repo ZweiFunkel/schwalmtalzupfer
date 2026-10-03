@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { getApiBase } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
@@ -116,7 +117,7 @@ function EventDetailModal({ event, onClose }: { event: KalenderTermin; onClose: 
       >
         <div className="flex items-start justify-between gap-3">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${style.chip}`}>
-            <span>{style.icon}</span>{style.label}
+            <span>{style.icon}</span><T value={style.label} />
           </span>
           <button onClick={onClose} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-700 dark:hover:text-white transition">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -136,7 +137,7 @@ function EventDetailModal({ event, onClose }: { event: KalenderTermin; onClose: 
               {event.endDatum && event.endDatum !== event.startDatum
                 ? `${parseIso(event.startDatum).toLocaleDateString('de-DE')} – ${parseIso(event.endDatum).toLocaleDateString('de-DE')}`
                 : parseIso(event.startDatum).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-              {event.uhrzeitVon && `, ${formatTime(event.uhrzeitVon)}${event.uhrzeitBis ? ` – ${formatTime(event.uhrzeitBis)}` : ''} Uhr`}
+              <T value={event.uhrzeitVon && `, ${formatTime(event.uhrzeitVon)}${event.uhrzeitBis ? ` – ${formatTime(event.uhrzeitBis)}` : ''} Uhr`} />
             </span>
           </div>
           {event.ort && (
@@ -155,11 +156,11 @@ function EventDetailModal({ event, onClose }: { event: KalenderTermin; onClose: 
 
         {event.abgesagt && (
           <div className="mt-4 rounded-lg border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-900/20 px-3 py-2 text-sm text-red-600 dark:text-red-400">
-            {event.istUnterricht ? 'Kein Unterricht' : 'Abgesagt'}{event.absageGrund ? `: ${event.absageGrund}` : ''}
+            <T value={event.istUnterricht ? 'Kein Unterricht' : 'Abgesagt'} />{event.absageGrund ? `: ${event.absageGrund}` : ''}
           </div>
         )}
         {event.generiert && (
-          <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">Regelmäßige Unterrichtsstunde (automatisch aus dem Gruppenplan)</p>
+          <p className="mt-4 text-xs text-gray-400 dark:text-gray-500"><T value={"Regelmäßige Unterrichtsstunde (automatisch aus dem Gruppenplan)"} /></p>
         )}
       </div>
     </div>
@@ -171,14 +172,14 @@ function EventDetailModal({ event, onClose }: { event: KalenderTermin; onClose: 
 function MonthEventChip({ event, onClick }: { event: KalenderTermin; onClick: () => void }) {
   const style = katStyle(event.kategorie)
   return (
-    <button
+    <L as="button"
       onClick={e => { e.stopPropagation(); onClick() }}
       className={`w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium transition hover:opacity-80 ${style.chip} ${event.abgesagt ? 'line-through opacity-60' : ''}`}
       title={event.titel}
     >
       {event.uhrzeitVon && <span className="font-mono opacity-70">{formatTime(event.uhrzeitVon)} </span>}
       {event.titel}
-    </button>
+    </L>
   )
 }
 
@@ -226,8 +227,7 @@ function MonthView({ cursor, events, today, onSelectDay, onSelectEvent }: {
                 ))}
                 {dayEvents.length > MAX_VISIBLE && (
                   <span className="px-1.5 text-[11px] font-medium text-gray-400 dark:text-gray-500">
-                    +{dayEvents.length - MAX_VISIBLE} weitere
-                  </span>
+                    +{dayEvents.length - MAX_VISIBLE}<T value={" weitere "} /></span>
                 )}
               </div>
             </div>
@@ -267,7 +267,7 @@ function TimeGrid({ days, events, today, onSelectEvent }: {
       {/* Ganztägige Termine */}
       {days.some(d => eventsOnDay(events, d).some(isAllDay)) && (
         <div className="grid border-b border-gray-200 dark:border-white/10" style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)` }}>
-          <div className="px-1.5 py-1.5 text-[10px] text-gray-400">ganztägig</div>
+          <div className="px-1.5 py-1.5 text-[10px] text-gray-400"><T value={"ganztägig"} /></div>
           {days.map((d, i) => (
             <div key={i} className="flex flex-col gap-1 border-l border-gray-100 dark:border-white/5 p-1">
               {eventsOnDay(events, d).filter(isAllDay).map(ev => {
@@ -315,7 +315,7 @@ function TimeGrid({ days, events, today, onSelectEvent }: {
                     className={`absolute left-0.5 right-0.5 overflow-hidden rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium shadow-sm transition hover:opacity-90 ${style.chip} ${ev.abgesagt ? 'line-through opacity-60' : ''}`}
                   >
                     <div className="truncate font-semibold">{ev.titel}</div>
-                    <div className="truncate opacity-80">{formatTime(ev.uhrzeitVon!)} Uhr</div>
+                    <div className="truncate opacity-80">{formatTime(ev.uhrzeitVon!)}<T value={" Uhr"} /></div>
                   </button>
                 )
               })}
@@ -335,7 +335,7 @@ function Legend() {
       {(Object.keys(KAT_STYLE) as Kategorie[]).map(k => (
         <span key={k} className="flex items-center gap-1.5">
           <span className={`h-2 w-2 rounded-full ${KAT_STYLE[k].dot}`} />
-          {KAT_STYLE[k].label}
+          <T value={KAT_STYLE[k].label} />
         </span>
       ))}
     </div>
@@ -399,7 +399,7 @@ export default function KalenderPage() {
     return `${WOCHENTAGE_LANG[(cursor.getDay() + 6) % 7]}, ${cursor.getDate()}. ${MONATE[cursor.getMonth()]} ${cursor.getFullYear()}`
   }, [view, cursor])
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>
   if (!user) return null
 
   return (
@@ -408,28 +408,24 @@ export default function KalenderPage() {
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-            <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition">Intern</Link>
+            <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition"><T value={"Intern"} /></Link>
             <span>/</span>
-            <span className="text-gray-500 dark:text-gray-300">Kalender</span>
+            <span className="text-gray-500 dark:text-gray-300"><T value={"Kalender"} /></span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Kalender</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Konzerte, Ausflüge, Unterricht & mehr auf einen Blick</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white"><T value={"Kalender"} /></h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400"><T value={"Konzerte, Ausflüge, Unterricht & mehr auf einen Blick"} /></p>
         </div>
         <a
           href={`${API_BASE}/api/kalender/ics?von=${von}&bis=${bis}`}
           className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:border-green-500/40 hover:text-green-500 dark:hover:text-green-400 transition"
         >
-          <DownloadIcon className="h-3.5 w-3.5" />
-          Kalender exportieren
-        </a>
+          <DownloadIcon className="h-3.5 w-3.5" /><T value={" Kalender exportieren "} /></a>
       </div>
 
       {/* Toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <button onClick={goToday} className="rounded-lg border border-gray-200 dark:border-white/10 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition">
-            Heute
-          </button>
+          <button onClick={goToday} className="rounded-lg border border-gray-200 dark:border-white/10 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition"><T value={" Heute "} /></button>
           <div className="flex items-center">
             <button onClick={goPrev} className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition"><ChevronIcon dir="left" /></button>
             <button onClick={goNext} className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition"><ChevronIcon dir="right" /></button>
@@ -455,7 +451,7 @@ export default function KalenderPage() {
       <div className="mb-4"><Legend /></div>
 
       {eventsLoading ? (
-        <div className="flex min-h-[300px] items-center justify-center text-sm text-gray-400">Lädt…</div>
+        <div className="flex min-h-[300px] items-center justify-center text-sm text-gray-400"><T value={"Lädt…"} /></div>
       ) : view === 'monat' ? (
         <MonthView
           cursor={cursor}

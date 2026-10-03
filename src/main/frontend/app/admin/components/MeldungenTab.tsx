@@ -1,4 +1,6 @@
 'use client'
+import { translateBrowserText } from '@/lib/i18n/browser'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 import { useEffect, useState } from 'react'
 import { ImageField } from './ImageField'
@@ -65,7 +67,7 @@ export default function MeldungenTab() {
   }
 
   const remove = (id: string) => {
-    if (!confirm('Meldung wirklich löschen?')) return
+    if (!confirm(translateBrowserText('Meldung wirklich löschen?'))) return
     setMeldungen(prev => prev.filter(m => m.id !== id))
   }
 
@@ -73,29 +75,23 @@ export default function MeldungenTab() {
     setMeldungen(prev => prev.map(m => ({ ...m, activeForBanner: m.id === id ? !m.activeForBanner : false })))
   }
 
-  if (loading) return <p className="text-gray-400 text-sm py-4">Lade Meldungen…</p>
+  if (loading) return <p className="text-gray-400 text-sm py-4"><T value={"Lade Meldungen…"} /></p>
 
   return (
     <div className="space-y-4">
       {/* Header + Add */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-gray-400">
-            Erstelle Info-Meldungen. Eine kann als Banner oben aktiviert werden – andere lassen sich mit abgesagten Terminen verknüpfen.
-          </p>
+          <p className="text-xs text-gray-400"><T value={" Erstelle Info-Meldungen. Eine kann als Banner oben aktiviert werden – andere lassen sich mit abgesagten Terminen verknüpfen. "} /></p>
         </div>
         <button onClick={addNew}
-          className="shrink-0 rounded-lg border border-dashed border-green-500/40 bg-green-900/10 px-3 py-1.5 text-xs text-green-400 hover:bg-green-900/20 transition">
-          + Neue Meldung
-        </button>
+          className="shrink-0 rounded-lg border border-dashed border-green-500/40 bg-green-900/10 px-3 py-1.5 text-xs text-green-400 hover:bg-green-900/20 transition"><T value={" + Neue Meldung "} /></button>
       </div>
 
       {meldungen.length === 0 && (
         <div className="rounded-xl border border-dashed border-white/10 py-10 text-center">
-          <p className="text-sm text-gray-500">Noch keine Meldungen.</p>
-          <button onClick={addNew} className="mt-3 text-sm text-green-400 hover:text-green-300 transition">
-            + Erste Meldung erstellen
-          </button>
+          <p className="text-sm text-gray-500"><T value={"Noch keine Meldungen."} /></p>
+          <button onClick={addNew} className="mt-3 text-sm text-green-400 hover:text-green-300 transition"><T value={" + Erste Meldung erstellen "} /></button>
         </div>
       )}
 
@@ -115,23 +111,23 @@ export default function MeldungenTab() {
           <div key={m.id} className={`rounded-xl border overflow-hidden transition ${sCfg.cardCls}`}>
             {/* Row header */}
             <div className="flex items-center gap-3 px-4 py-3">
-              <button onClick={() => toggleBanner(m.id)} title="Manuell als Banner aktivieren"
+              <L as="button" onClick={() => toggleBanner(m.id)} title="Manuell als Banner aktivieren"
                 className={`shrink-0 flex h-5 w-9 rounded-full transition ${status === 'manual-active' ? 'bg-amber-500' : 'bg-slate-700'}`}>
                 <div className={`m-0.5 h-4 w-4 rounded-full bg-white transition-transform ${status === 'manual-active' ? 'translate-x-4' : ''}`} />
-              </button>
+              </L>
               <span className={`h-2 w-2 rounded-full shrink-0 ${colorDot}`} />
               <span className="flex-1 truncate text-sm font-medium text-white">
-                {m.title || <span className="text-gray-500 italic">Ohne Titel</span>}
+                {m.title || <span className="text-gray-500 italic"><T value={"Ohne Titel"} /></span>}
               </span>
               {sCfg.label && (
                 <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold shrink-0 ${sCfg.cls}`}>
-                  {sCfg.label}
+                  <T value={sCfg.label} />
                 </span>
               )}
               <div className="flex gap-1.5 shrink-0">
                 <button onClick={() => setExpanded(isOpen ? null : m.id)}
                   className="rounded px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition">
-                  {isOpen ? '▲ Einklappen' : '▼ Bearbeiten'}
+                  <T value={isOpen ? '▲ Einklappen' : '▼ Bearbeiten'} />
                 </button>
                 <button onClick={() => remove(m.id)}
                   className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">✕</button>
@@ -143,13 +139,13 @@ export default function MeldungenTab() {
               <div className="border-t border-white/10 p-4 flex flex-col gap-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs text-gray-400">Titel <span className="text-gray-600">(nur intern – zur Unterscheidung)</span></label>
-                    <input value={m.title} onChange={e => update(m.id, { title: e.target.value })}
+                    <label className="mb-1 block text-xs text-gray-400"><T value={"Titel "} /><span className="text-gray-600"><T value={"(nur intern – zur Unterscheidung)"} /></span></label>
+                    <L as="input" value={m.title} onChange={e => update(m.id, { title: e.target.value })}
                       placeholder="z.B. Sommerkonzert 2026 abgesagt"
                       className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-gray-400">Farbe</label>
+                    <label className="mb-1 block text-xs text-gray-400"><T value={"Farbe"} /></label>
                     <div className="flex gap-2 pt-0.5">
                       {(Object.entries(MELDUNG_STYLE_COLORS) as [string, { label: string; dot: string }][]).map(([v, c]) => (
                         <button key={v} onClick={() => update(m.id, { style: v as MeldungItem['style'] })}
@@ -157,52 +153,49 @@ export default function MeldungenTab() {
                             m.style === v ? 'border-green-500/40 bg-green-900/30 text-green-400' : 'border-white/10 bg-slate-800 text-gray-400 hover:text-white'
                           }`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
-                          {c.label}
+                          <T value={c.label} />
                         </button>
                       ))}
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-gray-400">Kurztext <span className="text-gray-600">(im Banner + Popup-Header)</span></label>
-                  <input value={m.text} onChange={e => update(m.id, { text: e.target.value })}
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Kurztext "} /><span className="text-gray-600"><T value={"(im Banner + Popup-Header)"} /></span></label>
+                  <L as="input" value={m.text} onChange={e => update(m.id, { text: e.target.value })}
                     placeholder="z.B. Das Sommerkonzert 2026 fällt leider aus."
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-gray-400">Beitragstext <span className="text-gray-600">(optional – erscheint im Popup)</span></label>
-                  <textarea value={m.body} onChange={e => update(m.id, { body: e.target.value })}
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Beitragstext "} /><span className="text-gray-600"><T value={"(optional – erscheint im Popup)"} /></span></label>
+                  <L as="textarea" value={m.body} onChange={e => update(m.id, { body: e.target.value })}
                     rows={4} placeholder="Ausführliche Infos, Hintergründe, Alternativen..."
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white resize-y focus:border-green-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-gray-400">Bild im Popup <span className="text-gray-600">(optional – erscheint über dem Text)</span></label>
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Bild im Popup "} /><span className="text-gray-600"><T value={"(optional – erscheint über dem Text)"} /></span></label>
                   <ImageField label="" value={m.imageUrl ?? ''} onChange={v => update(m.id, { imageUrl: v })} />
                 </div>
                 {/* Zeitplan */}
                 <div className="rounded-lg border border-white/8 bg-slate-800/50 p-3 flex flex-col gap-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                    🗓 Zeitplan <span className="normal-case font-normal text-gray-600">(optional – Banner erscheint automatisch im angegebenen Zeitraum)</span>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={" 🗓 Zeitplan "} /><span className="normal-case font-normal text-gray-600"><T value={"(optional – Banner erscheint automatisch im angegebenen Zeitraum)"} /></span>
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="mb-1 block text-xs text-gray-400">Von</label>
-                      <input type="text" value={m.validFrom ?? ''} onChange={e => update(m.id, { validFrom: e.target.value || undefined })}
+                      <label className="mb-1 block text-xs text-gray-400"><T value={"Von"} /></label>
+                      <L as="input" type="text" value={m.validFrom ?? ''} onChange={e => update(m.id, { validFrom: e.target.value || undefined })}
                         placeholder="dd.MM.yyyy"
                         className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none" />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs text-gray-400">Bis (inkl.)</label>
-                      <input type="text" value={m.validUntil ?? ''} onChange={e => update(m.id, { validUntil: e.target.value || undefined })}
+                      <label className="mb-1 block text-xs text-gray-400"><T value={"Bis (inkl.)"} /></label>
+                      <L as="input" type="text" value={m.validUntil ?? ''} onChange={e => update(m.id, { validUntil: e.target.value || undefined })}
                         placeholder="dd.MM.yyyy"
                         className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none" />
                     </div>
                   </div>
                   {(m.validFrom || m.validUntil) && (
                     <button onClick={() => update(m.id, { validFrom: undefined, validUntil: undefined, activeForBanner: false })}
-                      className="self-start text-[11px] text-red-400/70 hover:text-red-400 transition">
-                      ✕ Zeitplan entfernen
-                    </button>
+                      className="self-start text-[11px] text-red-400/70 hover:text-red-400 transition"><T value={" ✕ Zeitplan entfernen "} /></button>
                   )}
                 </div>
 
@@ -212,7 +205,7 @@ export default function MeldungenTab() {
                       className={`relative h-5 w-9 rounded-full transition ${m.activeForBanner && !m.validFrom && !m.validUntil ? 'bg-amber-500' : 'bg-slate-700'}`}>
                       <div className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${m.activeForBanner && !m.validFrom && !m.validUntil ? 'translate-x-4' : ''}`} />
                     </div>
-                    <span className="text-xs text-gray-400">Manuell als Banner aktivieren <span className="text-gray-600">(deaktiviert andere; wird durch Zeitplan überschrieben)</span></span>
+                    <span className="text-xs text-gray-400"><T value={"Manuell als Banner aktivieren "} /><span className="text-gray-600"><T value={"(deaktiviert andere; wird durch Zeitplan überschrieben)"} /></span></span>
                   </label>
                   <p className="ml-auto text-[10px] text-gray-600 font-mono truncate">ID: {m.id.slice(0, 8)}…</p>
                 </div>
@@ -225,7 +218,7 @@ export default function MeldungenTab() {
       {meldungen.length > 0 && (
         <button onClick={() => save(meldungen)} disabled={saving}
           className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-          {saving ? 'Speichert…' : saved ? '✓ Gespeichert!' : '✓ Alle Meldungen speichern'}
+          <T value={saving ? 'Speichert…' : saved ? '✓ Gespeichert!' : '✓ Alle Meldungen speichern'} />
         </button>
       )}
     </div>

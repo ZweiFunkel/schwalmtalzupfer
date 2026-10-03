@@ -1,4 +1,6 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
+import { L } from '@/lib/i18n/LanguageProvider'
 
 import React, { useState } from 'react'
 import { PersonGridContent, Person } from '@/types/page'
@@ -18,13 +20,13 @@ function PersonAvatar({ person, onClick }: { person: Person; onClick?: () => voi
   }
 
   return (
-    <div
+    <L as="div"
       className="mb-6 h-40 w-40 overflow-hidden rounded-full ring-4 ring-green-500/60 relative flex-shrink-0 cursor-zoom-in transition hover:ring-green-400 hover:scale-105"
       onClick={onClick}
       title="Klicken zum Vergrößern"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <L as="img"
         src={person.imageUrl}
         alt={person.name}
         style={{
@@ -33,7 +35,7 @@ function PersonAvatar({ person, onClick }: { person: Person; onClick?: () => voi
           transformOrigin: 'center',
         }}
       />
-    </div>
+    </L>
   )
 }
 
@@ -44,7 +46,7 @@ export default function PersonGridSection({ content }: { content: PersonGridCont
     <section className="bg-gray-50 dark:bg-slate-900 py-24">
       <div className="mx-auto max-w-7xl px-6">
         {content.heading && (
-          <h2 className="mb-4 text-center text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
+          <h2 className="mb-4 text-center text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>
         )}
         {/* Musical staff decoration */}
         <div className="mx-auto mb-14 flex max-w-xs items-center gap-0.5">

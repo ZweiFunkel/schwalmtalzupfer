@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 
 import React from 'react'
 import { ActivityGridContent, ActivityItem, ActivityAccent } from '@/types/page'
@@ -25,7 +26,7 @@ function ActivityCard({ item }: { item: ActivityItem }) {
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h3 className={`text-lg font-bold leading-snug ${c.heading}`}>{item.title}</h3>
+          <h3 className={`text-lg font-bold leading-snug ${c.heading}`}><T value={item.title} /></h3>
           {item.targetGroup && (
             <span className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${c.badge}`}>
               👥 {item.targetGroup}
@@ -53,9 +54,9 @@ export default function ActivityGridSection({ content }: { content: ActivityGrid
               <div className="mb-4">
                 <div className="mb-3 flex items-center gap-3">
                   <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Vereinsleben</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Vereinsleben"} /></span>
                 </div>
-                <h2 className="text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
+                <h2 className="text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>
               </div>
             )}
             {content.intro && (
@@ -68,7 +69,7 @@ export default function ActivityGridSection({ content }: { content: ActivityGrid
 
         {/* Cards */}
         {items.length === 0 && (
-          <p className="text-gray-400 italic">Keine Aktivitäten eingetragen.</p>
+          <p className="text-gray-400 italic"><T value={"Keine Aktivitäten eingetragen."} /></p>
         )}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item, i) => (

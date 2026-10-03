@@ -1,3 +1,4 @@
+import { T } from '@/lib/i18n/LanguageProvider'
 import React from 'react'
 import { ChoirListContent, ChoirVoice } from '@/types/page'
 
@@ -19,13 +20,13 @@ export default function ChoirListSection({ content }: { content: ChoirListConten
         <div className="mb-14 text-center">
           <div className="mb-3 flex items-center justify-center gap-3">
             <span className="h-px w-16 bg-green-500/50 rounded-full" />
-            <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Chor</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Chor"} /></span>
             <span className="h-px w-16 bg-green-500/50 rounded-full" />
           </div>
-          {content.heading && <h2 className="text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>}
+          {content.heading && <h2 className="text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>}
           {content.conductor && (
             <div className="mt-5 inline-flex items-center gap-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-slate-800/60 px-5 py-2.5">
-              <span className="text-gray-500 dark:text-gray-400 text-sm">Leitung</span>
+              <span className="text-gray-500 dark:text-gray-400 text-sm"><T value={"Leitung"} /></span>
               <span className="h-3 w-px bg-gray-300 dark:bg-white/20" />
               <span className="font-bold text-gray-900 dark:text-white">{content.conductor}</span>
             </div>

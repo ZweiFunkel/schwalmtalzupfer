@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 
 import React, { useEffect } from 'react'
 
@@ -39,13 +40,13 @@ export default function Lightbox({ src, alt, onClose, images, index, onPrev, onN
       onClick={onClose}
     >
       {/* Close button */}
-      <button
+      <L as="button"
         onClick={onClose}
         className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition text-xl z-10"
         aria-label="Schließen"
       >
         ✕
-      </button>
+      </L>
 
       {/* Counter */}
       {hasNav && (
@@ -56,7 +57,7 @@ export default function Lightbox({ src, alt, onClose, images, index, onPrev, onN
 
       {/* Prev arrow */}
       {hasNav && (
-        <button
+        <L as="button"
           onClick={e => { e.stopPropagation(); onPrev!() }}
           disabled={isFirst}
           className="absolute left-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition disabled:opacity-20 disabled:cursor-default z-10"
@@ -65,12 +66,12 @@ export default function Lightbox({ src, alt, onClose, images, index, onPrev, onN
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-        </button>
+        </L>
       )}
 
       {/* Next arrow */}
       {hasNav && (
-        <button
+        <L as="button"
           onClick={e => { e.stopPropagation(); onNext!() }}
           disabled={isLast}
           className="absolute right-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition disabled:opacity-20 disabled:cursor-default z-10"
@@ -79,7 +80,7 @@ export default function Lightbox({ src, alt, onClose, images, index, onPrev, onN
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
-        </button>
+        </L>
       )}
 
       {/* Image */}
@@ -88,7 +89,7 @@ export default function Lightbox({ src, alt, onClose, images, index, onPrev, onN
         onClick={e => e.stopPropagation()}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <L as="img"
           src={src}
           alt={alt}
           className="block max-h-[90vh] max-w-[90vw] object-contain"
@@ -101,7 +102,7 @@ export default function Lightbox({ src, alt, onClose, images, index, onPrev, onN
         )}
       </div>
 
-      <p className="absolute bottom-4 text-xs text-gray-500">ESC · ← →</p>
+      <p className="absolute bottom-4 text-xs text-gray-500"><T value={"ESC · ← →"} /></p>
     </div>
   )
 }

@@ -1,9 +1,12 @@
 'use client'
+import { translateBrowserText } from '@/lib/i18n/browser'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth, isAdmin, isBoard, isChef } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
+import TranslationEditor from './components/TranslationEditor'
 import KalenderTab from './components/KalenderTab'
 import AssetsTab from './components/AssetsTab'
 import VideosTab from './components/VideosTab'
@@ -60,8 +63,8 @@ function sectionTypeInfo(type: string) {
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div>
-      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</label>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={label} /></label>
+      <L as="input" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none" />
     </div>
   )
@@ -72,8 +75,8 @@ function SectionHeader({ icon, title, desc }: { icon: string; title: string; des
     <div className="flex items-center gap-3 pb-4 border-b border-white/8">
       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-xl shrink-0">{icon}</div>
       <div>
-        <h2 className="text-base font-bold text-white leading-none">{title}</h2>
-        {desc && <p className="mt-0.5 text-xs text-gray-500">{desc}</p>}
+        <h2 className="text-base font-bold text-white leading-none"><T value={title} /></h2>
+        {desc && <p className="mt-0.5 text-xs text-gray-500"><T value={desc} /></p>}
       </div>
     </div>
   )
@@ -115,14 +118,14 @@ function HeroForm({ content, onChange }: { content: Record<string, unknown>; onC
           onChange={e => set('parallax', e.target.checked)}
           className="h-4 w-4 accent-green-500 rounded"
         />
-        <span className="text-sm text-gray-300">Parallax-Scrolleffekt</span>
-        <span className="text-xs text-gray-500">(Bild bewegt sich langsamer als der Inhalt)</span>
+        <span className="text-sm text-gray-300"><T value={"Parallax-Scrolleffekt"} /></span>
+        <span className="text-xs text-gray-500"><T value={"(Bild bewegt sich langsamer als der Inhalt)"} /></span>
       </label>
 
       {/* Zoom */}
       <div>
         <label className="mb-1 block text-xs text-gray-400">
-          Zoom: <span className="text-white font-semibold">{zoomLabel}</span>
+          Zoom: <span className="text-white font-semibold"><T value={zoomLabel} /></span>
           <span className="ml-2 text-gray-500">({imageZoom.toFixed(1)}×)</span>
         </label>
         <input
@@ -132,17 +135,17 @@ function HeroForm({ content, onChange }: { content: Record<string, unknown>; onC
           className="w-full accent-green-500"
         />
         <div className="flex justify-between text-xs text-gray-600 mt-0.5">
-          <span>Standard</span>
-          <span>Sehr nah</span>
+          <span><T value={"Standard"} /></span>
+          <span><T value={"Sehr nah"} /></span>
         </div>
       </div>
 
       {/* Fokuspunkt */}
       <div>
-        <label className="mb-1.5 block text-xs text-gray-400">Fokuspunkt</label>
+        <label className="mb-1.5 block text-xs text-gray-400"><T value={"Fokuspunkt"} /></label>
         <div className="inline-grid grid-cols-3 gap-1">
           {POSITION_GRID.flat().map(pos => (
-            <button
+            <L as="button"
               key={pos} type="button"
               onClick={() => set('imagePosition', pos)}
               title={pos}
@@ -151,7 +154,7 @@ function HeroForm({ content, onChange }: { content: Record<string, unknown>; onC
                   ? 'border-green-500 bg-green-500/20 text-green-400'
                   : 'border-white/10 bg-slate-800 text-gray-400 hover:border-white/20 hover:text-white'
               }`}
-            >{POSITION_LABELS[pos]}</button>
+            >{POSITION_LABELS[pos]}</L>
           ))}
         </div>
         <p className="mt-1 text-xs text-gray-600">Aktuell: <span className="text-gray-400">{imagePosition}</span></p>
@@ -161,7 +164,7 @@ function HeroForm({ content, onChange }: { content: Record<string, unknown>; onC
       <div>
         <label className="mb-1 block text-xs text-gray-400">
           Bild-Abdunkelung: <span className="text-white font-semibold">{Math.round(overlayOpacity * 100)} %</span>
-          <span className="ml-2 text-gray-500">(0 % = kein Overlay, 100 % = komplett schwarz)</span>
+          <span className="ml-2 text-gray-500"><T value={"(0 % = kein Overlay, 100 % = komplett schwarz)"} /></span>
         </label>
         <input
           type="range" min={0} max={1} step={0.05}
@@ -170,8 +173,8 @@ function HeroForm({ content, onChange }: { content: Record<string, unknown>; onC
           className="w-full accent-green-500"
         />
         <div className="flex justify-between text-xs text-gray-600 mt-0.5">
-          <span>hell (0 %)</span>
-          <span>dunkel (100 %)</span>
+          <span><T value={"hell (0 %)"} /></span>
+          <span><T value={"dunkel (100 %)"} /></span>
         </div>
       </div>
     </div>
@@ -184,13 +187,11 @@ function TextBlockForm({ content, onChange }: { content: Record<string, unknown>
     <div className="flex flex-col gap-3">
       <Field label="Überschrift" value={String(content.heading ?? '')} onChange={v => set('heading', v)} />
       <div>
-        <label className="mb-1 block text-xs text-gray-400">Inhalt (Markdown)</label>
+        <label className="mb-1 block text-xs text-gray-400"><T value={"Inhalt (Markdown)"} /></label>
         <textarea value={String(content.markdown ?? '')} onChange={e => set('markdown', e.target.value)} rows={6}
           className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
       </div>
-      <p className="text-xs text-gray-500">
-        Willst du ein Bild neben dem Text? Nutze stattdessen den Baustein "Bild &amp; Text".
-      </p>
+      <p className="text-xs text-gray-500"><T value={" Willst du ein Bild neben dem Text? Nutze stattdessen den Baustein \"Bild & Text\". "} /></p>
     </div>
   )
 }
@@ -210,10 +211,10 @@ function EventCardForm({ content, onChange }: { content: Record<string, unknown>
         <div key={i} className={`rounded-lg border p-3 flex flex-col gap-2 ${ev.cancelled ? 'border-red-500/30 bg-red-900/10' : 'border-white/10 bg-slate-900'}`}>
           <div className="flex justify-between items-center mb-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-300">Event {i + 1}</span>
-              {ev.cancelled && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400 font-semibold">ABGESAGT</span>}
+              <span className="text-xs font-bold text-gray-300"><T value={"Event "} />{i + 1}</span>
+              {ev.cancelled && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400 font-semibold"><T value={"ABGESAGT"} /></span>}
             </div>
-            <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕ Entfernen</button>
+            <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300"><T value={"✕ Entfernen"} /></button>
           </div>
           <Field label="Titel" value={ev.title} onChange={v => update(i, 'title', v)} />
           <Field label="Datum" value={ev.date} onChange={v => update(i, 'date', v)} />
@@ -223,12 +224,12 @@ function EventCardForm({ content, onChange }: { content: Record<string, unknown>
           <div className={`rounded-lg border p-3 flex flex-col gap-2 ${ev.cancelled ? 'border-red-500/20 bg-red-900/10' : 'border-white/5 bg-slate-800/40'}`}>
             <label className="flex cursor-pointer items-center gap-2">
               <input type="checkbox" checked={ev.cancelled ?? false} onChange={e => update(i, 'cancelled', e.target.checked)} className="h-4 w-4 accent-red-500 rounded" />
-              <span className="text-sm font-medium text-red-400">Veranstaltung absagen</span>
+              <span className="text-sm font-medium text-red-400"><T value={"Veranstaltung absagen"} /></span>
             </label>
             {ev.cancelled && (
               <div>
-                <label className="mb-1 block text-xs text-gray-400">Absagegrund (optional, wird Besuchern angezeigt)</label>
-                <input
+                <label className="mb-1 block text-xs text-gray-400"><T value={"Absagegrund (optional, wird Besuchern angezeigt)"} /></label>
+                <L as="input"
                   value={ev.cancellationNote ?? ''}
                   onChange={e => update(i, 'cancellationNote', e.target.value)}
                   placeholder="z.B. Aufgrund der Hitzewelle muss das Konzert leider entfallen."
@@ -239,9 +240,7 @@ function EventCardForm({ content, onChange }: { content: Record<string, unknown>
           </div>
         </div>
       ))}
-      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + Event hinzufügen
-      </button>
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition"><T value={" + Event hinzufügen "} /></button>
     </div>
   )
 }
@@ -281,10 +280,10 @@ function ImageCropModal({ imageUrl, zoom, x, y, onSave, onClose }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900 shadow-2xl p-6 flex flex-col gap-5">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-white">🖼 Bild anpassen</h3>
+          <h3 className="font-bold text-white"><T value={"🖼 Bild anpassen"} /></h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-lg">✕</button>
         </div>
-        <p className="text-xs text-gray-400">Ziehen zum Verschieben · Scrollen oder Slider zum Zoomen</p>
+        <p className="text-xs text-gray-400"><T value={"Ziehen zum Verschieben · Scrollen oder Slider zum Zoomen"} /></p>
 
         {/* Circular preview */}
         <div className="flex justify-center">
@@ -297,7 +296,7 @@ function ImageCropModal({ imageUrl, zoom, x, y, onSave, onClose }: {
             onWheel={onWheel}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <L as="img"
               src={imageUrl}
               alt="Vorschau"
               draggable={false}
@@ -326,13 +325,9 @@ function ImageCropModal({ imageUrl, zoom, x, y, onSave, onClose }: {
 
         <div className="flex gap-2">
           <button onClick={() => { setCurZoom(1); setCurX(0); setCurY(0) }}
-            className="rounded-lg border border-white/10 px-3 py-2 text-xs text-gray-400 hover:text-white transition">
-            Zurücksetzen
-          </button>
+            className="rounded-lg border border-white/10 px-3 py-2 text-xs text-gray-400 hover:text-white transition"><T value={" Zurücksetzen "} /></button>
           <button onClick={() => onSave(curZoom, curX, curY)}
-            className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">
-            ✓ Übernehmen
-          </button>
+            className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition"><T value={" ✓ Übernehmen "} /></button>
         </div>
       </div>
     </div>
@@ -360,7 +355,7 @@ function PersonRolesEditor({ roles, onChange }: { roles: string[]; onChange: (r:
   }
   return (
     <div>
-      <label className="mb-1 block text-xs text-gray-400">Rollen / Funktionen</label>
+      <label className="mb-1 block text-xs text-gray-400"><T value={"Rollen / Funktionen"} /></label>
       <div className="flex flex-wrap gap-1.5 mb-2">
         {roles.map((r, i) => (
           <span key={i} className="flex items-center gap-1 rounded-full bg-green-900/40 border border-green-500/30 px-2.5 py-0.5 text-xs text-green-400">
@@ -368,14 +363,14 @@ function PersonRolesEditor({ roles, onChange }: { roles: string[]; onChange: (r:
             <button onClick={() => onChange(roles.filter((_, idx) => idx !== i))} className="text-green-600 hover:text-red-400 ml-0.5">✕</button>
           </span>
         ))}
-        {roles.length === 0 && <span className="text-xs text-gray-500">Noch keine Rollen</span>}
+        {roles.length === 0 && <span className="text-xs text-gray-500"><T value={"Noch keine Rollen"} /></span>}
       </div>
       <div className="flex gap-2">
-        <input value={input} onChange={e => setInput(e.target.value)}
+        <L as="input" value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add() } }}
           placeholder="Neue Rolle eingeben…"
           className="flex-1 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-green-500 focus:outline-none" />
-        <button onClick={add} className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition">+ Hinzufügen</button>
+        <button onClick={add} className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition"><T value={"+ Hinzufügen"} /></button>
       </div>
     </div>
   )
@@ -413,7 +408,7 @@ function PersonRosterForm({
           <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-3">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-300">{itemLabel} {i + 1}</span>
-              <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕ Entfernen</button>
+              <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300"><T value={"✕ Entfernen"} /></button>
             </div>
             <Field label="Name" value={p.name} onChange={v => updatePerson(i, { name: v })} />
             <PersonRolesEditor roles={roles} onChange={r => updatePerson(i, { roles: r, role: undefined })} />
@@ -426,12 +421,12 @@ function PersonRosterForm({
 
             {/* Image + crop */}
             <div>
-              <label className="mb-1 block text-xs text-gray-400">Foto</label>
+              <label className="mb-1 block text-xs text-gray-400"><T value={"Foto"} /></label>
               <div className="flex gap-3 items-start">
                 <div className={`${avatarSizeClass} flex-shrink-0 overflow-hidden rounded-full ring-2 ${ringColorClass} relative bg-slate-800`}>
                   {p.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.imageUrl} alt={p.name} style={{
+                    <L as="img" src={p.imageUrl} alt={p.name} style={{
                       position: 'absolute', width: '100%', height: '100%', objectFit: 'cover',
                       transform: `scale(${p.imageZoom ?? 1}) translate(${p.imageX ?? 0}px, ${p.imageY ?? 0}px)`,
                       transformOrigin: 'center',
@@ -444,7 +439,7 @@ function PersonRosterForm({
                 </div>
                 <div className="flex flex-1 flex-col gap-2">
                   <div className="flex gap-2">
-                    <input value={p.imageUrl ?? ''} onChange={e => updatePerson(i, { imageUrl: e.target.value })}
+                    <L as="input" value={p.imageUrl ?? ''} onChange={e => updatePerson(i, { imageUrl: e.target.value })}
                       placeholder="Bild-URL"
                       className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-xs text-white focus:border-green-500 focus:outline-none" />
                     <button type="button" onClick={() => setPickerIdx(i)}
@@ -454,9 +449,7 @@ function PersonRosterForm({
                   </div>
                   {p.imageUrl && (
                     <button onClick={() => setCropIdx(i)}
-                      className={`rounded-lg border px-3 py-1.5 text-xs transition text-left ${cropAccentClass}`}>
-                      ✂ Bild zoomen &amp; ausrichten
-                    </button>
+                      className={`rounded-lg border px-3 py-1.5 text-xs transition text-left ${cropAccentClass}`}><T value={" ✂ Bild zoomen & ausrichten "} /></button>
                   )}
                 </div>
               </div>
@@ -465,8 +458,7 @@ function PersonRosterForm({
         )
       })}
       <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + {itemLabel} hinzufügen
-      </button>
+        + {itemLabel}<T value={" hinzufügen "} /></button>
       {cropIdx !== null && persons[cropIdx]?.imageUrl && (
         <ImageCropModal
           imageUrl={persons[cropIdx].imageUrl!}
@@ -501,11 +493,11 @@ function NextConcertForm({ content, onChange }: { content: Record<string, unknow
   const remove = (i: number) => onChange({ ...content, events: events.filter((_, idx) => idx !== i) })
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs text-gray-400">Das nächste zukünftige Event aus dieser Liste wird automatisch angezeigt. Ist keines mehr aktuell, erscheint ein Hinweis.</p>
+      <p className="text-xs text-gray-400"><T value={"Das nächste zukünftige Event aus dieser Liste wird automatisch angezeigt. Ist keines mehr aktuell, erscheint ein Hinweis."} /></p>
       {events.map((ev, i) => (
         <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-2">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-xs font-bold text-gray-300">Konzert {i + 1}</span>
+            <span className="text-xs font-bold text-gray-300"><T value={"Konzert "} />{i + 1}</span>
             <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕</button>
           </div>
           <Field label="Titel" value={ev.title} onChange={v => update(i, 'title', v)} />
@@ -514,9 +506,7 @@ function NextConcertForm({ content, onChange }: { content: Record<string, unknow
           <Field label="Beschreibung" value={ev.description} onChange={v => update(i, 'description', v)} />
         </div>
       ))}
-      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + Konzert hinzufügen
-      </button>
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition"><T value={" + Konzert hinzufügen "} /></button>
     </div>
   )
 }
@@ -559,15 +549,13 @@ function ChoirListForm({ content, onChange }: { content: Record<string, unknown>
             <button onClick={() => removeVoice(i)} className="ml-2 text-xs text-red-400 hover:text-red-300 mt-4">✕</button>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Mitglieder (je Zeile ein Name)</label>
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Mitglieder (je Zeile ein Name)"} /></label>
             <textarea value={v.members.join('\n')} onChange={e => updateMembers(i, e.target.value)} rows={4}
               className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
           </div>
         </div>
       ))}
-      <button type="button" onClick={addVoice} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + Stimmlage hinzufügen
-      </button>
+      <button type="button" onClick={addVoice} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition"><T value={" + Stimmlage hinzufügen "} /></button>
     </div>
   )
 }
@@ -674,7 +662,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
     setExpanded(prev => new Set([...prev, newKey]))
   }
   const remove = (key: string) => {
-    if (!confirm('Termin wirklich löschen?')) return
+    if (!confirm(translateBrowserText('Termin wirklich löschen?'))) return
     onChange({ ...content, termine: termine.filter(t => t._key !== key) })
     setExpanded(prev => { const s = new Set(prev); s.delete(key); return s })
   }
@@ -707,12 +695,12 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
         <div className="flex items-center gap-3 px-3 py-2.5 cursor-pointer select-none" onClick={() => toggleExpanded(key)}>
           <span className="text-base shrink-0">{KAT_ICONS[t.kategorie] ?? '📅'}</span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{t.title || <span className="italic text-gray-500">Ohne Titel</span>}</p>
+            <p className="text-sm font-semibold text-white truncate">{t.title || <span className="italic text-gray-500"><T value={"Ohne Titel"} /></span>}</p>
             {t.date && <p className="text-[11px] text-gray-500 font-mono mt-0.5">{t.date}</p>}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {t.cancelled && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] text-red-400 font-bold uppercase">Abgesagt</span>}
-            {past && !t.cancelled && <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-gray-600">Vergangen</span>}
+            {t.cancelled && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] text-red-400 font-bold uppercase"><T value={"Abgesagt"} /></span>}
+            {past && !t.cancelled && <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-gray-600"><T value={"Vergangen"} /></span>}
             <span className="text-gray-600 text-xs">{isOpen ? '▲' : '▼'}</span>
           </div>
         </div>
@@ -724,19 +712,19 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
 
             {/* Von / Bis — sort triggers on blur */}
             <div className="rounded-lg border border-white/8 bg-slate-800/50 p-3 flex flex-col gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">📅 Datum</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={"📅 Datum"} /></p>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-xs text-gray-400">Von <span className="text-gray-600">(Pflichtfeld)</span></label>
-                  <input value={dateFrom}
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Von "} /><span className="text-gray-600"><T value={"(Pflichtfeld)"} /></span></label>
+                  <L as="input" value={dateFrom}
                     onChange={e => updateNoSort(key, { date: joinDate(e.target.value, dateTo) })}
                     onBlur={sortNow}
                     placeholder="dd.MM.yyyy"
                     className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white font-mono placeholder-gray-600 focus:border-green-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-gray-400">Bis <span className="text-gray-600">(optional)</span></label>
-                  <input value={dateTo}
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Bis "} /><span className="text-gray-600"><T value={"(optional)"} /></span></label>
+                  <L as="input" value={dateTo}
                     onChange={e => updateNoSort(key, { date: joinDate(dateFrom, e.target.value) })}
                     onBlur={sortNow}
                     placeholder="dd.MM.yyyy"
@@ -747,11 +735,9 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
 
             {/* Uhrzeit(en) */}
             <div>
-              <label className="mb-1 block text-xs text-gray-400">
-                🕐 Uhrzeit(en)
-                <span className="ml-1 text-gray-600">(mehrere Zeilen für mehrere Tage/Zeiten)</span>
+              <label className="mb-1 block text-xs text-gray-400"><T value={" 🕐 Uhrzeit(en) "} /><span className="ml-1 text-gray-600"><T value={"(mehrere Zeilen für mehrere Tage/Zeiten)"} /></span>
               </label>
-              <textarea value={t.time ?? ''} onChange={e => update(key, { time: e.target.value })} rows={2}
+              <L as="textarea" value={t.time ?? ''} onChange={e => update(key, { time: e.target.value })} rows={2}
                 placeholder={'19:00\noder:\nFr: 17:00\nSa: 10:00 – 17:00\nSo: 11:00'}
                 className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
             </div>
@@ -762,14 +748,14 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
             {/* Parkplätze */}
             <div>
               <div className="mb-1 flex items-center justify-between">
-                <label className="text-xs text-gray-400">🅿️ Parkplätze</label>
-                <button onClick={() => addParking(key)} className="text-xs text-green-400 hover:text-green-300 transition">+ hinzufügen</button>
+                <label className="text-xs text-gray-400"><T value={"🅿️ Parkplätze"} /></label>
+                <button onClick={() => addParking(key)} className="text-xs text-green-400 hover:text-green-300 transition"><T value={"+ hinzufügen"} /></button>
               </div>
               {(t.parking ?? []).map((p, pi) => (
                 <div key={pi} className="flex gap-2 mb-1 items-center">
-                  <input value={p.name ?? ''} onChange={e => updateParking(key, pi, { name: e.target.value })} placeholder="Name"
+                  <L as="input" value={p.name ?? ''} onChange={e => updateParking(key, pi, { name: e.target.value })} placeholder="Name"
                     className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none" />
-                  <input value={p.mapUrl} onChange={e => updateParking(key, pi, { mapUrl: e.target.value })} placeholder="Maps-Link"
+                  <L as="input" value={p.mapUrl} onChange={e => updateParking(key, pi, { mapUrl: e.target.value })} placeholder="Maps-Link"
                     className="flex-[2] rounded-lg border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white font-mono placeholder-gray-600 focus:border-green-500 focus:outline-none" />
                   <button onClick={() => removeParking(key, pi)} className="text-xs text-red-400 hover:text-red-300 px-1">✕</button>
                 </div>
@@ -779,14 +765,14 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
             <Field label="Kurze Notiz (1 Zeile)" value={t.note ?? ''} onChange={v => update(key, { note: v })} placeholder="z.B. Eintritt frei!" />
 
             <div>
-              <label className="mb-1 block text-xs text-gray-400">Weitere Infos (mehrzeilig)</label>
-              <textarea value={t.details ?? ''} onChange={e => update(key, { details: e.target.value })} rows={3} placeholder="Zusätzliche Infos, Hinweise, Programmablauf..."
+              <label className="mb-1 block text-xs text-gray-400"><T value={"Weitere Infos (mehrzeilig)"} /></label>
+              <L as="textarea" value={t.details ?? ''} onChange={e => update(key, { details: e.target.value })} rows={3} placeholder="Zusätzliche Infos, Hinweise, Programmablauf..."
                 className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
             </div>
 
             {/* Tickets */}
             <div className="rounded-lg border border-white/8 bg-slate-800/50 p-3 flex flex-col gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">🎟️ Ticket-Infos (optional)</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={"🎟️ Ticket-Infos (optional)"} /></p>
               <div className="flex gap-2">
                 <div className="flex-1"><Field label="Preis Erwachsene" value={t.tickets?.priceAdults ?? ''} onChange={v => updateTickets(key, { priceAdults: v })} placeholder="12 €" /></div>
                 <div className="flex-1"><Field label="Preis Kinder" value={t.tickets?.priceChildren ?? ''} onChange={v => updateTickets(key, { priceChildren: v })} placeholder="5 € / frei bis 12 J." /></div>
@@ -797,7 +783,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
 
             {/* Kategorie */}
             <div>
-              <label className="mb-1 block text-xs text-gray-400">Kategorie</label>
+              <label className="mb-1 block text-xs text-gray-400"><T value={"Kategorie"} /></label>
               <div className="flex gap-2 flex-wrap">
                 {KATEGORIEN.map(k => (
                   <button key={k} type="button" onClick={() => update(key, { kategorie: k })}
@@ -810,19 +796,17 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
 
             {/* Archivierung */}
             <div className="rounded-lg border border-white/5 bg-slate-800/40 p-3 flex flex-col gap-1.5">
-              <label className="mb-0.5 block text-xs text-gray-400 font-medium">
-                Nicht mehr anzeigen ab
-                <span className="ml-1 font-normal text-gray-600">(optional – versteckt in Konzert- & Next-Ansicht, bleibt im Kalender)</span>
+              <label className="mb-0.5 block text-xs text-gray-400 font-medium"><T value={" Nicht mehr anzeigen ab "} /><span className="ml-1 font-normal text-gray-600"><T value={"(optional – versteckt in Konzert- & Next-Ansicht, bleibt im Kalender)"} /></span>
               </label>
               <div className="flex flex-wrap items-center gap-2">
-                <input type="text" value={t.archivedAfter ?? ''} onChange={e => update(key, { archivedAfter: e.target.value })}
+                <L as="input" type="text" value={t.archivedAfter ?? ''} onChange={e => update(key, { archivedAfter: e.target.value })}
                   placeholder="dd.MM.yyyy"
                   className="w-36 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white font-mono focus:border-slate-400 focus:outline-none" />
                 {t.archivedAfter && (
                   <button type="button" onClick={() => update(key, { archivedAfter: undefined })}
-                    className="text-xs text-gray-500 hover:text-white transition">✕ löschen</button>
+                    className="text-xs text-gray-500 hover:text-white transition"><T value={"✕ löschen"} /></button>
                 )}
-                <span className="text-xs text-gray-600">z.B. Tag nach dem Konzert</span>
+                <span className="text-xs text-gray-600"><T value={"z.B. Tag nach dem Konzert"} /></span>
               </div>
             </div>
 
@@ -830,22 +814,22 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
             <div className={`rounded-lg border p-3 flex flex-col gap-2 ${t.cancelled ? 'border-red-500/20 bg-red-900/10' : 'border-white/5 bg-slate-800/40'}`}>
               <label className="flex cursor-pointer items-center gap-2">
                 <input type="checkbox" checked={t.cancelled ?? false} onChange={e => update(key, { cancelled: e.target.checked })} className="h-4 w-4 accent-red-500 rounded" />
-                <span className="text-sm font-medium text-red-400">Veranstaltung absagen</span>
+                <span className="text-sm font-medium text-red-400"><T value={"Veranstaltung absagen"} /></span>
               </label>
               {t.cancelled && (
                 <>
                   <div>
-                    <label className="mb-1 block text-xs text-gray-400">Absagegrund (optional)</label>
-                    <input value={t.cancellationNote ?? ''} onChange={e => update(key, { cancellationNote: e.target.value })}
+                    <label className="mb-1 block text-xs text-gray-400"><T value={"Absagegrund (optional)"} /></label>
+                    <L as="input" value={t.cancellationNote ?? ''} onChange={e => update(key, { cancellationNote: e.target.value })}
                       placeholder="z.B. Aufgrund der Hitzewelle muss das Konzert leider entfallen."
                       className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-red-400 focus:outline-none" />
                   </div>
                   {meldungen.length > 0 && (
                     <div>
-                      <label className="mb-1 block text-xs text-gray-400">Verknüpfte Meldung <span className="text-gray-600">(öffnet Popup bei „Weitere Infos")</span></label>
+                      <label className="mb-1 block text-xs text-gray-400"><T value={"Verknüpfte Meldung "} /><span className="text-gray-600"><T value={"(öffnet Popup bei „Weitere Infos\")"} /></span></label>
                       <select value={t.meldungId ?? ''} onChange={e => update(key, { meldungId: e.target.value || undefined })}
                         className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-red-400 focus:outline-none">
-                        <option value="">— keine Meldung —</option>
+                        <option value=""><T value={"— keine Meldung —"} /></option>
                         {meldungen.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
                       </select>
                     </div>
@@ -855,9 +839,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
             </div>
 
             <button onClick={() => remove(key)}
-              className="self-start rounded-lg border border-red-900/50 bg-red-950/40 px-3 py-1.5 text-xs text-red-400 hover:bg-red-900/50 transition">
-              🗑 Termin löschen
-            </button>
+              className="self-start rounded-lg border border-red-900/50 bg-red-950/40 px-3 py-1.5 text-xs text-red-400 hover:bg-red-900/50 transition"><T value={" 🗑 Termin löschen "} /></button>
           </div>
         )}
       </div>
@@ -869,12 +851,10 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
       <Field label="Überschrift" value={String(content.heading ?? 'Termine')} onChange={v => onChange({ ...content, heading: v })} />
 
       <button type="button" onClick={addNew}
-        className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-green-500/40 bg-green-900/10 py-2.5 text-sm text-green-400 hover:bg-green-900/20 hover:border-green-500/70 transition">
-        + Neuer Termin
-      </button>
+        className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-green-500/40 bg-green-900/10 py-2.5 text-sm text-green-400 hover:bg-green-900/20 hover:border-green-500/70 transition"><T value={" + Neuer Termin "} /></button>
 
       {activeTermine.length === 0 && archiveTermine.length === 0 && (
-        <p className="text-center text-sm text-gray-600 py-4">Noch keine Termine. Oben einen neuen anlegen.</p>
+        <p className="text-center text-sm text-gray-600 py-4"><T value={"Noch keine Termine. Oben einen neuen anlegen."} /></p>
       )}
       {activeTermine.map(t => renderTermin(t))}
 
@@ -882,8 +862,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
         <div className="mt-2">
           <button onClick={() => setShowArchive(v => !v)}
             className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-slate-900/50 px-4 py-2.5 text-left text-xs text-gray-500 hover:text-gray-300 transition">
-            <span className={`transition-transform ${showArchive ? 'rotate-90' : ''}`}>▸</span>
-            Archiv – {archiveTermine.length} vergangene{archiveTermine.length === 1 ? 'r' : ''} Termin{archiveTermine.length === 1 ? '' : 'e'}
+            <span className={`transition-transform ${showArchive ? 'rotate-90' : ''}`}>▸</span><T value={" Archiv – "} />{archiveTermine.length}<T value={" vergangene"} />{archiveTermine.length === 1 ? 'r' : ''}<T value={" Termin"} />{archiveTermine.length === 1 ? '' : 'e'}
           </button>
           {showArchive && (
             <div className="mt-2 flex flex-col gap-2">
@@ -912,14 +891,14 @@ function ActivityGridForm({ content, onChange }: { content: Record<string, unkno
     <div className="flex flex-col gap-4">
       <Field label="Überschrift" value={String(content.heading ?? '')} onChange={v => onChange({ ...content, heading: v })} />
       <div>
-        <label className="mb-1 block text-xs text-gray-400">Einleitungstext</label>
+        <label className="mb-1 block text-xs text-gray-400"><T value={"Einleitungstext"} /></label>
         <textarea value={String(content.intro ?? '')} onChange={e => onChange({ ...content, intro: e.target.value })} rows={3}
           className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
       </div>
       {items.map((it, i) => (
         <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-2">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-gray-300">Aktivität {i + 1}</span>
+            <span className="text-xs font-bold text-gray-300"><T value={"Aktivität "} />{i + 1}</span>
             <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕</button>
           </div>
           <div className="flex gap-2">
@@ -928,12 +907,12 @@ function ActivityGridForm({ content, onChange }: { content: Record<string, unkno
           </div>
           <Field label="Zielgruppe (optional)" value={it.targetGroup ?? ''} onChange={v => update(i, { targetGroup: v })} placeholder="z.B. Kinder 8–12 Jahre" />
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Beschreibungstext</label>
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Beschreibungstext"} /></label>
             <textarea value={it.text} onChange={e => update(i, { text: e.target.value })} rows={3}
               className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Farbe</label>
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Farbe"} /></label>
             <div className="flex gap-2 flex-wrap">
               {ACCENTS.map(a => (
                 <button key={a} type="button" onClick={() => update(i, { accent: a })}
@@ -945,9 +924,7 @@ function ActivityGridForm({ content, onChange }: { content: Record<string, unkno
           </div>
         </div>
       ))}
-      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + Aktivität hinzufügen
-      </button>
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition"><T value={" + Aktivität hinzufügen "} /></button>
     </div>
   )
 }
@@ -969,22 +946,22 @@ function SponsorLocationsEditor({ locations, onChange }: { locations: SponsorLoc
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <label className="text-xs text-gray-400">Standorte</label>
-        <button onClick={add} className="text-xs text-green-400 hover:text-green-300">+ Standort</button>
+        <label className="text-xs text-gray-400"><T value={"Standorte"} /></label>
+        <button onClick={add} className="text-xs text-green-400 hover:text-green-300"><T value={"+ Standort"} /></button>
       </div>
       {locations.map((loc, i) => (
         <div key={i} className="mb-2 rounded-lg border border-white/10 bg-slate-800 p-2 flex flex-col gap-1.5">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-500">Standort {i + 1}</span>
+            <span className="text-xs text-gray-500"><T value={"Standort "} />{i + 1}</span>
             <button onClick={() => remove(i)} className="text-xs text-red-400">✕</button>
           </div>
-          <input value={loc.name ?? ''} onChange={e => update(i, { name: e.target.value })} placeholder="Name (z.B. REWE Markt Amern)"
+          <L as="input" value={loc.name ?? ''} onChange={e => update(i, { name: e.target.value })} placeholder="Name (z.B. REWE Markt Amern)"
             className="w-full rounded border border-white/10 bg-slate-900 px-2 py-1 text-xs text-white focus:border-green-500 focus:outline-none" />
-          <input value={loc.address} onChange={e => update(i, { address: e.target.value })} placeholder="Adresse"
+          <L as="input" value={loc.address} onChange={e => update(i, { address: e.target.value })} placeholder="Adresse"
             className="w-full rounded border border-white/10 bg-slate-900 px-2 py-1 text-xs text-white focus:border-green-500 focus:outline-none" />
-          <input value={loc.mapUrl ?? ''} onChange={e => update(i, { mapUrl: e.target.value })} placeholder="Google-Maps-Link (optional)"
+          <L as="input" value={loc.mapUrl ?? ''} onChange={e => update(i, { mapUrl: e.target.value })} placeholder="Google-Maps-Link (optional)"
             className="w-full rounded border border-white/10 bg-slate-900 px-2 py-1 text-xs text-white font-mono focus:border-green-500 focus:outline-none" />
-          <input value={loc.phone ?? ''} onChange={e => update(i, { phone: e.target.value })} placeholder="Telefon (optional)"
+          <L as="input" value={loc.phone ?? ''} onChange={e => update(i, { phone: e.target.value })} placeholder="Telefon (optional)"
             className="w-full rounded border border-white/10 bg-slate-900 px-2 py-1 text-xs text-white focus:border-green-500 focus:outline-none" />
         </div>
       ))}
@@ -1092,14 +1069,14 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
     <div className="flex flex-col gap-4">
       <Field label="Überschrift" value={String(content.heading ?? '')} onChange={v => onChange({ ...content, heading: v })} />
       <div>
-        <label className="mb-1 block text-xs text-gray-400">Einleitungstext</label>
+        <label className="mb-1 block text-xs text-gray-400"><T value={"Einleitungstext"} /></label>
         <textarea value={String(content.intro ?? '')} onChange={e => onChange({ ...content, intro: e.target.value })} rows={2}
           className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
       </div>
       
       {/* Sortierfunktion */}
       <div className="flex flex-col gap-2 p-3 rounded-lg border border-white/10 bg-slate-800">
-        <label className="text-xs font-bold text-gray-300">Sortierung</label>
+        <label className="text-xs font-bold text-gray-300"><T value={"Sortierung"} /></label>
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => sortAll('name-asc')}
@@ -1116,18 +1093,16 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
           <button
             onClick={() => sortAll('manual')}
             className={`px-3 py-1 rounded-lg text-xs transition ${sortMode === 'manual' ? 'bg-green-600 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'}`}
-          >
-            Manuell
-          </button>
+          ><T value={" Manuell "} /></button>
         </div>
         <p className="text-xs text-gray-500">
-          {sortMode === 'name-asc' ? 'Aktuell: Alphabetisch (A-Z)' :
+          <T value={sortMode === 'name-asc' ? 'Aktuell: Alphabetisch (A-Z)' :
            sortMode === 'name-desc' ? 'Aktuell: Alphabetisch (Z-A)' :
-           'Aktuell: Manuelle Sortierung'}
+           'Aktuell: Manuelle Sortierung'} />
         </p>
       </div>
       
-      <p className="text-xs text-gray-500">{sponsors.length} Sponsoren</p>
+      <p className="text-xs text-gray-500">{sponsors.length}<T value={" Sponsoren"} /></p>
       {getSortedSponsors().map((s, i) => (
         <div key={i} className={`rounded-lg border bg-slate-900 p-3 flex flex-col gap-2 ${s._newId && newSponsorIds.has(s._newId) ? 'border-green-500/40' : 'border-white/10'}`}>
           <div className="flex justify-between items-center flex-wrap gap-1">
@@ -1135,15 +1110,15 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
               <button onClick={() => toggleExpanded(i)} className="text-xs text-gray-400 hover:text-white">
                 {isExpanded(i) ? '▼' : '▶'}
               </button>
-              <span className="text-xs font-bold text-gray-300">Sponsor {i + 1}: {s.name || 'Unbenannter Sponsor'}</span>
+              <span className="text-xs font-bold text-gray-300"><T value={"Sponsor "} />{i + 1}: <T value={s.name || 'Unbenannter Sponsor'} /></span>
               {s._newId && newSponsorIds.has(s._newId) && (
-                <span className="text-xs text-green-400 bg-green-950/40 px-1.5 py-0.5 rounded">Neu – noch nicht sortiert</span>
+                <span className="text-xs text-green-400 bg-green-950/40 px-1.5 py-0.5 rounded"><T value={"Neu – noch nicht sortiert"} /></span>
               )}
             </div>
             <div className="flex gap-1">
               <button onClick={() => move(i, -1)} disabled={i === 0} className="text-xs text-gray-500 hover:text-white px-1 disabled:opacity-30">↑</button>
               <button onClick={() => move(i, 1)} disabled={i === getSortedSponsors().length - 1} className="text-xs text-gray-500 hover:text-white px-1 disabled:opacity-30">↓</button>
-              <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300 ml-1">✕ Entfernen</button>
+              <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300 ml-1"><T value={"✕ Entfernen"} /></button>
             </div>
           </div>
           <Field label="Firmenname *" value={s.name} onChange={v => update(i, { name: v })} />
@@ -1153,9 +1128,9 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
          <div className="mt-2 pt-2 border-t border-white/10">
            {/* Bild */}
            <div>
-             <label className="mb-1 block text-xs text-gray-400">Logo / Bild</label>
+             <label className="mb-1 block text-xs text-gray-400"><T value={"Logo / Bild"} /></label>
              <div className="flex gap-2">
-               <input value={s.imageUrl ?? ''} onChange={e => update(i, { imageUrl: e.target.value })} placeholder="Bild-URL"
+               <L as="input" value={s.imageUrl ?? ''} onChange={e => update(i, { imageUrl: e.target.value })} placeholder="Bild-URL"
                  className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-xs text-white focus:border-green-500 focus:outline-none" />
                <button type="button" onClick={() => setPickerIdx(i)} className="rounded-lg bg-slate-700 px-2 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition">🖼 R2</button>
              </div>
@@ -1176,9 +1151,7 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
            />
            {(!s.locations || s.locations.length === 0) && (
              <button onClick={() => update(i, { locations: [{ address: s.address ?? '' }], address: undefined, mapUrl: undefined })}
-               className="text-xs text-blue-400 hover:text-blue-300 text-left">
-               + Mehrere Standorte hinzufügen
-             </button>
+               className="text-xs text-blue-400 hover:text-blue-300 text-left"><T value={" + Mehrere Standorte hinzufügen "} /></button>
            )}
 
            <Field label="Website" value={s.website ?? ''} onChange={v => update(i, { website: v })} placeholder="www.beispiel.de" />
@@ -1191,9 +1164,7 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
        )}
         </div>
       ))}
-      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + Sponsor hinzufügen
-      </button>
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition"><T value={" + Sponsor hinzufügen "} /></button>
       {pickerIdx !== null && (
         <AssetPickerModal
           onSelect={url => { update(pickerIdx, { imageUrl: url }); setPickerIdx(null) }}
@@ -1208,17 +1179,15 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
 function TermineKonzerteForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs text-gray-400 italic">
-        Zeigt automatisch alle kommenden Konzerte aus der Terminliste an. Kein manuelles Pflegen nötig.
-      </p>
+      <p className="text-xs text-gray-400 italic"><T value={" Zeigt automatisch alle kommenden Konzerte aus der Terminliste an. Kein manuelles Pflegen nötig. "} /></p>
       <div>
-        <label className="mb-1 block text-xs text-gray-400">Überschrift</label>
+        <label className="mb-1 block text-xs text-gray-400"><T value={"Überschrift"} /></label>
         <input value={String(content.heading ?? 'Konzerte & Veranstaltungen')}
           onChange={e => onChange({ ...content, heading: e.target.value })}
           className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
       </div>
       <div>
-        <label className="mb-1 block text-xs text-gray-400">Max. Anzahl Karten (Standard: 6)</label>
+        <label className="mb-1 block text-xs text-gray-400"><T value={"Max. Anzahl Karten (Standard: 6)"} /></label>
         <input type="number" min={1} max={24} value={Number(content.maxItems ?? 6)}
           onChange={e => onChange({ ...content, maxItems: parseInt(e.target.value) || 6 })}
           className="w-32 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
@@ -1247,21 +1216,19 @@ function InternChangelogForm({ content, onChange }: { content: Record<string, un
     <div className="flex flex-col gap-4">
       <Field label="Überschrift" value={String(content.heading ?? 'Was ist neu?')} onChange={v => onChange({ ...content, heading: v })} />
       <button type="button" onClick={add}
-        className="rounded-lg border border-dashed border-green-500/30 bg-green-900/10 py-2 text-sm text-green-400 hover:bg-green-900/20 transition">
-        + Eintrag oben hinzufügen
-      </button>
+        className="rounded-lg border border-dashed border-green-500/30 bg-green-900/10 py-2 text-sm text-green-400 hover:bg-green-900/20 transition"><T value={" + Eintrag oben hinzufügen "} /></button>
       {entries.map((e, i) => (
         <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-2">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-bold text-gray-300">Eintrag {i + 1}</span>
-            <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕ entfernen</button>
+            <span className="text-xs font-bold text-gray-300"><T value={"Eintrag "} />{i + 1}</span>
+            <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300"><T value={"✕ entfernen"} /></button>
           </div>
           <div className="flex gap-2">
             <div className="w-36"><Field label="Datum" value={e.date} onChange={v => update(i, { date: v })} placeholder="25.04.2026" /></div>
             <div className="flex-1"><Field label="Titel" value={e.title} onChange={v => update(i, { title: v })} /></div>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Typ</label>
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Typ"} /></label>
             <div className="flex gap-1.5 flex-wrap">
               {TYPES.map(t => (
                 <button key={t} type="button" onClick={() => update(i, { type: t })}
@@ -1274,35 +1241,33 @@ function InternChangelogForm({ content, onChange }: { content: Record<string, un
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Inhalt</label>
-            <textarea value={e.content} onChange={ev => update(i, { content: ev.target.value })} rows={3}
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Inhalt"} /></label>
+            <L as="textarea" value={e.content} onChange={ev => update(i, { content: ev.target.value })} rows={3}
               placeholder="Was wurde hinzugefügt, geändert oder behoben?"
               className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Link (optional)</label>
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Link (optional)"} /></label>
             <select
               value=""
               onChange={ev => { if (ev.target.value) update(i, { link: ev.target.value }); ev.target.value = '' }}
               className="mb-1.5 w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-xs text-gray-300 focus:border-green-500 focus:outline-none"
             >
-              <option value="">Interne Seite auswählen…</option>
-              <option value="/intern">Intern → Übersicht</option>
-              <option value="/intern/videos">Intern → Videos</option>
-              <option value="/intern/kalender">Intern → Kalender</option>
-              <option value="/intern/merch">Intern → Merch</option>
+              <option value=""><T value={"Interne Seite auswählen…"} /></option>
+              <option value="/intern"><T value={"Intern → Übersicht"} /></option>
+              <option value="/intern/videos"><T value={"Intern → Videos"} /></option>
+              <option value="/intern/kalender"><T value={"Intern → Kalender"} /></option>
+              <option value="/intern/merch"><T value={"Intern → Merch"} /></option>
             </select>
-            <input value={e.link ?? ''} onChange={ev => update(i, { link: ev.target.value })}
+            <L as="input" value={e.link ?? ''} onChange={ev => update(i, { link: ev.target.value })}
               placeholder="z.B. /intern/videos?v=SOMMER__2025 oder https://…"
               className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none" />
-            <p className="mt-1 text-[10px] text-gray-500">
-              Bei "Intern → Videos" kannst du hinten noch <code className="text-gray-400">?v=SOMMER__2025</code> (Kategorie+Jahr, optional <code className="text-gray-400">__Tag</code>) anhängen, um direkt zu einem Konzert zu verlinken.
-            </p>
+            <p className="mt-1 text-[10px] text-gray-500"><T value={" Bei \"Intern → Videos\" kannst du hinten noch "} /><code className="text-gray-400"><T value={"?v=SOMMER__2025"} /></code><T value={" (Kategorie+Jahr, optional "} /><code className="text-gray-400"><T value={"__Tag"} /></code><T value={") anhängen, um direkt zu einem Konzert zu verlinken. "} /></p>
           </div>
         </div>
       ))}
       {entries.length === 0 && (
-        <p className="text-xs text-gray-500 italic text-center py-2">Noch keine Einträge. Klicke oben, um einen hinzuzufügen.</p>
+        <p className="text-xs text-gray-500 italic text-center py-2"><T value={"Noch keine Einträge. Klicke oben, um einen hinzuzufügen."} /></p>
       )}
     </div>
   )
@@ -1316,19 +1281,19 @@ function ImageTextForm({ content, onChange }: { content: Record<string, unknown>
     <div className="flex flex-col gap-3">
       <Field label="Überschrift (optional)" value={String(content.heading ?? '')} onChange={v => set('heading', v)} />
       <div>
-        <label className="mb-1 block text-xs text-gray-400">Bildposition</label>
+        <label className="mb-1 block text-xs text-gray-400"><T value={"Bildposition"} /></label>
         <div className="flex gap-2">
           {(['left', 'right'] as const).map(p => (
             <button key={p} type="button" onClick={() => set('imagePosition', p)}
               className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${position === p ? 'bg-green-900/40 border-green-500/40 text-green-400' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'}`}>
-              {p === 'left' ? 'Bild links' : 'Bild rechts'}
+              <T value={p === 'left' ? 'Bild links' : 'Bild rechts'} />
             </button>
           ))}
         </div>
       </div>
       <ImageField label="Bild" value={String(content.imageUrl ?? '')} onChange={v => set('imageUrl', v)} />
       <div>
-        <label className="mb-1 block text-xs text-gray-400">Text (Markdown)</label>
+        <label className="mb-1 block text-xs text-gray-400"><T value={"Text (Markdown)"} /></label>
         <textarea value={String(content.markdown ?? '')} onChange={e => set('markdown', e.target.value)} rows={6}
           className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
       </div>
@@ -1343,7 +1308,7 @@ function CtaButtonForm({ content, onChange }: { content: Record<string, unknown>
     <div className="flex flex-col gap-3">
       <Field label="Überschrift (optional)" value={String(content.heading ?? '')} onChange={v => set('heading', v)} />
       <div>
-        <label className="mb-1 block text-xs text-gray-400">Text (optional)</label>
+        <label className="mb-1 block text-xs text-gray-400"><T value={"Text (optional)"} /></label>
         <textarea value={String(content.text ?? '')} onChange={e => set('text', e.target.value)} rows={2}
           className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
       </div>
@@ -1367,20 +1332,18 @@ function FaqForm({ content, onChange }: { content: Record<string, unknown>; onCh
       {items.map((it, i) => (
         <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex flex-col gap-2">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-gray-300">Frage {i + 1}</span>
-            <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300">✕ entfernen</button>
+            <span className="text-xs font-bold text-gray-300"><T value={"Frage "} />{i + 1}</span>
+            <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-300"><T value={"✕ entfernen"} /></button>
           </div>
           <Field label="Frage" value={it.question} onChange={v => update(i, { question: v })} />
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Antwort</label>
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Antwort"} /></label>
             <textarea value={it.answer} onChange={e => update(i, { answer: e.target.value })} rows={3}
               className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white focus:border-green-500 focus:outline-none resize-y" />
           </div>
         </div>
       ))}
-      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + Frage hinzufügen
-      </button>
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition"><T value={" + Frage hinzufügen "} /></button>
     </div>
   )
 }
@@ -1392,21 +1355,19 @@ function SpacerForm({ content, onChange }: { content: Record<string, unknown>; o
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <label className="mb-1 block text-xs text-gray-400">Höhe</label>
+        <label className="mb-1 block text-xs text-gray-400"><T value={"Höhe"} /></label>
         <div className="flex gap-2">
           {(['sm', 'md', 'lg'] as const).map(s => (
             <button key={s} type="button" onClick={() => onChange({ ...content, size: s })}
               className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${size === s ? 'bg-green-900/40 border-green-500/40 text-green-400' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'}`}>
-              {s === 'sm' ? 'Klein' : s === 'md' ? 'Mittel' : 'Groß'}
+              <T value={s === 'sm' ? 'Klein' : s === 'md' ? 'Mittel' : 'Groß'} />
             </button>
           ))}
         </div>
       </div>
       <label className="flex items-center gap-2 text-sm text-gray-300">
         <input type="checkbox" checked={showLine} onChange={e => onChange({ ...content, showLine: e.target.checked })}
-          className="h-4 w-4 rounded border-white/20 bg-slate-800 accent-green-500" />
-        Dünne Trennlinie anzeigen
-      </label>
+          className="h-4 w-4 rounded border-white/20 bg-slate-800 accent-green-500" /><T value={" Dünne Trennlinie anzeigen "} /></label>
     </div>
   )
 }
@@ -1417,7 +1378,7 @@ function QuoteForm({ content, onChange }: { content: Record<string, unknown>; on
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <label className="mb-1 block text-xs text-gray-400">Zitat</label>
+        <label className="mb-1 block text-xs text-gray-400"><T value={"Zitat"} /></label>
         <textarea value={String(content.quote ?? '')} onChange={e => set('quote', e.target.value)} rows={3}
           className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-gray-200 focus:border-green-500 focus:outline-none resize-y" />
       </div>
@@ -1442,12 +1403,10 @@ function StatsForm({ content, onChange }: { content: Record<string, unknown>; on
         <div key={i} className="rounded-lg border border-white/10 bg-slate-900 p-3 flex gap-2 items-end">
           <div className="flex-1"><Field label="Wert" value={it.value} onChange={v => update(i, { value: v })} placeholder="z.B. seit 1975" /></div>
           <div className="flex-1"><Field label="Beschriftung" value={it.label} onChange={v => update(i, { label: v })} placeholder="z.B. Mitglieder" /></div>
-          <button onClick={() => remove(i)} className="mb-1.5 text-xs text-red-400 hover:text-red-300 whitespace-nowrap">✕ entfernen</button>
+          <button onClick={() => remove(i)} className="mb-1.5 text-xs text-red-400 hover:text-red-300 whitespace-nowrap"><T value={"✕ entfernen"} /></button>
         </div>
       ))}
-      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition">
-        + Zahl hinzufügen
-      </button>
+      <button type="button" onClick={add} className="rounded-lg border border-dashed border-white/20 py-2 text-sm text-gray-400 hover:text-white hover:border-green-500/60 transition"><T value={" + Zahl hinzufügen "} /></button>
     </div>
   )
 }
@@ -1522,35 +1481,35 @@ function SectionEditor({ section, pageSlug, onSaved, onDeleted, dragHandleProps,
       <div className="mb-3 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 min-w-0">
           {dragHandleProps && (
-            <button type="button" {...dragHandleProps}
+            <L as="button" type="button" {...dragHandleProps}
               className="cursor-grab active:cursor-grabbing rounded px-1.5 py-1 text-gray-500 hover:text-gray-300 touch-none" title="Ziehen zum Verschieben">
               ⠿
-            </button>
+            </L>
           )}
           {(onMoveUp || onMoveDown) && (
             <div className="flex flex-col -my-1">
-              <button type="button" onClick={onMoveUp} disabled={!canMoveUp}
-                className="px-1 text-[10px] leading-tight text-gray-500 hover:text-white disabled:opacity-20 disabled:hover:text-gray-500 transition" title="Nach oben verschieben">▲</button>
-              <button type="button" onClick={onMoveDown} disabled={!canMoveDown}
-                className="px-1 text-[10px] leading-tight text-gray-500 hover:text-white disabled:opacity-20 disabled:hover:text-gray-500 transition" title="Nach unten verschieben">▼</button>
+              <L as="button" type="button" onClick={onMoveUp} disabled={!canMoveUp}
+                className="px-1 text-[10px] leading-tight text-gray-500 hover:text-white disabled:opacity-20 disabled:hover:text-gray-500 transition" title="Nach oben verschieben">▲</L>
+              <L as="button" type="button" onClick={onMoveDown} disabled={!canMoveDown}
+                className="px-1 text-[10px] leading-tight text-gray-500 hover:text-white disabled:opacity-20 disabled:hover:text-gray-500 transition" title="Nach unten verschieben">▼</L>
             </div>
           )}
           <span className="flex items-center gap-1.5 rounded-lg border border-green-500/20 bg-green-900/30 px-2.5 py-1 text-xs font-semibold text-green-400 whitespace-nowrap">
             <span>{sectionTypeInfo(section.type).icon}</span>
-            {sectionTypeInfo(section.type).label}
+            <T value={sectionTypeInfo(section.type).label} />
           </span>
-          <span className="hidden sm:inline text-xs text-gray-500 truncate">{sectionTypeInfo(section.type).hint}</span>
+          <span className="hidden sm:inline text-xs text-gray-500 truncate"><T value={sectionTypeInfo(section.type).hint} /></span>
         </div>
         <div className="flex gap-2 flex-wrap">
           <button type="button" onClick={() => setShowPreview(v => !v)}
             className={`rounded px-2 py-1 text-xs transition ${showPreview ? 'bg-green-900/30 text-green-400' : 'bg-slate-700 text-gray-400 hover:text-white'}`}>
-            {showPreview ? '👁 Vorschau an' : '👁 Vorschau aus'}
+            <T value={showPreview ? '👁 Vorschau an' : '👁 Vorschau aus'} />
           </button>
           <button type="button" onClick={toggleExpert}
             className={`rounded px-2 py-1 text-xs transition ${expertMode ? 'bg-yellow-800/40 text-yellow-400' : 'bg-slate-700 text-gray-400 hover:text-white'}`}>
-            {expertMode ? '🔧 Expertenmode (aktiv)' : '🔧 Expertenmode'}
+            <T value={expertMode ? '🔧 Expertenmode (aktiv)' : '🔧 Expertenmode'} />
           </button>
-          <button type="button" onClick={() => setConfirmDelete(true)} className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">Löschen</button>
+          <button type="button" onClick={() => setConfirmDelete(true)} className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition"><T value={"Löschen"} /></button>
         </div>
       </div>
 
@@ -1581,19 +1540,20 @@ function SectionEditor({ section, pageSlug, onSaved, onDeleted, dragHandleProps,
               {section.type === 'QUOTE'         && <QuoteForm content={content} onChange={setContent} />}
               {section.type === 'STATS'         && <StatsForm content={content} onChange={setContent} />}
               {section.type === 'VIDEO_EMBED'   && <VideoEmbedForm content={content} onChange={setContent} />}
+              <TranslationEditor content={content} onChange={setContent} />
             </div>
           )}
 
-          {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
+          {error && <p className="mb-2 text-xs text-red-400"><T value={error} /></p>}
           <button type="button" onClick={save} disabled={saving}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-            {saving ? 'Speichert…' : '✓ Speichern'}
+            <T value={saving ? 'Speichert…' : '✓ Speichern'} />
           </button>
         </div>
 
         {showPreview && (
           <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500">Live-Vorschau</p>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={"Live-Vorschau"} /></p>
             <div className="max-h-[420px] overflow-y-auto rounded-lg border border-white/10">
               <PreviewErrorBoundary>
                 {/* section.type ist im Admin-Bereich ein loser String (auch unbekannte Werte möglich),
@@ -1705,14 +1665,14 @@ function PageEditor({ page, onBack }: { page: PageMeta; onBack: () => void }) {
   return (
     <div>
       <div className="flex items-center gap-2 text-sm mb-6">
-        <button onClick={onBack} className="text-gray-500 hover:text-white transition">📄 Seiten</button>
+        <button onClick={onBack} className="text-gray-500 hover:text-white transition"><T value={"📄 Seiten"} /></button>
         <span className="text-gray-600">/</span>
         <span className="text-white font-medium">{page.title}</span>
-        <span className="rounded-full bg-slate-800 border border-white/10 px-2 py-0.5 text-[10px] text-gray-500">wird bearbeitet</span>
+        <span className="rounded-full bg-slate-800 border border-white/10 px-2 py-0.5 text-[10px] text-gray-500"><T value={"wird bearbeitet"} /></span>
         <span className="ml-auto text-xs font-mono text-gray-600">/{page.slug}</span>
       </div>
       <div className="flex flex-col gap-4 mb-6">
-        {sections.length === 0 && <p className="text-sm text-gray-500">Keine Sektionen vorhanden.</p>}
+        {sections.length === 0 && <p className="text-sm text-gray-500"><T value={"Keine Sektionen vorhanden."} /></p>}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
             {sections.map((s, i) => (
@@ -1734,14 +1694,12 @@ function PageEditor({ page, onBack }: { page: PageMeta; onBack: () => void }) {
         <select value={addType} onChange={e => setAddType(e.target.value)}
           className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none">
           {Object.keys(SECTION_TYPE_INFO).map(t => (
-            <option key={t} value={t}>{sectionTypeInfo(t).icon} {sectionTypeInfo(t).label}</option>
+            <option key={t} value={t}>{sectionTypeInfo(t).icon} <T value={sectionTypeInfo(t).label} /></option>
           ))}
         </select>
-        <button type="button" onClick={addSection} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">
-          + Sektion hinzufügen
-        </button>
+        <button type="button" onClick={addSection} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition"><T value={" + Sektion hinzufügen "} /></button>
       </div>
-      <p className="mt-1.5 text-xs text-gray-500">{sectionTypeInfo(addType).hint}</p>
+      <p className="mt-1.5 text-xs text-gray-500"><T value={sectionTypeInfo(addType).hint} /></p>
     </div>
   )
 }
@@ -1840,7 +1798,7 @@ export default function AdminPage() {
     else { setPageActionError(`Speichern fehlgeschlagen (${res.status})`); showToast('Speichern fehlgeschlagen.', 'error') }
   }
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>
   if (!user || (!isBoard(user) && !isChef(user))) return null
 
   type TabKey = 'pages' | 'assets' | 'meldungen' | 'settings' | 'members' | 'videos' | 'preisgruppen' | 'antraege' | 'kalender'
@@ -1921,7 +1879,7 @@ export default function AdminPage() {
                 {g.items.map(t => (
                   <button key={t.key} onClick={() => switchTab(t.key)} className={navButtonClass(tab === t.key)}>
                     <span>{t.icon}</span>
-                    <span>{t.label}</span>
+                    <span><T value={t.label} /></span>
                   </button>
                 ))}
               </div>
@@ -1930,10 +1888,10 @@ export default function AdminPage() {
         </nav>
         <div className="border-t border-white/8 p-3 space-y-0.5">
           <button onClick={() => setDocsOpen(true)} className={navButtonClass(false)}>
-            <span>❓</span><span>Hilfe &amp; Doku</span>
+            <span>❓</span><span><T value={"Hilfe & Doku"} /></span>
           </button>
           <a href="/" target="_blank" className={navButtonClass(false)}>
-            <span>🔗</span><span>Website ansehen</span>
+            <span>🔗</span><span><T value={"Website ansehen"} /></span>
           </a>
         </div>
       </aside>
@@ -1948,7 +1906,7 @@ export default function AdminPage() {
               </div>
               <p className="text-sm font-semibold text-white truncate">{user.username || user.email}</p>
             </div>
-            <button onClick={() => setDocsOpen(true)} className="text-xs text-gray-400 hover:text-white transition shrink-0">❓ Hilfe</button>
+            <button onClick={() => setDocsOpen(true)} className="text-xs text-gray-400 hover:text-white transition shrink-0"><T value={"❓ Hilfe"} /></button>
           </div>
           <div className="overflow-x-auto flex px-2 pb-1">
             {flatTabs.map(t => (
@@ -1956,7 +1914,7 @@ export default function AdminPage() {
                 className={`relative flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors whitespace-nowrap
                   ${tab === t.key ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}>
                 <span>{t.icon}</span>
-                <span>{t.label}</span>
+                <span><T value={t.label} /></span>
                 {tab === t.key && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />}
               </button>
             ))}
@@ -1966,13 +1924,11 @@ export default function AdminPage() {
         {/* ── Desktop header ─────────────────────────────────────────────── */}
         <div className="hidden md:flex items-center justify-between h-16 px-6 border-b border-white/8 bg-slate-900/40 backdrop-blur-md sticky top-0 z-30">
           <div>
-            <h1 className="text-sm font-bold text-white">{activeTabDef?.icon} {activeTabDef?.label}</h1>
+            <h1 className="text-sm font-bold text-white">{activeTabDef?.icon} <T value={activeTabDef?.label} /></h1>
             {activeTabDef?.desc && <p className="text-xs text-gray-500 mt-0.5">{activeTabDef.desc}</p>}
           </div>
           <button onClick={() => setDocsOpen(true)}
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-gray-400 hover:text-white hover:border-white/20 transition">
-            ❓ Hilfe
-          </button>
+            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-gray-400 hover:text-white hover:border-white/20 transition"><T value={" ❓ Hilfe "} /></button>
         </div>
 
         {/* ── Content ─────────────────────────────────────────────────────── */}
@@ -2031,22 +1987,22 @@ export default function AdminPage() {
               </div>
             )}
             <div className="flex items-center gap-3">
-              <span className="rounded-full bg-slate-700 border border-white/10 px-2.5 py-0.5 text-xs text-gray-400">{pages.length} Seiten</span>
+              <span className="rounded-full bg-slate-700 border border-white/10 px-2.5 py-0.5 text-xs text-gray-400">{pages.length}<T value={" Seiten"} /></span>
             </div>
             <div className="overflow-hidden rounded-xl border border-white/10 mb-6">
               <table className="w-full text-sm">
                 <thead className="bg-slate-800 text-gray-400">
                   <tr>
-                    <th className="px-4 py-3 text-left font-medium">Slug</th>
-                    <th className="px-4 py-3 text-left font-medium">Titel</th>
+                    <th className="px-4 py-3 text-left font-medium"><T value={"Slug"} /></th>
+                    <th className="px-4 py-3 text-left font-medium"><T value={"Titel"} /></th>
                     <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">
-                      <span className="inline-flex items-center gap-1">Veröffentlicht <HelpHint text='Entwurf ist für Besucher unter keiner URL erreichbar. "Veröffentlicht" macht die Seite live - unabhängig davon, ob sie im Menü erscheint.' /></span>
+                      <span className="inline-flex items-center gap-1"><T value={"Veröffentlicht "} /><HelpHint text='Entwurf ist für Besucher unter keiner URL erreichbar. "Veröffentlicht" macht die Seite live - unabhängig davon, ob sie im Menü erscheint.' /></span>
                     </th>
                     <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">
-                      <span className="inline-flex items-center gap-1">Im Menü <HelpHint text="Steuert nur den Link in der Navigation oben. Eine versteckte Seite ist trotzdem über ihre Adresse erreichbar." /></span>
+                      <span className="inline-flex items-center gap-1"><T value={"Im Menü "} /><HelpHint text="Steuert nur den Link in der Navigation oben. Eine versteckte Seite ist trotzdem über ihre Adresse erreichbar." /></span>
                     </th>
-                    <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Sektionen</th>
-                    <th className="px-4 py-3 text-left font-medium">Aktionen</th>
+                    <th className="px-4 py-3 text-left font-medium hidden sm:table-cell"><T value={"Sektionen"} /></th>
+                    <th className="px-4 py-3 text-left font-medium"><T value={"Aktionen"} /></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -2070,16 +2026,16 @@ export default function AdminPage() {
                           <td className="px-4 py-2">
                             <div className="flex gap-2">
                               <button onClick={savePage}
-                                className="rounded px-2 py-1 text-xs bg-green-700/60 hover:bg-green-600 text-green-300 transition">✓ Speichern</button>
+                                className="rounded px-2 py-1 text-xs bg-green-700/60 hover:bg-green-600 text-green-300 transition"><T value={"✓ Speichern"} /></button>
                               <button onClick={() => setEditingPage(null)}
-                                className="rounded px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-400 transition">Abbrechen</button>
+                                className="rounded px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-400 transition"><T value={"Abbrechen"} /></button>
                             </div>
                           </td>
                         </>
                       ) : (
                         <>
                           <td className="px-4 py-3 font-mono text-xs text-gray-300">
-                            {p.slug ? `/${p.slug}` : <span className="text-yellow-500 italic">⚠ kein Slug</span>}
+                            {p.slug ? `/${p.slug}` : <span className="text-yellow-500 italic"><T value={"⚠ kein Slug"} /></span>}
                           </td>
                           <td className="px-4 py-3 text-white font-medium">{p.title}</td>
                           <td className="px-4 py-3 hidden sm:table-cell">
@@ -2098,7 +2054,7 @@ export default function AdminPage() {
                                   : 'border-green-500/20 bg-green-900/20 text-green-400 hover:bg-green-900/40'
                               }`}
                             >
-                              {p.published === false ? '⊘ Entwurf' : '✓ Veröffentlicht'}
+                              <T value={p.published === false ? '⊘ Entwurf' : '✓ Veröffentlicht'} />
                             </button>
                           </td>
                           <td className="px-4 py-3 hidden sm:table-cell">
@@ -2108,9 +2064,9 @@ export default function AdminPage() {
                           <td className="px-4 py-3">
                             <div className="flex gap-1.5 flex-wrap">
                               <button onClick={() => setSelectedPage(p)}
-                                className="rounded px-2.5 py-1 text-xs bg-green-800/40 hover:bg-green-700/60 text-green-400 transition font-medium">📝 Bearbeiten</button>
+                                className="rounded px-2.5 py-1 text-xs bg-green-800/40 hover:bg-green-700/60 text-green-400 transition font-medium"><T value={"📝 Bearbeiten"} /></button>
                               <button onClick={() => setEditingPage({ id: p.id, slug: p.slug ?? '', originalSlug: p.slug ?? '', title: p.title })}
-                                className="rounded px-2.5 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition">✏️ Umbenennen</button>
+                                className="rounded px-2.5 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition"><T value={"✏️ Umbenennen"} /></button>
                               {p.slug && <a href={`/${p.slug}`} target="_blank" rel="noopener noreferrer"
                                 className="rounded px-2.5 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition">↗</a>}
                               <button onClick={() => setPageToDelete(p.slug ?? null)}
@@ -2125,13 +2081,13 @@ export default function AdminPage() {
               </table>
             </div>
             <div className="rounded-xl border border-white/10 bg-slate-800/40 p-5">
-              <h3 className="mb-3 font-semibold text-white text-sm">+ Neue Seite anlegen</h3>
+              <h3 className="mb-3 font-semibold text-white text-sm"><T value={"+ Neue Seite anlegen"} /></h3>
               <div className="flex gap-3 flex-wrap">
-                <input value={newSlug} onChange={e => setNewSlug(e.target.value)} placeholder="slug (z.B. ueber-uns)"
+                <L as="input" value={newSlug} onChange={e => setNewSlug(e.target.value)} placeholder="slug (z.B. ueber-uns)"
                   className="flex-1 min-w-40 rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
-                <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Titel"
+                <L as="input" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Titel"
                   className="flex-1 min-w-40 rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
-                <button onClick={createPage} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">Erstellen</button>
+                <button onClick={createPage} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition"><T value={"Erstellen"} /></button>
               </div>
             </div>
           </div>
@@ -2143,4 +2099,5 @@ export default function AdminPage() {
     </div>
   )
 }
+
 

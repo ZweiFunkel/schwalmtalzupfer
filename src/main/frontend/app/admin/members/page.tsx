@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 
 import React, { useEffect, useState, useCallback } from 'react'
@@ -74,7 +75,7 @@ export default function AdminMembersPage() {
     fetchMembers()
   }
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>
   if (!user) return null
 
   const roleLabel: Record<string, string> = {
@@ -86,13 +87,13 @@ export default function AdminMembersPage() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Mitgliederverwaltung</h1>
-        <Link href="/admin" className="text-sm text-gray-400 hover:text-white transition">← Zurück zum Admin</Link>
+        <h1 className="text-3xl font-bold text-white"><T value={"Mitgliederverwaltung"} /></h1>
+        <Link href="/admin" className="text-sm text-gray-400 hover:text-white transition"><T value={"← Zurück zum Admin"} /></Link>
       </div>
 
       {/* Suche & Filter */}
       <div className="mb-4 flex gap-3 flex-wrap">
-        <input
+        <L as="input"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Suche nach Vorname, Nachname, Username…"
@@ -104,7 +105,7 @@ export default function AdminMembersPage() {
             showArchive ? 'bg-amber-600 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
           }`}
         >
-          {showArchive ? 'Archiv anzeigen' : 'Aktive anzeigen'}
+          <T value={showArchive ? 'Archiv anzeigen' : 'Aktive anzeigen'} />
         </button>
       </div>
 
@@ -113,21 +114,21 @@ export default function AdminMembersPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10 text-gray-400 text-left">
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Username</th>
-              <th className="px-4 py-3">E-Mail</th>
-              <th className="px-4 py-3">Rolle</th>
-              <th className="px-4 py-3">Gruppe</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Aktionen</th>
+              <th className="px-4 py-3"><T value={"Name"} /></th>
+              <th className="px-4 py-3"><T value={"Username"} /></th>
+              <th className="px-4 py-3"><T value={"E-Mail"} /></th>
+              <th className="px-4 py-3"><T value={"Rolle"} /></th>
+              <th className="px-4 py-3"><T value={"Gruppe"} /></th>
+              <th className="px-4 py-3"><T value={"Status"} /></th>
+              <th className="px-4 py-3"><T value={"Aktionen"} /></th>
             </tr>
           </thead>
           <tbody>
             {fetching && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-500">Laden…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-500"><T value={"Laden…"} /></td></tr>
             )}
             {!fetching && filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-500">Keine Mitglieder gefunden.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-500"><T value={"Keine Mitglieder gefunden."} /></td></tr>
             )}
             {filtered.map(m => (
               <tr key={m.id} className="border-b border-white/5 hover:bg-slate-800/50 transition">
@@ -148,14 +149,12 @@ export default function AdminMembersPage() {
                 </td>
                 <td className="px-4 py-3">
                   {m.istAktiv
-                    ? <span className="rounded-full bg-green-900/40 px-2 py-0.5 text-xs text-green-400">Aktiv</span>
-                    : <span className="rounded-full bg-red-900/40 px-2 py-0.5 text-xs text-red-400">Archiviert</span>}
+                    ? <span className="rounded-full bg-green-900/40 px-2 py-0.5 text-xs text-green-400"><T value={"Aktiv"} /></span>
+                    : <span className="rounded-full bg-red-900/40 px-2 py-0.5 text-xs text-red-400"><T value={"Archiviert"} /></span>}
                 </td>
                 <td className="px-4 py-3 flex gap-2">
                   <Link href={`/admin/members/detail?id=${m.id}`}
-                    className="rounded bg-slate-700 px-2 py-1 text-xs text-white hover:bg-slate-600 transition">
-                    Details
-                  </Link>
+                    className="rounded bg-slate-700 px-2 py-1 text-xs text-white hover:bg-slate-600 transition"><T value={" Details "} /></Link>
                   <button
                     onClick={() => toggleAktiv(m)}
                     className={`rounded px-2 py-1 text-xs transition ${
@@ -164,7 +163,7 @@ export default function AdminMembersPage() {
                         : 'bg-green-900/40 text-green-400 hover:bg-green-900/70'
                     }`}
                   >
-                    {m.istAktiv ? 'Deaktivieren' : 'Reaktivieren'}
+                    <T value={m.istAktiv ? 'Deaktivieren' : 'Reaktivieren'} />
                   </button>
                 </td>
               </tr>

@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 
 import React from 'react'
 import { TextBlockContent } from '@/types/page'
@@ -23,9 +24,9 @@ export default function TextBlockSection({ content, index = 0, anchorId }: Props
             <div className="mb-10">
               <div className="mb-3 flex items-center gap-3">
                 <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-                <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Leitfaden</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Leitfaden"} /></span>
               </div>
-              <h2 className="text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
+              <h2 className="text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>
             </div>
           )}
           <article className="prose prose-lg prose-green dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 [&_p]:leading-relaxed [&_p]:mb-5">
@@ -51,9 +52,9 @@ export default function TextBlockSection({ content, index = 0, anchorId }: Props
           <div className="mb-10">
             <div className="mb-3 flex items-center gap-3">
               <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-              <span className={`text-xs font-bold uppercase tracking-widest ${labelClass}`}>Geschichte</span>
+              <span className={`text-xs font-bold uppercase tracking-widest ${labelClass}`}><T value={"Geschichte"} /></span>
             </div>
-            <h2 className={`text-4xl font-bold ${headingClass}`}>{content.heading}</h2>
+            <h2 className={`text-4xl font-bold ${headingClass}`}><T value={content.heading} /></h2>
           </div>
         )}
         <article className={proseClass}>

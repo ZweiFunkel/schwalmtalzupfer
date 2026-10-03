@@ -1,4 +1,5 @@
 'use client'
+import { LanguageSwitch, T, L, useLanguage } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 
 import React, { useEffect, useRef, useState } from 'react'
@@ -24,6 +25,7 @@ const SLUG_LABELS: Record<string, string> = {
 }
 
 interface PageMeta { id: string; slug: string; title: string }
+interface QuickSearchResult { title: string; excerpt: string; href: string; kind: string }
 
 type NavVisibility = 'public' | 'member' | 'admin' | 'guest'
 interface NavDropdownGroup {
@@ -99,9 +101,9 @@ function NavDropdownMenu({ label, target, items, onClose }: {
       <div className="flex items-center">
         {/* Label: link if target, otherwise opens dropdown */}
         {target ? (
-          <Link href={`/${target}`} className="transition hover:text-green-600 dark:hover:text-green-400 group-hover/nav:text-green-600 dark:group-hover/nav:text-green-400">{label}</Link>
+          <Link href={`/${target}`} className="transition hover:text-green-600 dark:hover:text-green-400 group-hover/nav:text-green-600 dark:group-hover/nav:text-green-400"><T value={label} /></Link>
         ) : (
-          <button onClick={() => setOpen(o => !o)} className="transition hover:text-green-600 dark:hover:text-green-400 group-hover/nav:text-green-600 dark:group-hover/nav:text-green-400">{label}</button>
+          <button onClick={() => setOpen(o => !o)} className="transition hover:text-green-600 dark:hover:text-green-400 group-hover/nav:text-green-600 dark:group-hover/nav:text-green-400"><T value={label} /></button>
         )}
         {/* Arrow always toggles dropdown */}
         <button onClick={() => setOpen(o => !o)} className="ml-1 p-0.5 text-gray-400 group-hover/nav:text-green-500 transition">
@@ -115,7 +117,7 @@ function NavDropdownMenu({ label, target, items, onClose }: {
           {items.map(p => (
             <Link key={p.slug} href={`/${p.slug}`} className={dropdownItem}
               onClick={() => { setOpen(false); onClose?.() }}>
-              {p.title}
+              <T value={p.title} />
             </Link>
           ))}
         </div>
@@ -136,14 +138,14 @@ function NavFixedDropdown({ link, onClose }: { link: NavFixedLink; onClose?: () 
 
   if (!link.items || link.items.length === 0) {
     return (
-      <Link href={link.href} className="transition hover:text-green-600 dark:hover:text-green-400" onClick={onClose}>{link.label}</Link>
+      <Link href={link.href} className="transition hover:text-green-600 dark:hover:text-green-400" onClick={onClose}><T value={link.label} /></Link>
     )
   }
 
   return (
     <div className="relative group/nav" ref={ref}>
       <div className="flex items-center">
-        <Link href={link.href} className="transition hover:text-green-600 dark:hover:text-green-400 group-hover/nav:text-green-600 dark:group-hover/nav:text-green-400">{link.label}</Link>
+        <Link href={link.href} className="transition hover:text-green-600 dark:hover:text-green-400 group-hover/nav:text-green-600 dark:group-hover/nav:text-green-400"><T value={link.label} /></Link>
         <button onClick={() => setOpen(o => !o)} className="ml-1 p-0.5 text-gray-400 group-hover/nav:text-green-500 transition">
           <svg className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -155,7 +157,7 @@ function NavFixedDropdown({ link, onClose }: { link: NavFixedLink; onClose?: () 
           {link.items.map((item, i) => (
             <Link key={i} href={item.href} className={dropdownItem}
               onClick={() => { setOpen(false); onClose?.() }}>
-              {item.label}
+              <T value={item.label} />
             </Link>
           ))}
         </div>
@@ -165,12 +167,17 @@ function NavFixedDropdown({ link, onClose }: { link: NavFixedLink; onClose?: () 
 }
 
 export default function Navbar() {
+  const { language } = useLanguage()
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const router = useRouter()
   const [pages, setPages] = useState<PageMeta[]>([])
   const [menuOpen, setMenuOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<QuickSearchResult[]>([])
+  const [searchBusy, setSearchBusy] = useState(false)
   const [logoUrl, setLogoUrl] = useState('/assets/logo.svg')
   const [navConfig, setNavConfig] = useState<NavConfig | null>(null)
   const navDone = usePageLoad('nav')
@@ -197,6 +204,20 @@ export default function Navbar() {
       })
       .catch(() => { setNavConfig(DEFAULT_CONFIG); navDone() })
   }, [navDone])
+
+  useEffect(() => {
+    if (!searchOpen || searchQuery.trim().length < 2) { setSearchResults([]); setSearchBusy(false); return }
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
+      setSearchBusy(true)
+      try {
+        const response = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(searchQuery.trim())}`, { credentials: 'include', cache: 'no-store', signal: controller.signal })
+        if (response.ok) setSearchResults((await response.json()) as QuickSearchResult[])
+      } catch { /* Suche bleibt leer, wenn Backend kurz nicht erreichbar ist. */ }
+      finally { if (!controller.signal.aborted) setSearchBusy(false) }
+    }, 250)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [searchOpen, searchQuery, user])
 
   useEffect(() => {
     const h = (e: MouseEvent) => { if (userRef.current && !userRef.current.contains(e.target as Node)) setUserOpen(false) }
@@ -244,7 +265,7 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <nav className="hidden items-center gap-5 text-sm font-medium text-gray-600 dark:text-gray-300 md:flex">
-          <Link href="/" className="transition hover:text-green-600 dark:hover:text-green-400">Startseite</Link>
+          <Link href="/" className="transition hover:text-green-600 dark:hover:text-green-400"><T value={"Startseite"} /></Link>
           {cfg.dropdowns.filter(g => isVisible(g.visibility)).map((group, i) => {
             const items = resolveItems(group.items)
             return (
@@ -253,7 +274,7 @@ export default function Navbar() {
           })}
           {extraPages.map(p => (
             <Link key={p.id} href={`/${p.slug}`} className="transition hover:text-green-600 dark:hover:text-green-400">
-              {SLUG_LABELS[p.slug] ?? p.title}
+              <T value={SLUG_LABELS[p.slug] ?? p.title} />
             </Link>
           ))}
           {fixedLinks.filter(l => isVisible(l.visibility)).map((l, i) => (
@@ -263,8 +284,24 @@ export default function Navbar() {
 
         {/* User / Login */}
         <div className="hidden md:flex items-center gap-3">
+          <form onSubmit={(e) => e.preventDefault()} className={`relative flex items-center rounded-xl border transition-all ${searchOpen ? 'w-56 border-green-500/60 bg-white dark:bg-slate-900' : 'w-10 border-transparent'}`} role="search">
+            {searchOpen && <L as="input" autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Gitarre, Dä Staer ..." aria-label={language === 'en' ? 'Search' : 'Suche'} className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none" />}
+            <button type="button" onClick={() => { setSearchOpen(o => !o); if (searchOpen) setSearchQuery('') }} aria-label={language === 'en' ? 'Open search' : 'Suche öffnen'} title={language === 'en' ? 'Search' : 'Suche'} className="flex h-9 w-10 shrink-0 items-center justify-center text-gray-500 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="m20 20-4-4" /></svg>
+            </button>
+            {searchOpen && searchQuery.trim().length >= 2 && <div className="absolute right-0 top-full mt-2 max-h-80 w-80 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+              {searchBusy && <p className="px-3 py-3 text-sm text-gray-500"><T value="Suche läuft…" /></p>}
+              {!searchBusy && searchResults.length === 0 && <p className="px-3 py-3 text-sm text-gray-500"><T value="Keine passenden Inhalte gefunden." /></p>}
+              {!searchBusy && searchResults.map((result, index) => <Link key={`${result.href}-${index}`} href={result.href} onClick={() => { setSearchOpen(false); setSearchQuery('') }} className="block rounded-lg px-3 py-2 hover:bg-green-500/10">
+                <span className="block text-xs text-gray-500"><T value={result.kind} /></span>
+                <span className="block truncate text-sm font-semibold text-gray-800 dark:text-gray-100">{result.title}</span>
+                {result.excerpt && <span className="block truncate text-xs text-gray-500 dark:text-gray-400">{result.excerpt}</span>}
+              </Link>)}
+            </div>}
+          </form>
+          <LanguageSwitch />
           {/* Theme Toggle */}
-          <button
+          <L as="button"
             onClick={toggleTheme}
             aria-label="Design wechseln"
             title={theme === 'dark' ? 'Light Mode aktivieren' : 'Dark Mode aktivieren'}
@@ -282,7 +319,7 @@ export default function Navbar() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
               </svg>
             )}
-          </button>
+          </L>
           {user ? (
             <div className="relative" ref={userRef}>
               <button onClick={() => setUserOpen(o => !o)}
@@ -296,75 +333,71 @@ export default function Navbar() {
               {userOpen && (
                 <div className={`${dropdownPanel} right-0 w-44`}>
                   {!isGuestOnly(user) && (
-                    <Link href="/profil" className={dropdownItem} onClick={() => setUserOpen(false)}>
-                      👤 Profil
-                    </Link>
+                    <Link href="/profil" className={dropdownItem} onClick={() => setUserOpen(false)}><T value={" 👤 Profil "} /></Link>
                   )}
                   {(isBoard(user) || isChef(user)) && (
                     <Link href="/admin" className="block px-4 py-2.5 text-sm text-yellow-600 dark:text-yellow-400/80 hover:bg-yellow-500/10 hover:text-yellow-600 dark:hover:text-yellow-400 transition" onClick={() => setUserOpen(false)}>
-                      {isAdmin(user) ? '⚙️ Admin' : user.role === 'ROLE_CHEF' ? '🎸 Chef' : '👥 Vorstand'}
+                      <T value={isAdmin(user) ? '⚙️ Admin' : user.role === 'ROLE_CHEF' ? '🎸 Chef' : '👥 Vorstand'} />
                     </Link>
                   )}
                   <div className="my-1 border-t border-gray-100 dark:border-white/10" />
-                  <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm text-red-500 dark:text-red-400/80 hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400 transition">
-                    ↩ Abmelden
-                  </button>
+                  <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm text-red-500 dark:text-red-400/80 hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400 transition"><T value={" ↩ Abmelden "} /></button>
                 </div>
               )}
             </div>
           ) : (
-            <Link href="/login" className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-green-500 transition shadow-lg shadow-green-900/30">
-              Login
-            </Link>
+            <Link href="/login" className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-green-500 transition shadow-lg shadow-green-900/30"><T value={" Login "} /></Link>
           )}
         </div>
 
         {/* Mobile Burger */}
-        <button onClick={() => setMenuOpen(o => !o)} className="flex flex-col gap-1.5 md:hidden" aria-label="Menü öffnen">
+        <L as="button" onClick={() => setMenuOpen(o => !o)} className="flex flex-col gap-1.5 md:hidden" aria-label="Menü öffnen">
           <span className={`block h-0.5 w-6 bg-gray-600 dark:bg-gray-300 transition-transform duration-200 ${menuOpen ? 'translate-y-2 rotate-45' : ''}`} />
           <span className={`block h-0.5 w-6 bg-gray-600 dark:bg-gray-300 transition-opacity duration-200 ${menuOpen ? 'opacity-0' : ''}`} />
           <span className={`block h-0.5 w-6 bg-gray-600 dark:bg-gray-300 transition-transform duration-200 ${menuOpen ? '-translate-y-2 -rotate-45' : ''}`} />
-        </button>
+        </L>
       </div>
 
       {/* Mobile Menu */}
       {menuOpen && (
         <nav className="border-t border-gray-200 dark:border-white/5 bg-white dark:bg-slate-950 px-6 py-5 md:hidden">
           <ul className="flex flex-col gap-4 text-sm font-medium text-gray-600 dark:text-gray-300">
-            <li><Link href="/" className="hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}>Startseite</Link></li>
+            <li><Link href="/" className="hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}><T value={"Startseite"} /></Link></li>
+            <li className="flex items-center gap-2"><LanguageSwitch /><span className="text-sm text-gray-500"><T value="Sprache wählen" /></span></li>
+            <li><Link href="/suche" className="flex items-center gap-2 hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}><span aria-hidden="true">⌕</span><T value={"Suche"} /></Link></li>
             {cfg.dropdowns.filter(g => isVisible(g.visibility)).map((group, i) => (
               <li key={i} className="border-t border-gray-100 dark:border-white/5 pt-3">
                 {group.target
-                  ? <Link href={`/${group.target}`} className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}>{group.label}</Link>
-                  : <p className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{group.label}</p>
+                  ? <Link href={`/${group.target}`} className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}><T value={group.label} /></Link>
+                  : <p className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500"><T value={group.label} /></p>
                 }
                 <ul className="flex flex-col gap-3 pl-3">
                   {resolveItems(group.items).map(p => (
                     <li key={p.slug}>
-                      <Link href={`/${p.slug}`} className="hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}>{p.title}</Link>
+                      <Link href={`/${p.slug}`} className="hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}><T value={p.title} /></Link>
                     </li>
                   ))}
                 </ul>
               </li>
             ))}
             {extraPages.map(p => (
-              <li key={p.id}><Link href={`/${p.slug}`} className="hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}>{SLUG_LABELS[p.slug] ?? p.title}</Link></li>
+              <li key={p.id}><Link href={`/${p.slug}`} className="hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}><T value={SLUG_LABELS[p.slug] ?? p.title} /></Link></li>
             ))}
             {fixedLinks.filter(l => isVisible(l.visibility)).map((l, i) => (
               <li key={i} className="border-t border-gray-100 dark:border-white/5 pt-3">
-                <Link href={l.href} className="hover:text-green-600 dark:hover:text-green-400 transition font-medium" onClick={() => setMenuOpen(false)}>{l.label}</Link>
+                <Link href={l.href} className="hover:text-green-600 dark:hover:text-green-400 transition font-medium" onClick={() => setMenuOpen(false)}><T value={l.label} /></Link>
                 {l.items && l.items.length > 0 && (
                   <ul className="flex flex-col gap-2 pl-3 mt-2">
                     {l.items.map((item, j) => (
                       <li key={j}>
-                        <Link href={item.href} className="text-sm hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}>{item.label}</Link>
+                        <Link href={item.href} className="text-sm hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}><T value={item.label} /></Link>
                       </li>
                     ))}
                   </ul>
                 )}
               </li>
             ))}
-            {user && (isBoard(user) || isChef(user)) && <li><Link href="/admin" className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 transition" onClick={() => setMenuOpen(false)}>{isAdmin(user) ? 'Admin' : user.role === 'ROLE_CHEF' ? 'Chef' : 'Vorstand'}</Link></li>}
+            {user && (isBoard(user) || isChef(user)) && <li><Link href="/admin" className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 transition" onClick={() => setMenuOpen(false)}><T value={isAdmin(user) ? 'Admin' : user.role === 'ROLE_CHEF' ? 'Chef' : 'Vorstand'} /></Link></li>}
             <li className="border-t border-gray-100 dark:border-white/5 pt-3">
               <button onClick={toggleTheme} className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition">
                 {theme === 'dark' ? (
@@ -377,7 +410,7 @@ export default function Navbar() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
                   </svg>
                 )}
-                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                <T value={theme === 'dark' ? 'Light Mode' : 'Dark Mode'} />
               </button>
             </li>
             <li className="border-t border-gray-100 dark:border-white/5 pt-3">
@@ -387,10 +420,10 @@ export default function Navbar() {
                     <Link href="/profil" className="hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}>👤 {[user.vorname, user.nachname].filter(Boolean).join(' ') || user.username || user.email}</Link>
                   )}
                   {isGuestOnly(user) && <span className="text-gray-400">👤 {[user.vorname, user.nachname].filter(Boolean).join(' ') || user.username || user.email}</span>}
-                  <button onClick={handleLogout} className="text-left text-red-500 dark:text-red-400 hover:text-red-400 transition">↩ Abmelden</button>
+                  <button onClick={handleLogout} className="text-left text-red-500 dark:text-red-400 hover:text-red-400 transition"><T value={"↩ Abmelden"} /></button>
                 </div>
               ) : (
-                <Link href="/login" className="font-semibold text-green-600 dark:text-green-400 hover:text-green-500 transition" onClick={() => setMenuOpen(false)}>Login</Link>
+                <Link href="/login" className="font-semibold text-green-600 dark:text-green-400 hover:text-green-500 transition" onClick={() => setMenuOpen(false)}><T value={"Login"} /></Link>
               )}
             </li>
           </ul>
@@ -399,3 +432,5 @@ export default function Navbar() {
     </header>
   )
 }
+
+

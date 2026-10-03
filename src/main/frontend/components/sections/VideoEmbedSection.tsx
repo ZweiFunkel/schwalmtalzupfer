@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 
 import React from 'react'
 import { VideoEmbedContent } from '@/types/page'
@@ -51,16 +52,16 @@ export default function VideoEmbedSection({ content }: { content: VideoEmbedCont
           <div className="mb-8">
             <div className="mb-3 flex items-center gap-3">
               <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-              <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Video</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Video"} /></span>
             </div>
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>
           </div>
         )}
 
         {/* Video */}
         {embedUrl ? (
           <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-gray-100 dark:bg-slate-900">
-            <iframe
+            <L as="iframe"
               src={embedUrl}
               className="absolute inset-0 h-full w-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -75,15 +76,13 @@ export default function VideoEmbedSection({ content }: { content: VideoEmbedCont
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-base font-semibold text-green-600 dark:text-green-400 hover:underline"
-            >
-              Video ansehen ↗
-            </a>
+            ><T value={" Video ansehen ↗ "} /></a>
           </div>
         )}
 
         {/* Caption */}
         {content.caption && (
-          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">{content.caption}</p>
+          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400"><T value={content.caption} /></p>
         )}
 
       </div>

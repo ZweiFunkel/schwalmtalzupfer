@@ -57,3 +57,6 @@ src/main/frontend/certificates/
 ### Maven wrapper binary ###
 .mvn/wrapper/maven-wrapper.jar
 
+
+# Local development processes and logs
+.zupfer-local/

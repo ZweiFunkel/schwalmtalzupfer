@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 import React, { useEffect, useState, Suspense, useCallback } from 'react'
 import { useAuth, isBoard } from '@/lib/auth'
@@ -254,11 +255,11 @@ function VideoCard({ video, onOpen }: { video: VideoEntry; onOpen: (v: VideoEntr
         <div className="relative aspect-video overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-slate-800 shadow-md">
           {thumbnailUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumbnailUrl} alt={video.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+            <L as="img" src={thumbnailUrl} alt={video.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-900">
               <PlaylistIcon className="h-8 w-8 text-gray-400 dark:text-slate-600" />
-              <span className="text-xs font-medium text-gray-400 dark:text-slate-500">Playlist</span>
+              <span className="text-xs font-medium text-gray-400 dark:text-slate-500"><T value={"Playlist"} /></span>
             </div>
           )}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10 transition-all duration-200 group-hover:bg-black/50">
@@ -268,9 +269,7 @@ function VideoCard({ video, onOpen }: { video: VideoEntry; onOpen: (v: VideoEntr
           </div>
           {isPlaylist && (
             <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded bg-black/80 px-2 py-1 text-xs font-medium text-white">
-              <PlaylistIcon className="h-3 w-3" />
-              Playlist
-            </div>
+              <PlaylistIcon className="h-3 w-3" /><T value={" Playlist "} /></div>
           )}
         </div>
       </div>
@@ -278,7 +277,7 @@ function VideoCard({ video, onOpen }: { video: VideoEntry; onOpen: (v: VideoEntr
         <p className="text-sm font-medium text-gray-700 dark:text-gray-200 line-clamp-2 group-hover:text-gray-900 dark:group-hover:text-white transition">
           {video.title}
         </p>
-        <a
+        <L as="a"
           href={ytUrl(video)}
           target="_blank"
           rel="noopener noreferrer"
@@ -287,7 +286,7 @@ function VideoCard({ video, onOpen }: { video: VideoEntry; onOpen: (v: VideoEntr
           onClick={e => e.stopPropagation()}
         >
           <YouTubeIcon />
-        </a>
+        </L>
       </div>
     </div>
   )
@@ -328,21 +327,21 @@ function InlinePlaylistItems({ playlist, onOpen }: {
       <div className="mb-3 flex items-center gap-2">
         <PlaylistIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
         <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{playlist.title}</h3>
-        {items && <span className="text-xs text-gray-400 dark:text-gray-500">· {items.length} Videos</span>}
+        {items && <span className="text-xs text-gray-400 dark:text-gray-500">· {items.length}<T value={" Videos"} /></span>}
       </div>
       {items === null ? (
         <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3].map(i => <div key={i} className="aspect-video animate-pulse rounded-xl bg-gray-100 dark:bg-slate-800" />)}
         </div>
       ) : items.length === 0 ? (
-        <p className="text-sm text-gray-400 dark:text-gray-500">Keine Videos in dieser Playlist gefunden.</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500"><T value={"Keine Videos in dieser Playlist gefunden."} /></p>
       ) : (
         <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
           {items.map(item => (
             <div key={item.videoId} className="group cursor-pointer" onClick={() => onOpen(playlist, item.videoId)}>
               <div className="relative aspect-video overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-slate-800 shadow-md">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.thumbnail} alt={item.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+                <L as="img" src={item.thumbnail} alt={item.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10 transition-all duration-200 group-hover:bg-black/50">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 shadow-2xl transition-all duration-200 scale-90 opacity-70 group-hover:scale-100 group-hover:opacity-100">
                     <PlayIcon className="h-6 w-6 text-white" />
@@ -386,7 +385,7 @@ function DayCard({ day, entries, onSelect }: { day: string; entries: VideoEntry[
       <div className="relative aspect-video overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-slate-800 shadow-md">
         {thumb ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt={day} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+          <L as="img" src={thumb} alt={day} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-900">
             <PlaylistIcon className="h-8 w-8 text-gray-400 dark:text-slate-600" />
@@ -399,8 +398,8 @@ function DayCard({ day, entries, onSelect }: { day: string; entries: VideoEntry[
         </div>
       </div>
       <div className="px-0.5 pt-3">
-        <p className="text-base font-semibold text-gray-800 dark:text-white transition group-hover:text-gray-900 dark:group-hover:text-white">{day}</p>
-        {count != null && <p className="text-xs text-gray-400 dark:text-gray-500">{count} {count === 1 ? 'Video' : 'Videos'}</p>}
+        <p className="text-base font-semibold text-gray-800 dark:text-white transition group-hover:text-gray-900 dark:group-hover:text-white"><T value={day} /></p>
+        {count != null && <p className="text-xs text-gray-400 dark:text-gray-500">{count} <T value={count === 1 ? 'Video' : 'Videos'} /></p>}
       </div>
     </button>
   )
@@ -438,7 +437,7 @@ function SplitVideos({ items, onOpen }: { items: VideoEntry[]; onOpen: (v: Video
               <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
               </svg>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Videos</h3>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500"><T value={"Videos"} /></h3>
             </div>
           )}
           <VideoGrid videos={singles} onOpen={onOpen} />
@@ -677,27 +676,25 @@ function WatchArea({
       {isPlaylist && (
         railNarrow ? (
           <div className="flex justify-center">
-            <button
+            <L as="button"
               onClick={() => setPlaylistCollapsed(v => !v)}
               title="Playlist einblenden"
               className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 dark:text-gray-500 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <ChevronIcon open={false} className="h-3.5 w-3.5" />
-            </button>
+            </L>
           </div>
         ) : (
           <div>
-            <button
+            <L as="button"
               onClick={() => setPlaylistCollapsed(v => !v)}
               title={playlistCollapsed ? 'Playlist einblenden' : 'Playlist ausblenden'}
               className="mb-3 flex w-full items-center justify-between gap-2 text-left"
             >
               <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                <ChevronIcon open={!playlistCollapsed} className="h-3.5 w-3.5" />
-                Playlist
-              </span>
-              <span className="text-xs text-gray-400 dark:text-gray-500">{playlistItems.length} Videos</span>
-            </button>
+                <ChevronIcon open={!playlistCollapsed} className="h-3.5 w-3.5" /><T value={" Playlist "} /></span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">{playlistItems.length}<T value={" Videos"} /></span>
+            </L>
             {/* Hier ist die Spaltenbreite immer fest (Weitere Videos brauchen
                 den Platz noch), daher darf die Liste hier sanft per Höhe
                 ein-/ausklappen statt komplett aus dem DOM zu verschwinden. */}
@@ -707,7 +704,7 @@ function WatchArea({
                   {playlistLoading ? (
                     [1, 2, 3, 4].map(i => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-100 dark:bg-white/5" />)
                   ) : playlistItems.length === 0 ? (
-                    <p className="px-2 py-4 text-center text-xs text-gray-400 dark:text-gray-500">Keine Videos gefunden</p>
+                    <p className="px-2 py-4 text-center text-xs text-gray-400 dark:text-gray-500"><T value={"Keine Videos gefunden"} /></p>
                   ) : playlistItems.map((item, idx) => (
                     <button
                       key={item.videoId}
@@ -720,7 +717,7 @@ function WatchArea({
                     >
                       <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded bg-gray-200 dark:bg-slate-800">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={item.thumbnail} alt="" className="h-full w-full object-cover" />
+                        <L as="img" src={item.thumbnail} alt="" className="h-full w-full object-cover" />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                           <span className="text-[10px] font-bold text-white">{idx + 1}</span>
                         </div>
@@ -737,7 +734,7 @@ function WatchArea({
 
       {hasRelated && (
         <div>
-          <span className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-200">Weitere Videos</span>
+          <span className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-200"><T value={"Weitere Videos"} /></span>
           <div className="flex flex-col gap-3">
             {related.map(v => {
               const thumb = thumbnailFor(v)
@@ -746,16 +743,14 @@ function WatchArea({
                   <div className="relative aspect-video w-36 shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-slate-800">
                     {thumb ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={thumb} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                      <L as="img" src={thumb} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
                         <PlaylistIcon className="h-6 w-6 text-gray-400 dark:text-slate-600" />
                       </div>
                     )}
                     {v.type === 'PLAYLIST' && (
-                      <div className="absolute bottom-1 right-1 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                        Playlist
-                      </div>
+                      <div className="absolute bottom-1 right-1 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-medium text-white"><T value={" Playlist "} /></div>
                     )}
                   </div>
                   <p className="min-w-0 flex-1 line-clamp-3 text-xs font-medium text-gray-700 dark:text-gray-200">{v.title}</p>
@@ -794,22 +789,22 @@ function WatchArea({
             className="flex touch-none items-center gap-1 rounded-t-xl bg-gray-900 px-2 py-1.5 cursor-move"
           >
             <span className="flex-1 truncate text-xs font-medium text-white">{currentTitle}</span>
-            <button
+            <L as="button"
               onClick={expandFromMini}
               onPointerDown={e => e.stopPropagation()}
               title="Zur normalen Ansicht"
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-300 transition hover:bg-white/10 hover:text-white"
             >
               <FullscreenIcon className="h-3.5 w-3.5" />
-            </button>
-            <button
+            </L>
+            <L as="button"
               onClick={onClose}
               onPointerDown={e => e.stopPropagation()}
               title="Schließen"
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-300 transition hover:bg-white/10 hover:text-white"
             >
               <CloseIcon className="h-3.5 w-3.5" />
-            </button>
+            </L>
           </div>
         )}
 
@@ -819,7 +814,7 @@ function WatchArea({
             style={{ aspectRatio: '16/9' }}
           >
           {useIframeFallback ? (
-            <iframe
+            <L as="iframe"
               src={playlistEmbedSrc(activeVideo.youtubeId)}
               title={currentTitle}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -837,7 +832,7 @@ function WatchArea({
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
-              {playlistLoading ? 'Lade Playlist…' : 'Keine Videos gefunden'}
+              <T value={playlistLoading ? 'Lade Playlist…' : 'Keine Videos gefunden'} />
             </div>
           )}
           </div>
@@ -849,11 +844,11 @@ function WatchArea({
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">{currentTitle}</h2>
                 {isPlaylist && (
-                  <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Playlist · {activeVideo.title}</p>
+                  <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400"><T value={"Playlist · "} />{activeVideo.title}</p>
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <button
+                <L as="button"
                   onClick={() => onTheaterModeChange(!theaterMode)}
                   title={theaterMode ? 'Standardansicht' : 'Kinomodus'}
                   aria-pressed={theaterMode}
@@ -864,8 +859,8 @@ function WatchArea({
                   }`}
                 >
                   <TheaterIcon />
-                </button>
-                <button
+                </L>
+                <L as="button"
                   onClick={copyDeepLink}
                   title={linkCopied ? 'Link kopiert!' : 'Link zu diesem Video kopieren'}
                   className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
@@ -875,9 +870,9 @@ function WatchArea({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
                   ) : <LinkIcon />}
-                </button>
+                </L>
                 {systemPipSupported && (
-                  <button
+                  <L as="button"
                     onClick={systemPipActive ? closeSystemPip : openSystemPip}
                     title={systemPipActive ? 'Systemweiten Miniplayer schließen' : 'Systemweiter Miniplayer (frei über alle Bildschirme verschiebbar)'}
                     aria-pressed={systemPipActive}
@@ -888,9 +883,9 @@ function WatchArea({
                     }`}
                   >
                     <PipIcon />
-                  </button>
+                  </L>
                 )}
-                <a
+                <L as="a"
                   href={currentVideoId ? `https://www.youtube.com/watch?v=${currentVideoId}` : ytUrl(activeVideo)}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -898,14 +893,14 @@ function WatchArea({
                   className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-red-500 dark:hover:text-red-400"
                 >
                   <YouTubeIcon className="h-4 w-4" />
-                </a>
-                <button
+                </L>
+                <L as="button"
                   onClick={onClose}
                   title="Schließen"
                   className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-white/10"
                 >
                   <CloseIcon />
-                </button>
+                </L>
               </div>
             </div>
           </>
@@ -929,8 +924,8 @@ function EmptyVideos({ label }: { label: string }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
         </svg>
       </div>
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="text-xs text-gray-400 dark:text-gray-500">Noch keine Videos vorhanden</p>
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400"><T value={label} /></p>
+      <p className="text-xs text-gray-400 dark:text-gray-500"><T value={"Noch keine Videos vorhanden"} /></p>
     </div>
   )
 }
@@ -1004,7 +999,7 @@ function WeitereContent({ videos, sub, onOpen }: {
         .map(([year, vids]) => (
           <div key={year}>
             <div className="mb-4 flex items-center gap-3">
-              <span className="text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{year || 'Weitere'}</span>
+              <span className="text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500"><T value={year || 'Weitere'} /></span>
               <span className="flex-1 h-px bg-gray-200 dark:bg-white/10" />
             </div>
             <SplitVideos items={vids} onOpen={handleOpen} />
@@ -1068,7 +1063,7 @@ function SidebarSection({ label, icon, children }: { label: string; icon: React.
     <div>
       <div className="flex items-center gap-2 mb-1.5 px-2 text-gray-400 dark:text-gray-500">
         {icon}
-        <span className="text-xs font-medium">{label}</span>
+        <span className="text-xs font-medium"><T value={label} /></span>
       </div>
       {children}
     </div>
@@ -1106,7 +1101,7 @@ function SidebarNav({ nav, selection, onSelect }: {
     return (
       <SidebarSection label={label} icon={icon}>
         {years.length === 0 ? (
-          <p className="px-3 pb-1 text-xs italic text-gray-400 dark:text-gray-600">Keine Videos</p>
+          <p className="px-3 pb-1 text-xs italic text-gray-400 dark:text-gray-600"><T value={"Keine Videos"} /></p>
         ) : (
           <div className="flex flex-col gap-0.5">
             {years.map(({ year, days }) => {
@@ -1128,20 +1123,20 @@ function SidebarNav({ nav, selection, onSelect }: {
                         <span className="ml-auto text-[10px] text-gray-400 dark:text-gray-500">{days.length}d</span>
                       </NavItem>
                     </div>
-                    <button
+                    <L as="button"
                       onClick={() => toggleYear(key)}
                       title={open ? 'Tage einklappen' : 'Tage anzeigen'}
                       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       <ChevronIcon open={open} />
-                    </button>
+                    </L>
                   </div>
                   {open && (
                     <div className="relative ml-3.5 mt-0.5 mb-1 flex flex-col gap-0.5">
                       <div className="absolute left-0 top-1 bottom-1 w-px bg-gray-200 dark:bg-white/10" />
                       {days.map(day => (
                         <NavItem key={day} active={isSel(selection, { cat, year, day, slot: null })} onClick={() => onSelect({ cat, year, day, slot: null })} indent>
-                          {day}
+                          <T value={day} />
                         </NavItem>
                       ))}
                     </div>
@@ -1162,7 +1157,7 @@ function SidebarNav({ nav, selection, onSelect }: {
 
       <SidebarSection label="Weitere Auftritte" icon={<StarIcon />}>
         {nav.weitere.length === 0 ? (
-          <p className="px-3 pb-1 text-xs italic text-gray-400 dark:text-gray-600">Keine Videos</p>
+          <p className="px-3 pb-1 text-xs italic text-gray-400 dark:text-gray-600"><T value={"Keine Videos"} /></p>
         ) : (
           <div className="flex flex-col gap-0.5">
             {nav.weitere.map(sub => (
@@ -1258,8 +1253,11 @@ function VideosPageInner() {
         // als beim normalen Durchklicken (kein Auto-Play), weil ein gezielter
         // Link genau dorthin führen soll, wohin er zeigt.
         const videoParam = searchParams.get('video')
-        if (fromParam && videoParam) {
-          const pool = videosForSelection(data, fromParam)
+        if (videoParam) {
+          // Search results link directly with ?video=... and do not know the
+          // sidebar selection. Look through all accessible entries so the
+          // target opens even when no ?v= selection was supplied.
+          const pool = fromParam ? videosForSelection(data, fromParam) : data
           const directHit = pool.find(v => v.type === 'VIDEO' && v.youtubeId === videoParam)
           if (directHit) {
             if (!cancelled) setWatch({ video: directHit, pool })
@@ -1294,7 +1292,7 @@ function VideosPageInner() {
   const openWatch = useCallback((video: VideoEntry, pool: VideoEntry[], startVideoId?: string) => setWatch({ video, pool, startVideoId }), [])
   const closeWatch = useCallback(() => setWatch(null), [])
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>
   if (!user) return null
 
   const nav = buildNav(videos)
@@ -1305,21 +1303,19 @@ function VideosPageInner() {
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-            <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition">Intern</Link>
+            <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition"><T value={"Intern"} /></Link>
             <span>/</span>
-            <span className="text-gray-500 dark:text-gray-300">Videos</span>
+            <span className="text-gray-500 dark:text-gray-300"><T value={"Videos"} /></span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Video-Archiv</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Konzerte & Auftritte der Schwalmtalzupfer</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white"><T value={"Video-Archiv"} /></h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400"><T value={"Konzerte & Auftritte der Schwalmtalzupfer"} /></p>
         </div>
         {isBoard(user) && (
           <Link href="/admin?tab=videos"
             className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:border-green-500/40 hover:text-green-500 dark:hover:text-green-400 transition">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Videos verwalten
-          </Link>
+            </svg><T value={" Videos verwalten "} /></Link>
         )}
       </div>
 
@@ -1340,7 +1336,7 @@ function VideosPageInner() {
         {navOpen && (
           <div className="mt-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/90 p-4 shadow-lg">
             {videosLoading
-              ? <p className="text-xs text-gray-500">Lade…</p>
+              ? <p className="text-xs text-gray-500"><T value={"Lade…"} /></p>
               : <SidebarNav nav={nav} selection={selection} onSelect={handleSelect} />
             }
           </div>
@@ -1351,16 +1347,16 @@ function VideosPageInner() {
       <div className="flex gap-6">
         <aside className={`hidden md:block shrink-0 transition-all duration-300 ${sidebarCollapsed ? 'w-12' : 'w-56'}`}>
           <div className="sticky top-28 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900/80 shadow-sm overflow-hidden">
-            <button
+            <L as="button"
               onClick={() => setSidebarCollapsed(v => !v)}
               title={sidebarCollapsed ? 'Archiv einblenden' : 'Archiv ausblenden'}
               className={`flex w-full items-center gap-1.5 py-3 text-gray-400 dark:text-gray-500 transition hover:text-gray-600 dark:hover:text-gray-300 ${
                 sidebarCollapsed ? 'justify-center px-0' : 'justify-between border-b border-gray-100 dark:border-white/5 px-4'
               }`}
             >
-              {!sidebarCollapsed && <span className="text-xs font-bold uppercase tracking-widest">Archiv</span>}
+              {!sidebarCollapsed && <span className="text-xs font-bold uppercase tracking-widest"><T value={"Archiv"} /></span>}
               <CollapseArrowIcon collapsed={sidebarCollapsed} className="h-3.5 w-3.5" />
-            </button>
+            </L>
             {!sidebarCollapsed && (
               <div className="p-3">
                 {videosLoading
@@ -1416,8 +1412,8 @@ function VideosPageInner() {
                 </svg>
               </div>
               <div className="text-center">
-                <p className="font-medium text-gray-700 dark:text-gray-300">Noch keine Videos</p>
-                <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">Videos können im Admin-Bereich hinzugefügt werden.</p>
+                <p className="font-medium text-gray-700 dark:text-gray-300"><T value={"Noch keine Videos"} /></p>
+                <p className="mt-1 text-sm text-gray-400 dark:text-gray-500"><T value={"Videos können im Admin-Bereich hinzugefügt werden."} /></p>
               </div>
             </div>
           )}
@@ -1429,7 +1425,7 @@ function VideosPageInner() {
 
 export default function VideosPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>}>
+    <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>}>
       <VideosPageInner />
     </Suspense>
   )

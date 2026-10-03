@@ -1,3 +1,6 @@
+'use client'
+import { useLocalizedContent } from '@/lib/i18n/LanguageProvider'
+import { T } from '@/lib/i18n/LanguageProvider'
 import React from 'react'
 import { PageSection, HeroContent, EventCardContent, PersonGridContent, TextBlockContent, NextConcertContent, BandGridContent, ChoirListContent, ImageCaptionContent, TermineListContent, ActivityGridContent, SponsorGridContent, TermineKonzerteContent, InternChangelogContent, ImageTextContent, CtaButtonContent, FaqContent, SpacerContent, QuoteContent, StatsContent, VideoEmbedContent } from '@/types/page'
 import HeroSection from './sections/HeroSection'
@@ -28,6 +31,8 @@ interface Props {
 }
 
 export default function SectionResolver({ section, index, anchorId }: Props) {
+  const localize = useLocalizedContent()
+  section = { ...section, content: localize(section.content) }
   switch (section.type) {
     case 'HERO':
       return <HeroSection content={section.content as HeroContent} />
@@ -71,9 +76,9 @@ export default function SectionResolver({ section, index, anchorId }: Props) {
       return <VideoEmbedSection content={section.content as VideoEmbedContent} />
     default:
       return (
-        <div className="py-8 text-center text-gray-400">
-          Unbekannter Sektionstyp: {(section as PageSection).type}
+        <div className="py-8 text-center text-gray-400"><T value={" Unbekannter Sektionstyp: "} />{(section as PageSection).type}
         </div>
       )
   }
 }
+

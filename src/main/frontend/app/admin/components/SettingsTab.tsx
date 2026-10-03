@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useToast } from './ui/Toast'
@@ -23,13 +24,13 @@ function VisibilitySelect({ value, onChange }: { value: NavVisibility | undefine
   const cur = value ?? 'public'
   return (
     <div>
-      <label className="mb-1 block text-xs text-gray-400">Sichtbar für</label>
+      <label className="mb-1 block text-xs text-gray-400"><T value={"Sichtbar für"} /></label>
       <div className="flex gap-1.5 flex-wrap">
         {VISIBILITY_OPTIONS.map(o => (
           <button key={o.value} type="button" onClick={() => onChange(o.value)}
             className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition
               ${cur === o.value ? 'border-green-500 bg-green-900/20 text-green-400' : 'border-white/10 bg-slate-800 text-gray-500 hover:text-white hover:border-white/30'}`}>
-            {o.icon} {o.label}
+            {o.icon} <T value={o.label} />
           </button>
         ))}
       </div>
@@ -96,11 +97,11 @@ export function PageVisibilityToggle({ slug }: { slug: string }) {
   if (hidden === null) return <span className="text-xs text-gray-600">…</span>
 
   return (
-    <button type="button" onClick={toggle} disabled={busy}
+    <L as="button" type="button" onClick={toggle} disabled={busy}
       className={`rounded px-2 py-1 text-xs transition disabled:opacity-50 whitespace-nowrap ${hidden ? 'bg-slate-700 text-gray-400 hover:text-white' : 'bg-green-900/30 text-green-400 hover:bg-green-900/50'}`}
       title={hidden ? 'Aktuell im Menü versteckt - klicken zum Anzeigen' : 'Aktuell im Menü sichtbar - klicken zum Verstecken'}>
-      {hidden ? '🚫 Versteckt' : '👁 Sichtbar'}
-    </button>
+      <T value={hidden ? '🚫 Versteckt' : '👁 Sichtbar'} />
+    </L>
   )
 }
 
@@ -126,9 +127,7 @@ function DropdownItemsEditor({ items, pages, onChange }: {
     <div className="space-y-2">
       {/* Active ordered items */}
       {items.length === 0 && (
-        <p className="rounded-lg border border-dashed border-white/10 px-3 py-3 text-xs text-gray-500 italic text-center">
-          Noch keine Seiten hinzugefügt. Wähle unten eine Seite aus.
-        </p>
+        <p className="rounded-lg border border-dashed border-white/10 px-3 py-3 text-xs text-gray-500 italic text-center"><T value={" Noch keine Seiten hinzugefügt. Wähle unten eine Seite aus. "} /></p>
       )}
       {items.map((slug, i) => {
         const page = pages.find(p => p.slug === slug)
@@ -155,7 +154,7 @@ function DropdownItemsEditor({ items, pages, onChange }: {
             {isOrphan ? (
               <>
                 <span className="font-mono text-xs text-yellow-500">/{slug}</span>
-                <span className="flex-1 text-xs text-yellow-500/70 italic">⚠ Seite nicht gefunden</span>
+                <span className="flex-1 text-xs text-yellow-500/70 italic"><T value={"⚠ Seite nicht gefunden"} /></span>
               </>
             ) : (
               <>
@@ -174,7 +173,7 @@ function DropdownItemsEditor({ items, pages, onChange }: {
       {/* Add from available pages */}
       {available.length > 0 && (
         <div className="pt-1">
-          <label className="mb-1 block text-xs text-gray-500">Seite hinzufügen:</label>
+          <label className="mb-1 block text-xs text-gray-500"><T value={"Seite hinzufügen:"} /></label>
           <div className="flex flex-wrap gap-1.5">
             {available.map(p => (
               <button key={p.slug} onClick={() => addItem(p.slug)}
@@ -186,7 +185,7 @@ function DropdownItemsEditor({ items, pages, onChange }: {
         </div>
       )}
       {available.length === 0 && items.length > 0 && (
-        <p className="text-xs text-gray-600 italic pt-1">Alle verfügbaren Seiten sind bereits im Dropdown.</p>
+        <p className="text-xs text-gray-600 italic pt-1"><T value={"Alle verfügbaren Seiten sind bereits im Dropdown."} /></p>
       )}
     </div>
   )
@@ -258,18 +257,16 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
 
       {/* ═══ HEADER ══════════════════════════════════════════════════════════ */}
       <div className="rounded-xl border border-white/10 bg-slate-800/40 px-5 py-4">
-        <h3 className="text-base font-bold text-white">🗂 Navigation konfigurieren</h3>
-        <p className="mt-1 text-xs text-gray-400">
-          Lege Dropdown-Menüs und feste Links an. Menüpunkte können per <strong className="text-gray-300">Pfeil-Buttons</strong> in der gewünschten Reihenfolge sortiert werden.
-        </p>
+        <h3 className="text-base font-bold text-white"><T value={"🗂 Navigation konfigurieren"} /></h3>
+        <p className="mt-1 text-xs text-gray-400"><T value={" Lege Dropdown-Menüs und feste Links an. Menüpunkte können per "} /><strong className="text-gray-300"><T value={"Pfeil-Buttons"} /></strong><T value={" in der gewünschten Reihenfolge sortiert werden. "} /></p>
       </div>
 
       {/* ═══ FIXED: Startseite ══════════════════════════════════════════════ */}
       <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3">
         <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-gray-300">1</span>
-        <span className="flex-1 text-sm font-medium text-white">Startseite</span>
+        <span className="flex-1 text-sm font-medium text-white"><T value={"Startseite"} /></span>
         <span className="font-mono text-xs text-gray-500">/</span>
-        <span className="rounded-full bg-slate-700 px-2.5 py-1 text-xs text-gray-500 border border-white/10">🔒 Immer sichtbar</span>
+        <span className="rounded-full bg-slate-700 px-2.5 py-1 text-xs text-gray-500 border border-white/10"><T value={"🔒 Immer sichtbar"} /></span>
       </div>
 
       {/* ═══ DROPDOWN GROUPS ════════════════════════════════════════════════ */}
@@ -292,22 +289,19 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
               </div>
               {/* Label */}
               <div className="flex flex-1 items-center gap-2 min-w-0">
-                <span className="rounded bg-slate-700 px-2 py-0.5 text-xs text-gray-400">Dropdown</span>
-                <span className="font-medium text-white truncate">{group.label || <em className="text-gray-500">Kein Name</em>}</span>
+                <span className="rounded bg-slate-700 px-2 py-0.5 text-xs text-gray-400"><T value={"Dropdown"} /></span>
+                <span className="font-medium text-white truncate">{group.label || <em className="text-gray-500"><T value={"Kein Name"} /></em>}</span>
                 <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-800 px-2 py-0.5 text-xs text-gray-500">
-                  {group.items.length} Eintr.
-                </span>
+                  {group.items.length}<T value={" Eintr. "} /></span>
               </div>
               {/* Actions */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button onClick={() => toggleExpand(gi)}
                   className="rounded-lg border border-white/10 px-2.5 py-1 text-xs text-gray-400 hover:text-white hover:border-white/30 transition">
-                  {isExpanded ? '▲ Einklappen' : '▼ Bearbeiten'}
+                  <T value={isExpanded ? '▲ Einklappen' : '▼ Bearbeiten'} />
                 </button>
                 <button onClick={() => removeGroup(gi)}
-                  className="rounded-lg border border-red-500/20 bg-red-900/10 px-2.5 py-1 text-xs text-red-400 hover:bg-red-900/30 transition">
-                  Entfernen
-                </button>
+                  className="rounded-lg border border-red-500/20 bg-red-900/10 px-2.5 py-1 text-xs text-red-400 hover:bg-red-900/30 transition"><T value={" Entfernen "} /></button>
               </div>
             </div>
 
@@ -317,8 +311,8 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                 {/* Name */}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-gray-300">Anzeigename</label>
-                    <input value={group.label} onChange={e => updateGroup(gi, { label: e.target.value })}
+                    <label className="mb-1 block text-xs font-semibold text-gray-300"><T value={"Anzeigename"} /></label>
+                    <L as="input" value={group.label} onChange={e => updateGroup(gi, { label: e.target.value })}
                       placeholder="z. B. Über uns"
                       className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
                   </div>
@@ -327,25 +321,21 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
 
                 {/* Click behaviour */}
                 <div>
-                  <label className="mb-2 block text-xs font-semibold text-gray-300">Klick-Verhalten auf den Namen</label>
+                  <label className="mb-2 block text-xs font-semibold text-gray-300"><T value={"Klick-Verhalten auf den Namen"} /></label>
                   <div className="flex gap-2">
                     <button type="button" onClick={() => updateGroup(gi, { target: undefined })}
                       className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition
-                        ${!group.target ? 'border-green-500 bg-green-900/20 text-green-400' : 'border-white/10 bg-slate-800 text-gray-400 hover:border-white/30 hover:text-white'}`}>
-                      ▾ Nur Dropdown öffnen
-                    </button>
+                        ${!group.target ? 'border-green-500 bg-green-900/20 text-green-400' : 'border-white/10 bg-slate-800 text-gray-400 hover:border-white/30 hover:text-white'}`}><T value={" ▾ Nur Dropdown öffnen "} /></button>
                     <button type="button" onClick={() => updateGroup(gi, { target: group.target || pages[0]?.slug || '' })}
                       className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition
-                        ${group.target ? 'border-blue-500 bg-blue-900/20 text-blue-400' : 'border-white/10 bg-slate-800 text-gray-400 hover:border-white/30 hover:text-white'}`}>
-                      🔗 Auf Seite weiterleiten
-                    </button>
+                        ${group.target ? 'border-blue-500 bg-blue-900/20 text-blue-400' : 'border-white/10 bg-slate-800 text-gray-400 hover:border-white/30 hover:text-white'}`}><T value={" 🔗 Auf Seite weiterleiten "} /></button>
                   </div>
                   {group.target && (
                     <div className="mt-2">
-                      <label className="mb-1 block text-xs text-gray-400">Zielseite</label>
+                      <label className="mb-1 block text-xs text-gray-400"><T value={"Zielseite"} /></label>
                       <select value={group.target} onChange={e => updateGroup(gi, { target: e.target.value || undefined })}
                         className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-blue-500 focus:outline-none">
-                        <option value="">— Seite auswählen —</option>
+                        <option value=""><T value={"— Seite auswählen —"} /></option>
                         {pages.map(p => <option key={p.slug} value={p.slug}>/{p.slug} – {p.title}</option>)}
                       </select>
                     </div>
@@ -355,7 +345,7 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                 {/* Items ordered list */}
                 <div>
                   <div className="mb-2 flex items-center gap-2">
-                    <label className="text-xs font-semibold text-gray-300">Menüpunkte (Reihenfolge)</label>
+                    <label className="text-xs font-semibold text-gray-300"><T value={"Menüpunkte (Reihenfolge)"} /></label>
                     <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-gray-500">{group.items.length}</span>
                   </div>
                   <DropdownItemsEditor
@@ -371,24 +361,20 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
       })}
 
       <button onClick={addGroup}
-        className="w-full rounded-xl border border-dashed border-white/20 py-3 text-sm font-medium text-gray-400 hover:border-green-500/60 hover:text-green-400 transition">
-        + Neues Dropdown-Menü hinzufügen
-      </button>
+        className="w-full rounded-xl border border-dashed border-white/20 py-3 text-sm font-medium text-gray-400 hover:border-green-500/60 hover:text-green-400 transition"><T value={" + Neues Dropdown-Menü hinzufügen "} /></button>
 
       {/* ═══ FESTE LINKS ════════════════════════════════════════════════════ */}
       <div className="rounded-xl border border-blue-500/20 bg-blue-900/10 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 border-b border-blue-500/10">
           <div>
-            <p className="text-sm font-bold text-blue-300">🔗 Feste Links</p>
-            <p className="mt-0.5 text-xs text-gray-500">Eigenständige Links ohne Dropdown – z.&nbsp;B. „Intern" nur für Mitglieder.</p>
+            <p className="text-sm font-bold text-blue-300"><T value={"🔗 Feste Links"} /></p>
+            <p className="mt-0.5 text-xs text-gray-500"><T value={"Eigenständige Links ohne Dropdown – z. B. „Intern\" nur für Mitglieder."} /></p>
           </div>
-          <button onClick={addFixedLink} className="rounded-lg border border-blue-500/30 bg-blue-900/20 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-800/40 transition">
-            + Festen Link
-          </button>
+          <button onClick={addFixedLink} className="rounded-lg border border-blue-500/30 bg-blue-900/20 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-800/40 transition"><T value={" + Festen Link "} /></button>
         </div>
 
         <div className="p-4 space-y-3">
-          {fixedLinks.length === 0 && <p className="text-xs text-gray-600 italic">Keine festen Links konfiguriert.</p>}
+          {fixedLinks.length === 0 && <p className="text-xs text-gray-600 italic"><T value={"Keine festen Links konfiguriert."} /></p>}
           {fixedLinks.map((link, li) => (
             <div key={li} className="rounded-lg border border-white/10 bg-slate-900/60 overflow-hidden">
               {/* Header row */}
@@ -399,7 +385,7 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                   <button onClick={() => moveFixedLink(li, 1)} disabled={li === fixedLinks.length - 1}
                     className="flex h-4 w-5 items-center justify-center rounded text-gray-600 hover:bg-slate-700 hover:text-white disabled:opacity-20 transition text-xs">▼</button>
                 </div>
-                <span className="flex-1 font-medium text-blue-200">{link.label || <em className="text-gray-500">Kein Name</em>}</span>
+                <span className="flex-1 font-medium text-blue-200">{link.label || <em className="text-gray-500"><T value={"Kein Name"} /></em>}</span>
                 <span className="font-mono text-xs text-gray-500">{link.href}</span>
                 <button onClick={() => removeFixedLink(li)} className="rounded px-1.5 py-0.5 text-xs text-red-400 hover:bg-red-900/30 transition">✕</button>
               </div>
@@ -408,14 +394,14 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
               <div className="p-3 space-y-2">
                 <div className="flex gap-2 flex-wrap">
                   <div className="flex-1 min-w-[150px]">
-                    <label className="mb-1 block text-xs text-gray-400">Anzeigename</label>
+                    <label className="mb-1 block text-xs text-gray-400"><T value={"Anzeigename"} /></label>
                     <input value={link.label} onChange={e => updateFixedLink(li, { label: e.target.value })}
                       className="w-full rounded-lg border border-white/10 bg-slate-800 px-2 py-1.5 text-sm text-white focus:border-blue-500 focus:outline-none" />
                   </div>
                   <div className="flex-1 min-w-[150px]">
-                    <label className="mb-1 block text-xs text-gray-400">Pfad / URL</label>
+                    <label className="mb-1 block text-xs text-gray-400"><T value={"Pfad / URL"} /></label>
                     <div className="flex gap-1">
-                      <input value={link.href} onChange={e => updateFixedLink(li, { href: e.target.value })} placeholder="/intern"
+                      <L as="input" value={link.href} onChange={e => updateFixedLink(li, { href: e.target.value })} placeholder="/intern"
                         className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-2 py-1.5 text-sm text-white font-mono focus:border-blue-500 focus:outline-none" />
                       <select
                         value={pages.find(p => `/${p.slug}` === link.href)?.slug ?? ''}
@@ -425,7 +411,7 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                           if (p) updateFixedLink(li, { href: `/${p.slug}` })
                         }}
                         className="rounded-lg border border-white/10 bg-slate-800 px-2 py-1.5 text-xs text-gray-400 focus:border-blue-500 focus:outline-none max-w-[100px]">
-                        <option value="">📄 Seite…</option>
+                        <option value=""><T value={"📄 Seite…"} /></option>
                         {pages.map(p => <option key={p.slug} value={p.slug}>/{p.slug}</option>)}
                       </select>
                     </div>
@@ -438,13 +424,11 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                   const linkedPage = linkSlug ? pages.find(p => p.slug === linkSlug) : null
                   if (!linkSlug || link.href === '/') return null
                   return linkedPage
-                    ? <p className="text-xs text-green-500/70">✓ CMS-Seite „{linkedPage.title}" verknüpft</p>
+                    ? <p className="text-xs text-green-500/70"><T value={"✓ CMS-Seite „"} />{linkedPage.title}<T value={"\" verknüpft"} /></p>
                     : <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-xs text-yellow-500/60">⚠ Keine CMS-Seite für <span className="font-mono">{link.href}</span></p>
+                        <p className="text-xs text-yellow-500/60"><T value={"⚠ Keine CMS-Seite für "} /><span className="font-mono">{link.href}</span></p>
                         <button type="button" onClick={() => createPageForSlug(linkSlug, link.label)}
-                          className="rounded bg-yellow-700/40 border border-yellow-500/30 px-2 py-0.5 text-xs text-yellow-300 hover:bg-yellow-600/50 transition">
-                          + Seite anlegen
-                        </button>
+                          className="rounded bg-yellow-700/40 border border-yellow-500/30 px-2 py-0.5 text-xs text-yellow-300 hover:bg-yellow-600/50 transition"><T value={" + Seite anlegen "} /></button>
                       </div>
                 })()}
 
@@ -453,12 +437,12 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                 {/* Sub-Items */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5 mt-1">
-                    <label className="text-xs text-gray-400 font-medium">Untermenü-Links</label>
+                    <label className="text-xs text-gray-400 font-medium"><T value={"Untermenü-Links"} /></label>
                     <button onClick={() => updateFixedLink(li, { items: [...(link.items ?? []), { label: 'Neuer Link', href: '/' }] })}
-                      className="text-xs text-blue-400 hover:text-blue-300 transition">+ Sub-Link</button>
+                      className="text-xs text-blue-400 hover:text-blue-300 transition"><T value={"+ Sub-Link"} /></button>
                   </div>
                   {(link.items ?? []).length === 0 && (
-                    <p className="text-xs text-gray-600 italic">Keine Sub-Links.</p>
+                    <p className="text-xs text-gray-600 italic"><T value={"Keine Sub-Links."} /></p>
                   )}
                   <div className="space-y-1.5">
                     {(link.items ?? []).map((sub, si) => {
@@ -469,7 +453,7 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                       return (
                         <div key={si} className="rounded-lg border border-white/10 bg-slate-800/60 p-2 space-y-1.5">
                           <div className="flex gap-2 items-center">
-                            <input value={sub.label} onChange={e => updateSub({ label: e.target.value })}
+                            <L as="input" value={sub.label} onChange={e => updateSub({ label: e.target.value })}
                               placeholder="Label"
                               className="flex-1 rounded border border-white/10 bg-slate-900 px-2 py-1 text-xs text-white focus:border-blue-500 focus:outline-none" />
                             <select value={linkedPage ? subSlug : ''}
@@ -479,24 +463,22 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                                 if (p) updateSub({ href: `/${p.slug}`, label: sub.label || p.title })
                               }}
                               className="rounded border border-white/10 bg-slate-900 px-2 py-1 text-xs text-gray-300 focus:border-blue-500 focus:outline-none max-w-[130px]">
-                              <option value="">📄 Seite wählen…</option>
+                              <option value=""><T value={"📄 Seite wählen…"} /></option>
                               {pages.map(p => <option key={p.slug} value={p.slug}>/{p.slug}</option>)}
                             </select>
-                            <input value={sub.href} onChange={e => updateSub({ href: e.target.value })}
+                            <L as="input" value={sub.href} onChange={e => updateSub({ href: e.target.value })}
                               placeholder="/pfad"
                               className="w-28 rounded border border-white/10 bg-slate-900 px-2 py-1 text-xs text-white font-mono focus:border-blue-500 focus:outline-none" />
                             <button onClick={() => updateFixedLink(li, { items: (link.items ?? []).filter((_, idx) => idx !== si) })}
                               className="text-xs text-red-400 hover:text-red-300 px-1 flex-shrink-0">✕</button>
                           </div>
                           {linkedPage
-                            ? <p className="text-xs text-green-500/80">✓ „{linkedPage.title}" verknüpft</p>
+                            ? <p className="text-xs text-green-500/80">✓ „{linkedPage.title}<T value={"\" verknüpft"} /></p>
                             : sub.href && sub.href !== '/'
                               ? <div className="flex items-center gap-2">
-                                  <p className="text-xs text-yellow-500/70">⚠ Keine CMS-Seite für <span className="font-mono">{sub.href}</span></p>
+                                  <p className="text-xs text-yellow-500/70"><T value={"⚠ Keine CMS-Seite für "} /><span className="font-mono">{sub.href}</span></p>
                                   <button type="button" onClick={() => createPageForSlug(subSlug, sub.label)}
-                                    className="rounded bg-yellow-700/40 border border-yellow-500/30 px-2 py-0.5 text-xs text-yellow-300 hover:bg-yellow-600/50 transition">
-                                    + Anlegen
-                                  </button>
+                                    className="rounded bg-yellow-700/40 border border-yellow-500/30 px-2 py-0.5 text-xs text-yellow-300 hover:bg-yellow-600/50 transition"><T value={" + Anlegen "} /></button>
                                 </div>
                               : null
                           }
@@ -514,15 +496,15 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
       {/* ═══ HIDDEN PAGES ═══════════════════════════════════════════════════ */}
       <div className="rounded-xl border border-red-500/20 bg-red-900/10 overflow-hidden">
         <div className="px-5 py-3 border-b border-red-500/10">
-          <p className="text-sm font-bold text-red-300">🚫 Einzelseiten ausblenden</p>
-          <p className="mt-0.5 text-xs text-gray-500">Seiten ohne Dropdown erscheinen als eigenständiger Link – hier kannst du einzelne davon verstecken.</p>
+          <p className="text-sm font-bold text-red-300"><T value={"🚫 Einzelseiten ausblenden"} /></p>
+          <p className="mt-0.5 text-xs text-gray-500"><T value={"Seiten ohne Dropdown erscheinen als eigenständiger Link – hier kannst du einzelne davon verstecken."} /></p>
         </div>
         <div className="p-4">
           {(() => {
             const visiblePages = pages.filter(p => !inDropdown.has(p.slug))
             const orphanedHidden = Array.from(hiddenSet).filter(slug => !pages.find(p => p.slug === slug) && !inDropdown.has(slug))
             if (visiblePages.length === 0 && orphanedHidden.length === 0)
-              return <p className="text-xs text-gray-500 italic">Alle Seiten sind in Dropdowns vergeben.</p>
+              return <p className="text-xs text-gray-500 italic"><T value={"Alle Seiten sind in Dropdowns vergeben."} /></p>
             return (
               <div className="flex flex-col divide-y divide-white/5 rounded-lg border border-white/10 overflow-hidden">
                 {orphanedHidden.map(slug => (
@@ -532,7 +514,7 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                       <span className="text-white text-xs">✓</span>
                     </span>
                     <span className="font-mono text-xs w-28 truncate">/{slug}</span>
-                    <span className="flex-1 italic text-yellow-500/70 text-xs">⚠ Seite nicht gefunden – klicken zum Entfernen</span>
+                    <span className="flex-1 italic text-yellow-500/70 text-xs"><T value={"⚠ Seite nicht gefunden – klicken zum Entfernen"} /></span>
                   </button>
                 ))}
                 {visiblePages.map(p => {
@@ -548,7 +530,7 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                       <span className="font-mono text-xs text-gray-500 w-28 truncate">/{p.slug}</span>
                       <span className="flex-1 truncate">{p.title}</span>
                       <span className={`text-xs ${isHidden ? 'text-red-400/70' : 'text-gray-600'}`}>
-                        {isHidden ? 'ausgeblendet' : '→ eigenständiger Link'}
+                        <T value={isHidden ? 'ausgeblendet' : '→ eigenständiger Link'} />
                       </span>
                     </button>
                   )
@@ -584,11 +566,11 @@ function R2FolderPickerModal({ onSelect, onClose }: { onSelect: (prefix: string)
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 shadow-2xl flex flex-col max-h-[70vh]">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <h3 className="font-bold text-white">📁 R2-Ordner wählen</h3>
+          <h3 className="font-bold text-white"><T value={"📁 R2-Ordner wählen"} /></h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-lg">✕</button>
         </div>
         <div className="flex items-center gap-1 px-5 py-3 border-b border-white/10 flex-wrap">
-          <button onClick={() => setPrefix('')} className="text-xs text-green-400 hover:underline">Root</button>
+          <button onClick={() => setPrefix('')} className="text-xs text-green-400 hover:underline"><T value={"Root"} /></button>
           {breadcrumbs.map((b, i) => {
             const p = breadcrumbs.slice(0, i + 1).join('/') + '/'
             return <React.Fragment key={p}>
@@ -599,11 +581,10 @@ function R2FolderPickerModal({ onSelect, onClose }: { onSelect: (prefix: string)
         </div>
         <div className="overflow-y-auto p-4 flex flex-col gap-2">
           <button onClick={() => { onSelect(prefix); onClose() }}
-            className="flex items-center gap-2 rounded-lg border border-green-500/40 bg-green-900/20 px-4 py-2.5 text-sm text-green-400 hover:bg-green-900/40 transition">
-            ✓ Diesen Ordner wählen: <span className="font-mono">{prefix || 'Root'}</span>
+            className="flex items-center gap-2 rounded-lg border border-green-500/40 bg-green-900/20 px-4 py-2.5 text-sm text-green-400 hover:bg-green-900/40 transition"><T value={" ✓ Diesen Ordner wählen: "} /><span className="font-mono"><T value={prefix || 'Root'} /></span>
           </button>
-          {loading ? <p className="text-sm text-gray-400 py-2">Lade…</p> : folders.length === 0
-            ? <p className="text-sm text-gray-500 py-2">Keine Unterordner vorhanden.</p>
+          {loading ? <p className="text-sm text-gray-400 py-2"><T value={"Lade…"} /></p> : folders.length === 0
+            ? <p className="text-sm text-gray-500 py-2"><T value={"Keine Unterordner vorhanden."} /></p>
             : folders.map(f => (
               <button key={f} onClick={() => setPrefix(f)}
                 className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-4 py-2.5 text-sm text-gray-300 hover:border-green-500/40 hover:text-white transition">
@@ -650,7 +631,7 @@ export default function SettingsTab() {
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
 
-  if (loading) return <p className="text-gray-400 text-sm">Lade Einstellungen…</p>
+  if (loading) return <p className="text-gray-400 text-sm"><T value={"Lade Einstellungen…"} /></p>
 
   return (
     <div className="space-y-6">
@@ -664,7 +645,7 @@ export default function SettingsTab() {
       {/* ── Logo ─────────────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
-          <h3 className="text-sm font-bold text-white">🖼 Website-Darstellung</h3>
+          <h3 className="text-sm font-bold text-white"><T value={"🖼 Website-Darstellung"} /></h3>
         </div>
         <div className="p-5">
           <ImageField
@@ -678,25 +659,23 @@ export default function SettingsTab() {
       {/* ── Noten ────────────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
-          <h3 className="text-sm font-bold text-white">🎼 Noten-Einstellungen</h3>
-          <p className="mt-0.5 text-xs text-gray-400">Der R2-Ordner, aus dem die Noten-Seite für alle Mitglieder lädt.</p>
+          <h3 className="text-sm font-bold text-white"><T value={"🎼 Noten-Einstellungen"} /></h3>
+          <p className="mt-0.5 text-xs text-gray-400"><T value={"Der R2-Ordner, aus dem die Noten-Seite für alle Mitglieder lädt."} /></p>
         </div>
         <div className="p-5">
-          <label className="mb-1 block text-xs text-gray-400">Noten-Ordner (R2-Präfix)</label>
+          <label className="mb-1 block text-xs text-gray-400"><T value={"Noten-Ordner (R2-Präfix)"} /></label>
           <div className="flex gap-2 items-center">
-            <input
+            <L as="input"
               value={settings.noten_prefix || ''}
               onChange={e => setSettings({ ...settings, noten_prefix: e.target.value })}
               placeholder="z.B. Noten/"
               className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white font-mono focus:border-green-500 focus:outline-none"
             />
             <button onClick={() => { setFolderPickerTarget('noten_prefix'); setShowFolderPicker(true) }}
-              className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition whitespace-nowrap">
-              📁 R2 wählen
-            </button>
+              className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition whitespace-nowrap"><T value={" 📁 R2 wählen "} /></button>
           </div>
           <p className="mt-1 text-xs text-gray-500">
-            Aktuell: <span className="font-mono text-green-400">{settings.noten_prefix || '(nicht gesetzt – Root)'}</span>
+            Aktuell: <span className="font-mono text-green-400"><T value={settings.noten_prefix || '(nicht gesetzt – Root)'} /></span>
           </p>
         </div>
       </div>
@@ -704,28 +683,23 @@ export default function SettingsTab() {
       {/* ── Interne Galerie ──────────────────────────────────────────────── */}
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
-          <h3 className="text-sm font-bold text-white">🖼️ Interne Galerie</h3>
-          <p className="mt-0.5 text-xs text-gray-400">
-            Der R2-Ordner, aus dem die interne Galerie (nur für angemeldete Mitglieder) lädt.
-            Solange hier nichts eingetragen ist, zeigt die Seite einen Hinweis, dass noch nichts hinterlegt wurde.
-          </p>
+          <h3 className="text-sm font-bold text-white"><T value={"🖼️ Interne Galerie"} /></h3>
+          <p className="mt-0.5 text-xs text-gray-400"><T value={" Der R2-Ordner, aus dem die interne Galerie (nur für angemeldete Mitglieder) lädt. Solange hier nichts eingetragen ist, zeigt die Seite einen Hinweis, dass noch nichts hinterlegt wurde. "} /></p>
         </div>
         <div className="p-5">
-          <label className="mb-1 block text-xs text-gray-400">Interne-Galerie-Ordner (R2-Präfix)</label>
+          <label className="mb-1 block text-xs text-gray-400"><T value={"Interne-Galerie-Ordner (R2-Präfix)"} /></label>
           <div className="flex gap-2 items-center">
-            <input
+            <L as="input"
               value={settings.galerie_intern_prefix || ''}
               onChange={e => setSettings({ ...settings, galerie_intern_prefix: e.target.value })}
               placeholder="z.B. galerie-intern/"
               className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white font-mono focus:border-green-500 focus:outline-none"
             />
             <button onClick={() => { setFolderPickerTarget('galerie_intern_prefix'); setShowFolderPicker(true) }}
-              className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition whitespace-nowrap">
-              📁 R2 wählen
-            </button>
+              className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition whitespace-nowrap"><T value={" 📁 R2 wählen "} /></button>
           </div>
           <p className="mt-1 text-xs text-gray-500">
-            Aktuell: <span className="font-mono text-green-400">{settings.galerie_intern_prefix || '(nicht gesetzt – Galerie zeigt "Noch nichts hinterlegt")'}</span>
+            Aktuell: <span className="font-mono text-green-400"><T value={settings.galerie_intern_prefix || '(nicht gesetzt – Galerie zeigt "Noch nichts hinterlegt")'} /></span>
           </p>
         </div>
       </div>
@@ -733,8 +707,8 @@ export default function SettingsTab() {
       {/* ── Navigation ───────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
-          <h3 className="text-sm font-bold text-white">🗂 Navigation</h3>
-          <p className="mt-0.5 text-xs text-gray-400">Dropdown-Menüs, feste Links und Sichtbarkeitsregeln konfigurieren.</p>
+          <h3 className="text-sm font-bold text-white"><T value={"🗂 Navigation"} /></h3>
+          <p className="mt-0.5 text-xs text-gray-400"><T value={"Dropdown-Menüs, feste Links und Sichtbarkeitsregeln konfigurieren."} /></p>
         </div>
         <div className="p-5">
           <NavConfigEditor settings={settings} setSettings={setSettings} allPages={allPages} reloadPages={reloadPages} />
@@ -745,9 +719,9 @@ export default function SettingsTab() {
       <div className="flex items-center gap-3">
         <button onClick={saveSettings} disabled={saving}
           className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-          {saving ? 'Speichert…' : saved ? '✓ Gespeichert!' : '✓ Einstellungen speichern'}
+          <T value={saving ? 'Speichert…' : saved ? '✓ Gespeichert!' : '✓ Einstellungen speichern'} />
         </button>
-        {saved && <span className="text-xs text-green-400">Alle Änderungen wurden gespeichert.</span>}
+        {saved && <span className="text-xs text-green-400"><T value={"Alle Änderungen wurden gespeichert."} /></span>}
       </div>
     </div>
   )

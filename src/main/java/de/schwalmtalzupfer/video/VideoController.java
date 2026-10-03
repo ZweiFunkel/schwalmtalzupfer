@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VideoController {
 
     private final VideoRepository videoRepository;
-    
+
     @Value("${youtube.api.key:}")
     private String youtubeApiKey;
 
@@ -34,7 +34,7 @@ public class VideoController {
     public List<Video> getAll() {
         return videoRepository.findAllByOrderByPositionAscTitleAsc();
     }
-    
+
     /** Playlist-Videos von YouTube abrufen (mit 1h Cache) */
     @GetMapping("/playlist/{playlistId}")
     @PreAuthorize("hasAnyRole('GUEST', 'MEMBER', 'BOARD', 'ADMIN')")
@@ -60,22 +60,25 @@ public class VideoController {
             System.out.println("API Key is null or empty – returning empty list");
             return ResponseEntity.ok(new ArrayList<>());
         }
-        
+
         try {
-            RestTemplate restTemplate = new RestTemplate();
+            var requestFactory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+            requestFactory.setConnectTimeout(3000);
+            requestFactory.setReadTimeout(5000);
+            RestTemplate restTemplate = new RestTemplate(requestFactory);
             String url = String.format(
                 "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=%s&key=%s",
                 playlistId, youtubeApiKey
             );
-            System.out.println("Calling YouTube API: " + url);
-            
+
+
             @SuppressWarnings("unchecked")
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);
-            System.out.println("YouTube API Response: " + (response != null ? response.toString() : "null"));
-            
+
+
             List<PlaylistItem> items = new ArrayList<>();
-            
-            if (response != null && response.containsKey("items")) {
+
+            while (response != null && response.containsKey("items")) {
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> itemsList = (List<Map<String, Object>>) response.get("items");
                 for (Map<String, Object> item : itemsList) {
@@ -120,8 +123,11 @@ public class VideoController {
                         System.err.println("Skipping playlist item due to error: " + itemEx.getMessage());
                     }
                 }
+                String nextPage = (String) response.get("nextPageToken");
+                if (nextPage == null || nextPage.isBlank()) break;
+                response = restTemplate.getForObject(url + "&pageToken=" + java.net.URLEncoder.encode(nextPage, java.nio.charset.StandardCharsets.UTF_8), Map.class);
             }
-            
+
             System.out.println("Returning " + items.size() + " items");
             // Ergebnis cachen (auch leere Liste, um wiederholte API-Calls bei privaten Playlists zu vermeiden)
             playlistCache.put(playlistId, new Object[]{Instant.now().toEpochMilli(), items});
@@ -159,4 +165,3 @@ public class VideoController {
         return ResponseEntity.noContent().build();
     }
 }
-

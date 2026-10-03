@@ -56,8 +56,8 @@ public class PageController {
     public List<PageDto.PageResponse> listPages(Authentication authentication) {
         boolean admin = isAdmin(authentication);
         return pageRepository.findAll().stream()
-                .filter(p -> admin || p.isPublished())
-                .map(this::toDto)
+                .filter(p -> PageVisibility.canRead(p, authentication))
+                .map(p -> forReader(p, authentication))
                 .toList();
     }
 
@@ -66,8 +66,8 @@ public class PageController {
         String slug = extractSlug(request);
         boolean admin = isAdmin(authentication);
         return pageRepository.findBySlug(slug)
-                .filter(p -> admin || p.isPublished())
-                .map(this::toDto)
+                .filter(p -> PageVisibility.canRead(p, authentication))
+                .map(p -> forReader(p, authentication))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -210,6 +210,12 @@ public class PageController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    private PageDto.PageResponse forReader(Page page, Authentication auth) {
+        PageDto.PageResponse dto = toDto(page);
+        return new PageDto.PageResponse(dto.id(), dto.slug(), dto.title(), dto.published(), dto.sections().stream()
+                .filter(section -> PageVisibility.signedIn(auth) || section.type() != SectionType.INTERN_CHANGELOG).toList());
+    }
+
     private PageDto.PageResponse toDto(Page page) {
         List<PageDto.SectionResponse> sections = page.getSections().stream()
                 .map(s -> PageDto.SectionResponse.builder()
@@ -222,4 +228,6 @@ public class PageController {
         return new PageDto.PageResponse(page.getId(), page.getSlug(), page.getTitle(), page.isPublished(), sections);
     }
 }
+
+
 

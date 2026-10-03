@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
@@ -100,7 +101,7 @@ function FolderCard({ folder }: { folder: BrowseFolder }) {
       <div className="aspect-[4/3] overflow-hidden">
         {folder.coverUrl
           // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={folder.coverUrl} alt="" loading="lazy"
+          ? <L as="img" src={folder.coverUrl} alt="" loading="lazy"
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
           : <div className="flex h-full w-full items-center justify-center text-5xl opacity-20">🖼️</div>
         }
@@ -109,9 +110,9 @@ function FolderCard({ folder }: { folder: BrowseFolder }) {
       <div className="absolute bottom-0 left-0 right-0 p-3">
         <p className="text-base font-bold text-white leading-tight">{label(folder.name)}</p>
         <p className="mt-0.5 text-xs text-white/60">
-          {folder.imageCount > 0
+          <T value={folder.imageCount > 0
             ? `${folder.imageCount} Foto${folder.imageCount !== 1 ? 's' : ''}`
-            : folder.hasSubFolders ? 'Unteralben' : 'Leer'}
+            : folder.hasSubFolders ? 'Unteralben' : 'Leer'} />
         </p>
       </div>
       <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition">
@@ -172,7 +173,7 @@ function PhotoThumb({ img, apiPath, eager, onLoaded, onClick }: {
   }, [eager, img.key, apiPath])
 
   return (
-    <button
+    <L as="button"
       ref={containerRef}
       onClick={onClick}
       className="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -186,7 +187,7 @@ function PhotoThumb({ img, apiPath, eager, onLoaded, onClick }: {
       {/* Bild — wird eingeblendet sobald geladen */}
       {src && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <L as="img"
           ref={imgRef}
           src={src}
           alt=""
@@ -206,7 +207,7 @@ function PhotoThumb({ img, apiPath, eager, onLoaded, onClick }: {
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
         </svg>
       </div>
-    </button>
+    </L>
   )
 }
 
@@ -238,8 +239,7 @@ function PhotoGrid({ images, apiPath }: { images: BrowseImage[]; apiPath: string
   return (
     <>
       <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-        {images.length} Foto{images.length !== 1 ? 's' : ''} &nbsp;·&nbsp; Klicken zum Öffnen &nbsp;·&nbsp; ← → zum Navigieren
-      </p>
+        {images.length}<T value={" Foto"} />{images.length !== 1 ? 's' : ''}<T value={" · Klicken zum Öffnen · ← → zum Navigieren "} /></p>
 
       {/* Skeleton-Platzhalter solange die ersten Bilder noch laden */}
       {!gridVisible && (
@@ -361,7 +361,7 @@ export default function GalerieModernView({
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/logo.svg" alt="" className="h-10 w-10 animate-spin-slow brightness-0 dark:invert" />
+            <L as="img" src="/assets/logo.svg" alt="" className="h-10 w-10 animate-spin-slow brightness-0 dark:invert" />
             <div className="h-0.5 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
               <div className="h-full w-full origin-left animate-[shimmer_1.5s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-green-500 to-transparent" />
             </div>
@@ -375,10 +375,8 @@ export default function GalerieModernView({
       {/* Überschrift */}
       {isRoot ? (
         <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">Galerie</h1>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
-            Fotos aus Konzerten, Ausflügen und Vereinsleben
-          </p>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl"><T value={"Galerie"} /></h1>
+          <p className="mt-2 text-gray-500 dark:text-gray-400"><T value={" Fotos aus Konzerten, Ausflügen und Vereinsleben "} /></p>
         </div>
       ) : (
         <h2 className="mb-8 text-2xl font-extrabold text-gray-900 dark:text-white sm:text-3xl">
@@ -413,7 +411,7 @@ export default function GalerieModernView({
           {!hasContent && (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <div className="mb-4 text-6xl opacity-20">📂</div>
-              <p className="text-gray-500 dark:text-gray-400">Noch keine Inhalte in diesem Bereich.</p>
+              <p className="text-gray-500 dark:text-gray-400"><T value={"Noch keine Inhalte in diesem Bereich."} /></p>
             </div>
           )}
         </>
@@ -423,16 +421,12 @@ export default function GalerieModernView({
       {!loading && apiError && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="mb-4 text-6xl opacity-20">⚠️</div>
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Galerie konnte nicht geladen werden.</p>
-          <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
-            Möglicherweise ist die R2-Speicher-Verbindung nicht konfiguriert.
-          </p>
+          <p className="text-gray-500 dark:text-gray-400 font-medium"><T value={"Galerie konnte nicht geladen werden."} /></p>
+          <p className="mt-1 text-sm text-gray-400 dark:text-gray-500"><T value={" Möglicherweise ist die R2-Speicher-Verbindung nicht konfiguriert. "} /></p>
           <button
             onClick={() => { setApiError(false); setLoading(true); fetch(`${API_BASE}/api/${apiPath}/browse?prefix=${encodeURIComponent(currentPrefix)}`, { credentials: requireAuth ? 'include' : 'same-origin' }).then(r => r.ok ? r.json() : Promise.reject()).then(d => { setData(d); setLoading(false) }).catch(() => { setApiError(true); setLoading(false) }) }}
             className="mt-4 rounded-lg border border-gray-300 dark:border-white/20 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:border-green-500/50 hover:text-green-600 dark:hover:text-green-400 transition"
-          >
-            Erneut versuchen
-          </button>
+          ><T value={" Erneut versuchen "} /></button>
         </div>
       )}
     </div>

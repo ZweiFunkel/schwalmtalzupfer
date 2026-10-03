@@ -6,6 +6,10 @@ const isProd = process.env.NODE_ENV === 'production'
 const DEV_BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'
 
 const nextConfig = {
+  // Windows development environments can reject Next's worker child processes
+  // with EPERM. A single worker keeps the dev server usable without changing
+  // the production export.
+  experimental: { cpus: 1, workerThreads: true },
   ...(isProd ? { output: 'export', distDir: 'out' } : {}),
   trailingSlash: false, // Set to false for consistent URL handling without trailing slashes
   images: {

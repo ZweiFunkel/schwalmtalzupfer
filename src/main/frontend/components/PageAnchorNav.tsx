@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 
 import React, { useEffect, useRef, useState } from 'react'
 
@@ -67,7 +68,7 @@ export default function PageAnchorNav({ anchors }: { anchors: AnchorItem[] }) {
                 : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            {a.label}
+            <T value={a.label} />
           </button>
         ))}
       </div>
@@ -105,7 +106,7 @@ export default function PageAnchorNav({ anchors }: { anchors: AnchorItem[] }) {
                 }`}
               >
                 <span className={`h-2 w-2 rounded-full shrink-0 ${active === a.id ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-600'}`} />
-                {a.label}
+                <T value={a.label} />
               </button>
             ))}
           </div>

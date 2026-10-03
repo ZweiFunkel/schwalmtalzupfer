@@ -1,10 +1,26 @@
 'use client'
+import { T, L, useLanguage } from '@/lib/i18n/LanguageProvider'
 import React, { useEffect, useRef, useState } from 'react'
 import { getApiBase } from '@/lib/api'
 import { Meldung, isMeldungScheduledNow } from '@/lib/useMeldungen'
 
 const API_BASE = getApiBase()
 const STORAGE_KEY = 'dismissed_announcements'
+
+const ANNOUNCEMENT_EN: Record<string, string> = {
+  'Sommerkonzert 2026 fällt aus!': 'Summer concert 2026 is cancelled!',
+  'Liebe Schwalmtalzupfer und Freunde der Schwalmtalzupfer,\n\nseit Monaten proben wir voller Vorfreude für unser großes Sommerkonzert am Sonntag, den 28.06.2026. Ein Sommerkonzert mit viel Sonne klingt zunächst einmal wunderbar. Damit wir jedoch mit rund 300 Schwalmtalzupfern gemeinsam ein Open-Air-Konzert durchführen können, müssen die Rahmenbedingungen stimmen. Leider sind die Wetterprognosen für Sonntag derzeit sehr widersprüchlich. An einem Tag werden 28 Grad vorhergesagt, am nächsten plötzlich 35 Grad. Hinzu kommen mögliche Gewitter, deren Entwicklung sich aktuell nur schwer und oft erst sehr kurzfristig einschätzen lässt. Das birgt Risiken für alle Beteiligten sowie für die technische Ausstattung. Aus diesem Grund sind wir, der Vorstand der Schwalmtalzupfer, gemeinsam mit der Gemeinde Schwalmtal nach sorgfältiger Abwägung zu dem Entschluss gekommen, das Konzert schweren Herzens abzusagen. Die Sicherheit unserer Mitspielerinnen und Mitspieler, unserer Gäste sowie aller Helfer hat für uns oberste Priorität. Diese Entscheidung ist uns nicht leichtgefallen, denn wir hätten sehr gerne für euch gespielt und gemeinsam mit euch einen schönen Sommernachmittag verbracht. Wir danken euch für euer Verständnis und freuen uns darauf, euch spätestens bei unserem Winterkonzert am 4. Advent in der Achim-Besgen-Halle begrüßen zu dürfen. Dort tauschen wir Sonnencreme und Hitzewarnungen ganz entspannt gegen Weihnachtsstimmung und warme Getränke ein.\n\nEure Schwalmtalzupfer': 'Dear Schwalmtalzupfer members and friends,\n\nFor months, we have been rehearsing excitedly for our big summer concert on Sunday, 28 June 2026. A summer concert with plenty of sunshine sounds wonderful at first. However, to perform an open-air concert together with around 300 Schwalmtalzupfer members, the conditions have to be right. Unfortunately, the weather forecasts for Sunday are currently very inconsistent. One day predicts 28 degrees, the next suddenly 35 degrees. There is also a risk of thunderstorms, whose development is difficult to predict and often only becomes clear at very short notice. This poses risks for everyone involved as well as for the technical equipment.\n\nFor this reason, after careful consideration, the Schwalmtalzupfer board and the municipality of Schwalmtal have decided, with heavy hearts, to cancel the concert. The safety of our players, guests and helpers is our highest priority. This decision was not easy, as we would have loved to play for you and spend a wonderful summer afternoon together. Thank you for your understanding. We look forward to welcoming you at the latest at our winter concert on the fourth Sunday of Advent in the Achim-Besgen-Halle. We will gladly swap sunscreen and heat warnings for Christmas spirit and hot drinks.\n\nYour Schwalmtalzupfer',
+}
+
+function announcementText(value: string | undefined, language: string): string {
+  if (language !== 'en' || !value) return value ?? ''
+  const direct = ANNOUNCEMENT_EN[value]
+  if (direct) return direct
+  const normalize = (text: string) => text.replace(/\s+/g, ' ').replace(/\s*-\s*/g, '-').trim()
+  const normalized = normalize(value)
+  const match = Object.entries(ANNOUNCEMENT_EN).find(([source]) => normalize(source) === normalized)
+  return match?.[1] ?? value
+}
 
 export const MELDUNG_STYLE: Record<string, {
   banner: string; icon: string; textCl: string; subCl: string; pillBg: string; pillText: string
@@ -49,7 +65,10 @@ function saveDismissed(id: string) {
 }
 
 export function MeldungModal({ meldung, onClose }: { meldung: Meldung; onClose: () => void }) {
+  const { language } = useLanguage()
   const cfg = MELDUNG_STYLE[meldung.style ?? 'warning']
+  const title = announcementText(meldung.text, language)
+  const body = announcementText(meldung.body, language)
 
   useEffect(() => {
     const prev = document.body.style.overflow
@@ -74,7 +93,7 @@ export function MeldungModal({ meldung, onClose }: { meldung: Meldung; onClose: 
       >
         <div className={`flex items-start gap-3 rounded-t-2xl px-5 py-4 ${cfg.modalHeader}`}>
           <span className="text-2xl mt-0.5">{cfg.icon}</span>
-          <p className="flex-1 text-base font-semibold text-white leading-snug">{meldung.text}</p>
+          <p className="flex-1 text-base font-semibold text-white leading-snug">{title}</p>
           <button onClick={onClose}
             className="shrink-0 rounded-full p-1.5 text-white/60 hover:text-white hover:bg-white/15 transition mt-0.5">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -87,12 +106,12 @@ export function MeldungModal({ meldung, onClose }: { meldung: Meldung; onClose: 
           <div className="overflow-y-auto flex-1">
             {meldung.imageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={meldung.imageUrl} alt={meldung.title}
+              <L as="img" src={meldung.imageUrl} alt={meldung.title}
                 className="w-full object-cover max-h-64 sm:max-h-80" />
             )}
-            {meldung.body && (
+            {body && (
               <div className="px-5 py-4">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-300">{meldung.body}</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-300">{body}</p>
               </div>
             )}
           </div>
@@ -100,9 +119,7 @@ export function MeldungModal({ meldung, onClose }: { meldung: Meldung; onClose: 
 
         <div className="flex items-center justify-end gap-2 border-t border-gray-100 dark:border-white/10 px-5 py-3">
           <button onClick={onClose}
-            className="rounded-full border border-gray-200 dark:border-white/15 px-4 py-2 text-xs font-semibold text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white transition">
-            Schließen
-          </button>
+            className="rounded-full border border-gray-200 dark:border-white/15 px-4 py-2 text-xs font-semibold text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white transition"><T value={" Schließen "} /></button>
         </div>
       </div>
     </div>
@@ -110,6 +127,7 @@ export function MeldungModal({ meldung, onClose }: { meldung: Meldung; onClose: 
 }
 
 export default function AnnouncementBanner() {
+  const { language } = useLanguage()
   const [ann, setAnn]         = useState<Meldung | null>(null)
   const [mounted, setMounted] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -174,24 +192,22 @@ export default function AnnouncementBanner() {
           <span className="text-lg shrink-0">{cfg.icon}</span>
 
           <p className={`flex-1 text-sm font-semibold leading-snug ${cfg.textCl}`}>
-            {ann.text}
+            {announcementText(ann.text, language)}
           </p>
 
           {hasBody ? (
             <button
               onClick={() => setShowModal(true)}
               className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-bold transition ${cfg.pillBg} ${cfg.pillText} whitespace-nowrap border border-white/20`}
-            >
-              Weitere Infos
-            </button>
+            ><T value={" Weitere Infos "} /></button>
           ) : null}
 
-          <button onClick={handleDismiss} title="Ausblenden"
+          <L as="button" onClick={handleDismiss} title="Ausblenden"
             className={`shrink-0 rounded-full p-1.5 transition ${cfg.subCl} hover:bg-white/20`}>
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </button>
+          </L>
         </div>
       </div>
 

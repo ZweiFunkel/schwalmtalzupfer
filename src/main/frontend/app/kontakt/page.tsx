@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 
 import React, { useEffect, useState } from 'react'
@@ -15,6 +16,10 @@ export default function KontaktPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => { document.title = 'Kontakt – Schwalmtalzupfer' }, [])
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('betreff') === 'Gitarrenunterricht') setBetreff('Gitarrenunterricht')
+  }, [])
 
   const mailtoText = `An: info@schwalmtalzupfer.de\nBetreff: ${betreff}\nVon: ${email}\n\n${nachricht}`
 
@@ -53,28 +58,25 @@ export default function KontaktPage() {
 
   return (
     <div className="mx-auto max-w-xl px-6 py-12">
-      <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Kontakt</h1>
-      <p className="mb-8 text-gray-500 dark:text-gray-400">
-        Du hast eine Frage oder möchtest uns etwas mitteilen? Schreib uns – wir melden uns so schnell wie möglich.
-      </p>
+      <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white"><T value={"Kontakt"} /></h1>
+      <p className="mb-8 text-gray-500 dark:text-gray-400"><T value={" Du hast eine Frage oder möchtest uns etwas mitteilen? Schreib uns – wir melden uns so schnell wie möglich. "} /></p>
 
+      <p className="mb-6 text-sm text-gray-600 dark:text-gray-300"><T value={"Gitarrenunterricht und gemeinsames Musizieren sind für Anfänger und Fortgeschrittene, Kinder, Jugendliche und Erwachsene offen. Unsere Gruppen beginnen ab dem 2. Schuljahr. Frag uns gerne über dieses Formular oder unter "} /><a className="underline" href="mailto:info@schwalmtalzupfer.de"><T value={"info@schwalmtalzupfer.de"} /></a>.</p>
       {sent ? (
         <div className="rounded-xl border border-green-500/30 bg-green-50 dark:bg-green-900/20 p-6 text-center">
           <p className="text-2xl mb-2">✓</p>
-          <p className="text-green-700 dark:text-green-400 font-semibold">Nachricht erfolgreich gesendet!</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Wir werden uns bald bei dir melden.</p>
+          <p className="text-green-700 dark:text-green-400 font-semibold"><T value={"Nachricht erfolgreich gesendet!"} /></p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1"><T value={"Wir werden uns bald bei dir melden."} /></p>
           <button
             onClick={() => setSent(false)}
             className="mt-4 text-sm text-green-600 dark:text-green-400 underline hover:text-green-500 dark:hover:text-green-300"
-          >
-            Weitere Nachricht senden
-          </button>
+          ><T value={" Weitere Nachricht senden "} /></button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400">Deine E-Mail-Adresse *</label>
-            <input
+            <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400"><T value={"Deine E-Mail-Adresse *"} /></label>
+            <L as="input"
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
@@ -84,8 +86,8 @@ export default function KontaktPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400">Betreff *</label>
-            <input
+            <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400"><T value={"Betreff *"} /></label>
+            <L as="input"
               type="text"
               value={betreff}
               onChange={e => setBetreff(e.target.value)}
@@ -95,8 +97,8 @@ export default function KontaktPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400">Nachricht *</label>
-            <textarea
+            <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400"><T value={"Nachricht *"} /></label>
+            <L as="textarea"
               value={nachricht}
               onChange={e => setNachricht(e.target.value)}
               required
@@ -106,14 +108,14 @@ export default function KontaktPage() {
             />
           </div>
           {error && (
-            <p className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-500/30 px-3 py-2 text-sm text-red-600 dark:text-red-400">{error}</p>
+            <p className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-500/30 px-3 py-2 text-sm text-red-600 dark:text-red-400"><T value={error} /></p>
           )}
           <button
             type="submit"
             disabled={sending}
             className="rounded-lg bg-green-600 py-2.5 font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition"
           >
-            {sending ? 'Wird gesendet…' : 'Nachricht senden'}
+            <T value={sending ? 'Wird gesendet…' : 'Nachricht senden'} />
           </button>
 
           {/* Kopier-Fallback entfernt */}

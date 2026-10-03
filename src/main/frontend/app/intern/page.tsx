@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth'
@@ -29,7 +30,7 @@ export default function InternPage() {
       .catch(() => {})
   }, [user])
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>
   if (!user) return null
 
   const displayName = [user.vorname, user.nachname].filter(Boolean).join(' ') || user.username || user.email
@@ -39,13 +40,10 @@ export default function InternPage() {
     <div className="mx-auto max-w-7xl px-6 py-12">
       {/* Willkommen */}
       <div className="mb-10 rounded-2xl border border-gray-200 dark:border-white/10 bg-gradient-to-br from-gray-100 to-gray-50 dark:from-slate-900 dark:to-slate-800 p-8">
-        <p className="mb-1 text-sm font-medium uppercase tracking-widest text-green-600 dark:text-green-400">Interner Bereich</p>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Willkommen, {displayName}! 👋
+        <p className="mb-1 text-sm font-medium uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Interner Bereich"} /></p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white"><T value={" Willkommen, "} />{displayName}! 👋
         </h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Herzlich willkommen im Internen Bereich der Schwalmtalzupfer. Hier findest du alles für Mitglieder.
-        </p>
+        <p className="mt-2 text-gray-600 dark:text-gray-400"><T value={" Herzlich willkommen im Internen Bereich der Schwalmtalzupfer. Hier findest du alles für Mitglieder. "} /></p>
       </div>
 
       {/* Schnelllinks */}
@@ -58,13 +56,11 @@ export default function InternPage() {
             🗓️
           </div>
           <div>
-            <p className="font-semibold text-gray-900 dark:text-white">Kalender</p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              Alle Termine & Unterrichtsstunden in Monats-, Wochen- oder Tagesansicht.
-            </p>
+            <p className="font-semibold text-gray-900 dark:text-white"><T value={"Kalender"} /></p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed"><T value={" Alle Termine & Unterrichtsstunden in Monats-, Wochen- oder Tagesansicht. "} /></p>
           </div>
           <div className="mt-auto flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-500 group-hover:text-green-500 dark:group-hover:text-green-400 transition">
-            <span>Zum Kalender</span>
+            <span><T value={"Zum Kalender"} /></span>
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
@@ -79,13 +75,11 @@ export default function InternPage() {
             🎬
           </div>
           <div>
-            <p className="font-semibold text-gray-900 dark:text-white">Videos</p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              Sommerkonzerte, Winterkonzerte und weitere Auftritte direkt eingebettet.
-            </p>
+            <p className="font-semibold text-gray-900 dark:text-white"><T value={"Videos"} /></p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed"><T value={" Sommerkonzerte, Winterkonzerte und weitere Auftritte direkt eingebettet. "} /></p>
           </div>
           <div className="mt-auto flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-500 group-hover:text-green-500 dark:group-hover:text-green-400 transition">
-            <span>Zu den Videos</span>
+            <span><T value={"Zu den Videos"} /></span>
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
@@ -100,13 +94,11 @@ export default function InternPage() {
             👕
           </div>
           <div>
-            <p className="font-semibold text-gray-900 dark:text-white">Merch</p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              Vereinskleidung & Fanartikel – mit Bestellformular.
-            </p>
+            <p className="font-semibold text-gray-900 dark:text-white"><T value={"Merch"} /></p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed"><T value={" Vereinskleidung & Fanartikel – mit Bestellformular. "} /></p>
           </div>
           <div className="mt-auto flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-500 group-hover:text-green-500 dark:group-hover:text-green-400 transition">
-            <span>Zum Merch</span>
+            <span><T value={"Zum Merch"} /></span>
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
@@ -121,13 +113,11 @@ export default function InternPage() {
             🖼️
           </div>
           <div>
-            <p className="font-semibold text-gray-900 dark:text-white">Interne Galerie</p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              Fotos nur für Mitglieder – nicht öffentlich einsehbar.
-            </p>
+            <p className="font-semibold text-gray-900 dark:text-white"><T value={"Interne Galerie"} /></p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed"><T value={" Fotos nur für Mitglieder – nicht öffentlich einsehbar. "} /></p>
           </div>
           <div className="mt-auto flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-500 group-hover:text-green-500 dark:group-hover:text-green-400 transition">
-            <span>Zur Galerie</span>
+            <span><T value={"Zur Galerie"} /></span>
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
@@ -142,13 +132,11 @@ export default function InternPage() {
             🎼
           </div>
           <div>
-            <p className="font-semibold text-gray-900 dark:text-white">Notenarchiv</p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              Noten herunterladen, suchen und als ZIP exportieren.
-            </p>
+            <p className="font-semibold text-gray-900 dark:text-white"><T value={"Notenarchiv"} /></p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed"><T value={" Noten herunterladen, suchen und als ZIP exportieren. "} /></p>
           </div>
           <div className="mt-auto flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-500 group-hover:text-green-500 dark:group-hover:text-green-400 transition">
-            <span>Zum Notenarchiv</span>
+            <span><T value={"Zum Notenarchiv"} /></span>
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>

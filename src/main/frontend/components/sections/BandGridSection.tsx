@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 
 import React, { useState } from 'react'
 import { BandGridContent, Person } from '@/types/page'
@@ -17,17 +18,17 @@ function BandAvatar({ person, onClick }: { person: Person; onClick?: () => void 
     )
   }
   return (
-    <div
+    <L as="div"
       className="mb-5 h-36 w-36 overflow-hidden rounded-full ring-4 ring-purple-500/50 relative flex-shrink-0 cursor-zoom-in transition hover:ring-purple-400 hover:scale-105"
       onClick={onClick}
       title="Klicken zum Vergrößern"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={person.imageUrl} alt={person.name} style={{
+      <L as="img" src={person.imageUrl} alt={person.name} style={{
         position: 'absolute', width: '100%', height: '100%', objectFit: 'cover',
         transform: `scale(${zoom}) translate(${x}px, ${y}px)`, transformOrigin: 'center',
       }} />
-    </div>
+    </L>
   )
 }
 
@@ -41,10 +42,10 @@ export default function BandGridSection({ content }: { content: BandGridContent 
           <div className="mb-14 text-center">
             <div className="mb-3 flex items-center justify-center gap-3">
               <span className="h-px w-16 bg-purple-500/50 rounded-full" />
-              <span className="text-xs font-bold uppercase tracking-widest text-purple-600 dark:text-purple-400">Die Band</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-purple-600 dark:text-purple-400"><T value={"Die Band"} /></span>
               <span className="h-px w-16 bg-purple-500/50 rounded-full" />
             </div>
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>
           </div>
         )}
 

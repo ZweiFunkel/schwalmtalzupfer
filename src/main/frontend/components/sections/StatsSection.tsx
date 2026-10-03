@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 
 import React from 'react'
 import { StatsContent } from '@/types/page'
@@ -22,15 +23,15 @@ export default function StatsSection({ content }: { content: StatsContent }) {
           <div className="mb-12">
             <div className="mb-3 flex items-center gap-3">
               <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-              <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Zahlen &amp; Fakten</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Zahlen & Fakten"} /></span>
             </div>
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>
           </div>
         )}
 
         {/* Stats grid */}
         {items.length === 0 && (
-          <p className="text-gray-400 italic">Keine Statistiken eingetragen.</p>
+          <p className="text-gray-400 italic"><T value={"Keine Statistiken eingetragen."} /></p>
         )}
         <div className={`grid grid-cols-2 gap-8 ${gridColsClass(items.length)}`}>
           {items.map((item, i) => (
@@ -39,7 +40,7 @@ export default function StatsSection({ content }: { content: StatsContent }) {
                 {item.value}
               </span>
               <span className="text-sm sm:text-base font-medium text-gray-500 dark:text-gray-400">
-                {item.label}
+                <T value={item.label} />
               </span>
             </div>
           ))}

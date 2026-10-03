@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 
 import React, { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
@@ -45,7 +46,7 @@ export default function SlugPageClient({ slug: slugProp }: { slug?: string }) {
   if (page === undefined) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="animate-pulse text-gray-400">Lade...</div>
+        <div className="animate-pulse text-gray-400"><T value={"Lade..."} /></div>
       </div>
     )
   }
@@ -54,11 +55,9 @@ export default function SlugPageClient({ slug: slugProp }: { slug?: string }) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center text-center">
         <div>
-          <h1 className="mb-4 text-4xl font-bold text-white">Seite nicht gefunden</h1>
-          <p className="text-gray-400">Die angeforderte Seite existiert nicht.</p>
-          <a href="/" className="mt-6 inline-block text-green-400 hover:underline">
-            Zur Startseite
-          </a>
+          <h1 className="mb-4 text-4xl font-bold text-white"><T value={"Seite nicht gefunden"} /></h1>
+          <p className="text-gray-400"><T value={"Die angeforderte Seite existiert nicht."} /></p>
+          <a href="/" className="mt-6 inline-block text-green-400 hover:underline"><T value={" Zur Startseite "} /></a>
         </div>
       </div>
     )

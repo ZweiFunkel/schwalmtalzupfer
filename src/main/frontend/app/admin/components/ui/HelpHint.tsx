@@ -1,4 +1,5 @@
 'use client'
+import { L } from '@/lib/i18n/LanguageProvider'
 import React, { useState } from 'react'
 
 interface HelpHintProps {
@@ -11,7 +12,7 @@ export function HelpHint({ text, className = '' }: HelpHintProps) {
   const [open, setOpen] = useState(false)
   return (
     <span className={`relative inline-flex ${className}`}>
-      <button
+      <L as="button"
         type="button"
         onClick={() => setOpen(o => !o)}
         onBlur={() => setOpen(false)}
@@ -19,7 +20,7 @@ export function HelpHint({ text, className = '' }: HelpHintProps) {
         aria-label="Hilfe"
       >
         ?
-      </button>
+      </L>
       {open && (
         <span className="absolute left-1/2 top-full z-20 mt-1.5 w-56 -translate-x-1/2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs leading-relaxed text-gray-300 shadow-xl">
           {text}

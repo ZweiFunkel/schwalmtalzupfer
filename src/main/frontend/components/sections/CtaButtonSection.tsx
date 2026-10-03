@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 
 import React from 'react'
 import Link from 'next/link'
@@ -28,9 +29,9 @@ export default function CtaButtonSection({ content }: { content: CtaButtonConten
           <div className="mb-4">
             <div className="mb-3 flex items-center justify-center gap-3">
               <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-              <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Jetzt aktiv werden</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Jetzt aktiv werden"} /></span>
             </div>
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>
           </div>
         )}
 

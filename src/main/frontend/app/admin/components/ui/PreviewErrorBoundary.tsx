@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 import React from 'react'
 
 interface State { hasError: boolean }
@@ -23,9 +24,7 @@ export class PreviewErrorBoundary extends React.Component<{ children: React.Reac
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center p-8 text-sm text-gray-500 italic">
-          Vorschau mit den aktuellen Angaben nicht möglich - Pflichtfelder prüfen.
-        </div>
+        <div className="flex items-center justify-center p-8 text-sm text-gray-500 italic"><T value={" Vorschau mit den aktuellen Angaben nicht möglich - Pflichtfelder prüfen. "} /></div>
       )
     }
     return this.props.children

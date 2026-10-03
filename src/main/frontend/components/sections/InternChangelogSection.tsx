@@ -1,3 +1,4 @@
+import { T } from '@/lib/i18n/LanguageProvider'
 import React from 'react'
 import Link from 'next/link'
 import { InternChangelogContent, InternChangelogEntryType } from '@/types/page'
@@ -26,12 +27,12 @@ export default function InternChangelogSection({ content }: { content: InternCha
         <div className="mb-8 flex items-center gap-3">
           <div className="h-0.5 w-8 rounded-full bg-green-500" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {content.heading ?? 'Was ist neu?'}
+            <T value={content.heading ?? 'Was ist neu?'} />
           </h2>
         </div>
 
         {entries.length === 0 && (
-          <p className="text-sm text-gray-500 italic">Noch keine Einträge vorhanden.</p>
+          <p className="text-sm text-gray-500 italic"><T value={"Noch keine Einträge vorhanden."} /></p>
         )}
 
         {/* Timeline */}
@@ -52,22 +53,22 @@ export default function InternChangelogSection({ content }: { content: InternCha
                 <div className="flex-1 rounded-xl border border-gray-200 dark:border-white/8 bg-white dark:bg-slate-800/40 p-4 shadow-sm dark:shadow-none">
                   <div className="flex flex-wrap items-start gap-2 mb-2">
                     <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${cfg.badge} ${cfg.badgeText}`}>
-                      {cfg.label}
+                      <T value={cfg.label} />
                     </span>
                     {entry.link ? (
                       entry.link.startsWith('http://') || entry.link.startsWith('https://') ? (
                         <a href={entry.link} target="_blank" rel="noopener noreferrer"
                           className="font-semibold text-gray-900 dark:text-white text-sm leading-snug hover:text-green-600 dark:hover:text-green-400 hover:underline transition">
-                          {entry.title}
+                          <T value={entry.title} />
                         </a>
                       ) : (
                         <Link href={entry.link}
                           className="font-semibold text-gray-900 dark:text-white text-sm leading-snug hover:text-green-600 dark:hover:text-green-400 hover:underline transition">
-                          {entry.title}
+                          <T value={entry.title} />
                         </Link>
                       )
                     ) : (
-                      <span className="font-semibold text-gray-900 dark:text-white text-sm leading-snug">{entry.title}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white text-sm leading-snug"><T value={entry.title} /></span>
                     )}
                     <span className="ml-auto text-xs text-gray-400 dark:text-gray-500 shrink-0">{entry.date}</span>
                   </div>
@@ -78,9 +79,7 @@ export default function InternChangelogSection({ content }: { content: InternCha
                   )}
                   {entry.link && (
                     <Link href={entry.link}
-                      className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400 hover:underline">
-                      Ansehen
-                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400 hover:underline"><T value={" Ansehen "} /><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                       </svg>
                     </Link>

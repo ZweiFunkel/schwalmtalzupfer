@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 
 import React, { useCallback, useEffect, useState } from 'react'
@@ -84,7 +85,7 @@ function FolderCard({ folder, href }: { folder: GalerieFolder; href: string }) {
       <div className="aspect-[4/3] overflow-hidden bg-gray-200 dark:bg-slate-700">
         {folder.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <L as="img"
             src={folder.coverUrl}
             alt={labelFor(folder.name)}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -101,9 +102,9 @@ function FolderCard({ folder, href }: { folder: GalerieFolder; href: string }) {
       <div className="absolute bottom-0 left-0 right-0 p-4">
         <p className="text-lg font-bold text-white drop-shadow">{labelFor(folder.name)}</p>
         <p className="mt-0.5 text-xs text-white/70">
-          {folder.hasSubFolders
+          <T value={folder.hasSubFolders
             ? folder.imageCount > 0 ? `${folder.imageCount} Fotos` : 'Unteralben'
-            : `${folder.imageCount} Foto${folder.imageCount !== 1 ? 's' : ''}`}
+            : `${folder.imageCount} Foto${folder.imageCount !== 1 ? 's' : ''}`} />
         </p>
       </div>
 
@@ -135,14 +136,14 @@ function PhotoGrid({ images }: { images: GalerieImage[] }) {
     <>
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {images.map((img, i) => (
-          <button
+          <L as="button"
             key={img.key}
             onClick={() => open(i)}
             className="group relative aspect-square overflow-hidden rounded-lg bg-gray-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500"
             aria-label={`Foto ${i + 1} öffnen`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <L as="img"
               src={img.url}
               alt={img.name}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -158,7 +159,7 @@ function PhotoGrid({ images }: { images: GalerieImage[] }) {
                   d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
               </svg>
             </div>
-          </button>
+          </L>
         ))}
       </div>
 
@@ -236,7 +237,7 @@ export default function GalerieView({ prefix, showHeading = true }: Props) {
         {error && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="mb-4 text-6xl opacity-20">📷</div>
-            <p className="text-gray-500 dark:text-gray-400">Galerie konnte nicht geladen werden.</p>
+            <p className="text-gray-500 dark:text-gray-400"><T value={"Galerie konnte nicht geladen werden."} /></p>
           </div>
         )}
 
@@ -259,9 +260,8 @@ export default function GalerieView({ prefix, showHeading = true }: Props) {
             {data.images.length > 0 && (
               <>
                 <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
-                  {data.images.length} Foto{data.images.length !== 1 ? 's' : ''}
-                  {' '}· Klicken zum Öffnen · ← → zum Navigieren
-                </p>
+                  {data.images.length}<T value={" Foto"} />{data.images.length !== 1 ? 's' : ''}
+                  {' '}<T value={"· Klicken zum Öffnen · ← → zum Navigieren "} /></p>
                 <PhotoGrid images={data.images} />
               </>
             )}
@@ -270,7 +270,7 @@ export default function GalerieView({ prefix, showHeading = true }: Props) {
             {data.folders.length === 0 && data.images.length === 0 && (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="mb-4 text-6xl opacity-20">📂</div>
-                <p className="text-gray-500 dark:text-gray-400">Dieser Bereich ist noch leer.</p>
+                <p className="text-gray-500 dark:text-gray-400"><T value={"Dieser Bereich ist noch leer."} /></p>
               </div>
             )}
           </>

@@ -1,4 +1,6 @@
 'use client'
+import { translateBrowserText } from '@/lib/i18n/browser'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -72,7 +74,7 @@ export default function AssetsTab() {
   }
 
   const handleDelete = async (key: string) => {
-    if (!confirm(`"${key.split('/').pop()}" wirklich löschen?`)) return
+    if (!confirm(translateBrowserText(`"${key.split('/').pop()}" wirklich löschen?`))) return
     await fetch(`${API_BASE}/api/admin/assets?key=${encodeURIComponent(key)}`, { method: 'DELETE', credentials: 'include' })
     setSelectedKeys(prev => { const n = new Set(prev); n.delete(key); return n })
     load(prefix)
@@ -80,7 +82,7 @@ export default function AssetsTab() {
 
   const handleDeleteFolder = async (folderPrefix: string) => {
     const name = folderPrefix.replace(prefix, '').replace(/\/$/, '')
-    if (!confirm(`Ordner "${name}" und alle darin enthaltenen Dateien wirklich löschen?`)) return
+    if (!confirm(translateBrowserText(`Ordner "${name}" und alle darin enthaltenen Dateien wirklich löschen?`))) return
     await fetch(`${API_BASE}/api/admin/assets/folder?prefix=${encodeURIComponent(folderPrefix)}`, { method: 'DELETE', credentials: 'include' })
     load(prefix)
   }
@@ -150,7 +152,7 @@ export default function AssetsTab() {
     }
     setSelectedKeys(new Set())
     setMoving(false)
-    if (errors > 0) alert(`⚠️ ${errors} Datei(en) konnten nicht verschoben werden. Details in der Browser-Konsole.`)
+    if (errors > 0) alert(translateBrowserText(`⚠️ ${errors} Datei(en) konnten nicht verschoben werden. Details in der Browser-Konsole.`))
     load(prefix)
   }
 
@@ -223,7 +225,7 @@ export default function AssetsTab() {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {/* Breadcrumb */}
         <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-slate-800 px-3 py-2 flex-1 min-w-0 overflow-x-auto">
-          <button onClick={() => setPrefix('')} className="text-sm text-green-400 hover:underline font-mono whitespace-nowrap">Root</button>
+          <button onClick={() => setPrefix('')} className="text-sm text-green-400 hover:underline font-mono whitespace-nowrap"><T value={"Root"} /></button>
           {breadcrumbs.map((b, i) => {
             const p = breadcrumbs.slice(0, i + 1).join('/') + '/'
             return <React.Fragment key={p}>
@@ -232,11 +234,11 @@ export default function AssetsTab() {
             </React.Fragment>
           })}
         </div>
-        {prefix && <button onClick={goUp} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-400 hover:text-white transition">⬆ Hoch</button>}
+        {prefix && <button onClick={goUp} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-400 hover:text-white transition"><T value={"⬆ Hoch"} /></button>}
         {/* Neuer Ordner */}
         {showNewFolder ? (
           <div className="flex items-center gap-1">
-            <input value={newFolderName} onChange={e => setNewFolderName(e.target.value)}
+            <L as="input" value={newFolderName} onChange={e => setNewFolderName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleCreateFolder(); if (e.key === 'Escape') setShowNewFolder(false) }}
               autoFocus placeholder="Ordnername"
               className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none w-36" />
@@ -245,36 +247,32 @@ export default function AssetsTab() {
           </div>
         ) : (
           <button onClick={() => setShowNewFolder(true)}
-            className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300 hover:border-green-500/50 hover:text-white transition">
-            📁+ Ordner
-          </button>
+            className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300 hover:border-green-500/50 hover:text-white transition"><T value={" 📁+ Ordner "} /></button>
         )}
         <input ref={fileRef} type="file" multiple className="hidden" onChange={handleUpload} />
         <button onClick={() => fileRef.current?.click()} disabled={uploading}
           className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-          {uploading ? 'Lädt hoch…' : '↑ Hochladen'}
+          <T value={uploading ? 'Lädt hoch…' : '↑ Hochladen'} />
         </button>
       </div>
 
       {/* Auswahl-Aktionsleiste */}
       {selectedKeys.size > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-blue-500/30 bg-blue-900/20 px-4 py-3">
-          <span className="text-sm text-blue-300 font-semibold">{selectedKeys.size} Datei(en) ausgewählt</span>
+          <span className="text-sm text-blue-300 font-semibold">{selectedKeys.size}<T value={" Datei(en) ausgewählt"} /></span>
           <button onClick={() => setShowMoveModal(true)} disabled={moving || copying}
             className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50 transition">
-            {moving ? 'Verschiebe…' : '📁 Verschieben nach…'}
+            <T value={moving ? 'Verschiebe…' : '📁 Verschieben nach…'} />
           </button>
           <button onClick={() => setShowCopyFilesModal(true)} disabled={moving || copying}
             className="rounded-lg bg-slate-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-slate-500 disabled:opacity-50 transition">
-            {copying ? 'Kopiere…' : '📋 Kopieren nach…'}
+            <T value={copying ? 'Kopiere…' : '📋 Kopieren nach…'} />
           </button>
-          <button onClick={() => setSelectedKeys(new Set())} className="ml-auto text-xs text-gray-500 hover:text-white transition">
-            Auswahl aufheben
-          </button>
+          <button onClick={() => setSelectedKeys(new Set())} className="ml-auto text-xs text-gray-500 hover:text-white transition"><T value={" Auswahl aufheben "} /></button>
         </div>
       )}
 
-      {loading ? <p className="text-gray-400 text-sm">Lade Assets…</p> : (
+      {loading ? <p className="text-gray-400 text-sm"><T value={"Lade Assets…"} /></p> : (
         <>
           {/* Ordner */}
           {data.folders.length > 0 && (
@@ -297,12 +295,12 @@ export default function AssetsTab() {
                           📁 <span className="truncate font-mono">{folderName}</span>
                         </button>
                         <div className="hidden group-hover:flex items-center gap-1 pr-1">
-                          <button onClick={() => startRenameFolder(f)} title="Umbenennen"
-                            className="rounded p-1 text-gray-500 hover:text-yellow-400 transition text-xs">✏️</button>
-                          <button onClick={() => { setCopyFolderSource(f) }} title="Kopieren"
-                            className="rounded p-1 text-gray-500 hover:text-blue-400 transition text-xs">📋</button>
-                          <button onClick={() => handleDeleteFolder(f)} title="Löschen"
-                            className="rounded p-1 text-gray-500 hover:text-red-400 transition text-xs">🗑</button>
+                          <L as="button" onClick={() => startRenameFolder(f)} title="Umbenennen"
+                            className="rounded p-1 text-gray-500 hover:text-yellow-400 transition text-xs">✏️</L>
+                          <L as="button" onClick={() => { setCopyFolderSource(f) }} title="Kopieren"
+                            className="rounded p-1 text-gray-500 hover:text-blue-400 transition text-xs">📋</L>
+                          <L as="button" onClick={() => handleDeleteFolder(f)} title="Löschen"
+                            className="rounded p-1 text-gray-500 hover:text-red-400 transition text-xs">🗑</L>
                         </div>
                       </>
                     )}
@@ -312,7 +310,7 @@ export default function AssetsTab() {
             </div>
           )}
           {data.files.length === 0 && data.folders.length === 0 && (
-            <p className="text-gray-500 text-sm">Dieser Ordner ist leer. Lade Dateien hoch, um sie hier zu sehen.</p>
+            <p className="text-gray-500 text-sm"><T value={"Dieser Ordner ist leer. Lade Dateien hoch, um sie hier zu sehen."} /></p>
           )}
           {/* Dateien */}
           {data.files.length > 0 && (
@@ -324,10 +322,10 @@ export default function AssetsTab() {
                       <input type="checkbox" checked={selectedKeys.size === data.files.length && data.files.length > 0}
                         onChange={toggleAll} className="rounded accent-green-500 cursor-pointer" />
                     </th>
-                    <th className="px-4 py-3 text-left">Vorschau</th>
-                    <th className="px-4 py-3 text-left">Name / Pfad</th>
-                    <th className="px-4 py-3 text-left">Größe</th>
-                    <th className="px-4 py-3 text-left">Aktionen</th>
+                    <th className="px-4 py-3 text-left"><T value={"Vorschau"} /></th>
+                    <th className="px-4 py-3 text-left"><T value={"Name / Pfad"} /></th>
+                    <th className="px-4 py-3 text-left"><T value={"Größe"} /></th>
+                    <th className="px-4 py-3 text-left"><T value={"Aktionen"} /></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -341,7 +339,7 @@ export default function AssetsTab() {
                       <td className="px-4 py-3">
                         {isImage(a.key)
                           // eslint-disable-next-line @next/next/no-img-element
-                          ? <img src={a.url} alt={a.key} className="h-14 w-20 object-cover rounded-lg border border-white/10" />
+                          ? <L as="img" src={a.url} alt={a.key} className="h-14 w-20 object-cover rounded-lg border border-white/10" />
                           : <span className="text-2xl">{a.key.endsWith('.pdf') ? '📄' : '📎'}</span>}
                       </td>
                       <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
@@ -365,16 +363,16 @@ export default function AssetsTab() {
                         <div className="flex gap-2 flex-wrap">
                           <button onClick={() => copyUrl(a.url)}
                             className="rounded px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition whitespace-nowrap">
-                            {copied === a.url ? '✓ Kopiert' : 'URL kopieren'}
+                            <T value={copied === a.url ? '✓ Kopiert' : 'URL kopieren'} />
                           </button>
                           <a href={a.url} target="_blank" rel="noopener noreferrer"
-                            className="rounded px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition">Öffnen ↗</a>
+                            className="rounded px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition"><T value={"Öffnen ↗"} /></a>
                           <button onClick={() => { setSelectedKeys(new Set([a.key])); setShowCopyFilesModal(true) }}
-                            className="rounded px-2 py-1 text-xs bg-slate-600 hover:bg-slate-500 text-gray-300 transition">📋 Kopieren</button>
+                            className="rounded px-2 py-1 text-xs bg-slate-600 hover:bg-slate-500 text-gray-300 transition"><T value={"📋 Kopieren"} /></button>
                           <button onClick={() => startRenameFile(a.key)}
-                            className="rounded px-2 py-1 text-xs bg-yellow-900/40 hover:bg-yellow-900/70 text-yellow-400 transition">Umbenennen</button>
+                            className="rounded px-2 py-1 text-xs bg-yellow-900/40 hover:bg-yellow-900/70 text-yellow-400 transition"><T value={"Umbenennen"} /></button>
                           <button onClick={() => handleDelete(a.key)}
-                            className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">Löschen</button>
+                            className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition"><T value={"Löschen"} /></button>
                         </div>
                       </td>
                     </tr>
@@ -438,24 +436,20 @@ function OverwriteConfirmModal({ conflictCount, totalCount, onConfirm, onCancel 
         <div className="flex items-center gap-3">
           <span className="text-3xl">⚠️</span>
           <div>
-            <h3 className="font-bold text-white">Dateien bereits vorhanden</h3>
+            <h3 className="font-bold text-white"><T value={"Dateien bereits vorhanden"} /></h3>
             <p className="text-sm text-gray-400 mt-0.5">
-              {conflictCount === totalCount
+              <T value={conflictCount === totalCount
                 ? `Alle ${conflictCount} Datei${conflictCount !== 1 ? 'en' : ''} exist${conflictCount !== 1 ? 'ieren' : 'iert'} am Ziel bereits.`
-                : `${conflictCount} von ${totalCount} Datei${totalCount !== 1 ? 'en' : ''} exist${conflictCount !== 1 ? 'ieren' : 'iert'} am Ziel bereits.`}
+                : `${conflictCount} von ${totalCount} Datei${totalCount !== 1 ? 'en' : ''} exist${conflictCount !== 1 ? 'ieren' : 'iert'} am Ziel bereits.`} />
             </p>
           </div>
         </div>
-        <p className="text-sm text-gray-300">Vorhandene Dateien überschreiben?</p>
+        <p className="text-sm text-gray-300"><T value={"Vorhandene Dateien überschreiben?"} /></p>
         <div className="flex gap-3">
           <button onClick={onCancel}
-            className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm text-gray-400 hover:text-white transition">
-            Abbrechen
-          </button>
+            className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm text-gray-400 hover:text-white transition"><T value={" Abbrechen "} /></button>
           <button onClick={onConfirm}
-            className="flex-1 rounded-lg bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-500 transition">
-            Überschreiben
-          </button>
+            className="flex-1 rounded-lg bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-500 transition"><T value={" Überschreiben "} /></button>
         </div>
       </div>
     </div>
@@ -486,11 +480,11 @@ function MoveFolderPickerModal({ count, onSelect, onClose, title }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 shadow-2xl flex flex-col max-h-[70vh]">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <h3 className="font-bold text-white">{title ?? `📁 ${count} Datei(en) verschieben nach…`}</h3>
+          <h3 className="font-bold text-white"><T value={title ?? `📁 ${count} Datei(en) verschieben nach…`} /></h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-lg">✕</button>
         </div>
         <div className="flex items-center gap-1 px-5 py-3 border-b border-white/10 flex-wrap">
-          <button onClick={() => setPrefix('')} className="text-xs text-green-400 hover:underline">Root</button>
+          <button onClick={() => setPrefix('')} className="text-xs text-green-400 hover:underline"><T value={"Root"} /></button>
           {breadcrumbs.map((b, i) => {
             const p = breadcrumbs.slice(0, i + 1).join('/') + '/'
             return <React.Fragment key={p}>
@@ -501,11 +495,10 @@ function MoveFolderPickerModal({ count, onSelect, onClose, title }: {
         </div>
         <div className="overflow-y-auto p-4 flex flex-col gap-2">
           <button onClick={() => onSelect(prefix)}
-            className="flex items-center gap-2 rounded-lg border border-green-500/40 bg-green-900/20 px-4 py-2.5 text-sm text-green-400 hover:bg-green-900/40 transition">
-            ✓ Hierher verschieben: <span className="font-mono">{prefix || 'Root'}</span>
+            className="flex items-center gap-2 rounded-lg border border-green-500/40 bg-green-900/20 px-4 py-2.5 text-sm text-green-400 hover:bg-green-900/40 transition"><T value={" ✓ Hierher verschieben: "} /><span className="font-mono"><T value={prefix || 'Root'} /></span>
           </button>
-          {loading ? <p className="text-sm text-gray-400 py-2">Lade…</p> : folders.length === 0
-            ? <p className="text-sm text-gray-500 py-2">Keine Unterordner vorhanden.</p>
+          {loading ? <p className="text-sm text-gray-400 py-2"><T value={"Lade…"} /></p> : folders.length === 0
+            ? <p className="text-sm text-gray-500 py-2"><T value={"Keine Unterordner vorhanden."} /></p>
             : folders.map(f => (
               <button key={f} onClick={() => setPrefix(f)}
                 className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-4 py-2.5 text-sm text-gray-300 hover:border-green-500/40 hover:text-white transition">

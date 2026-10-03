@@ -1,4 +1,6 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
+import { L } from '@/lib/i18n/LanguageProvider'
 
 import React from 'react'
 import { ImageTextContent } from '@/types/page'
@@ -16,7 +18,7 @@ export default function ImageTextSection({ content }: { content: ImageTextConten
           {/* Bild */}
           <div className={imageOrderClass}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <L as="img"
               src={content.imageUrl}
               alt={content.heading ?? ''}
               className="w-full object-cover rounded-2xl ring-1 ring-gray-200 dark:ring-white/10 max-h-[480px]"
@@ -30,7 +32,7 @@ export default function ImageTextSection({ content }: { content: ImageTextConten
                 <div className="mb-3 flex items-center gap-3">
                   <span className="h-0.5 w-10 bg-green-500 rounded-full" />
                 </div>
-                <h2 className="text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
+                <h2 className="text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>
               </div>
             )}
             <article className="prose prose-lg prose-green dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 [&_p]:leading-relaxed [&_p]:mb-5">

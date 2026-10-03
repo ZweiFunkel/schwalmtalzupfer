@@ -1,7 +1,9 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 
 import React, { useEffect, useState } from 'react'
 import { PageData } from '@/types/page'
+import GuitarLessons from '@/components/GuitarLessons'
 import SectionResolver from '@/components/SectionResolver'
 import { getApiBase } from '@/lib/api'
 import { usePageLoad } from '@/lib/AppLoadingContext'
@@ -24,7 +26,7 @@ export default function HomePage() {
   if (page === undefined) {
     return (
       <div className="flex min-h-[80vh] items-center justify-center">
-        <div className="animate-pulse text-gray-400 text-lg">Lade…</div>
+        <div className="animate-pulse text-gray-400 text-lg"><T value={"Lade…"} /></div>
       </div>
     )
   }
@@ -33,12 +35,8 @@ export default function HomePage() {
     return (
       <div className="flex min-h-[80vh] flex-col items-center justify-center text-center">
         <div className="mb-6 text-8xl opacity-20">𝄞</div>
-        <h1 className="mb-4 text-5xl font-extrabold text-white">
-          Schwalmtalzupfer
-        </h1>
-        <p className="text-xl text-gray-400">
-          Willkommen auf der Vereinswebsite. Inhalte werden geladen…
-        </p>
+        <h1 className="mb-4 text-5xl font-extrabold text-white"><T value={" Schwalmtalzupfer "} /></h1>
+        <p className="text-xl text-gray-400"><T value={" Willkommen auf der Vereinswebsite. Inhalte werden geladen… "} /></p>
       </div>
     )
   }
@@ -50,6 +48,7 @@ export default function HomePage() {
         .map((section) => (
           <SectionResolver key={section.id} section={section} />
         ))}
+      <GuitarLessons compact />
     </>
   )
 }

@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import React, { useEffect, useRef, useState } from 'react'
 
 declare global {
@@ -216,7 +217,7 @@ export default function YouTubePlayer({
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden bg-gray-100 dark:bg-slate-900 px-6 py-10 text-center">
           {thumbnailUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumbnailUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-20 blur-sm" />
+            <L as="img" src={thumbnailUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-20 blur-sm" />
           )}
           <div className="relative flex max-w-md flex-col items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/10">
@@ -224,11 +225,11 @@ export default function YouTubePlayer({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            {title && <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{title}</p>}
+            {title && <p className="text-sm font-semibold text-gray-800 dark:text-gray-100"><T value={title} /></p>}
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {isEmbedDisabledCode(error.code)
+              <T value={isEmbedDisabledCode(error.code)
                 ? 'Video nicht verfügbar – der Rechteinhaber hat die Einbettung dieses Videos außerhalb von YouTube gesperrt.'
-                : error.message}
+                : error.message} />
             </p>
             <a
               href={`https://www.youtube.com/watch?v=${videoId}`}
@@ -238,9 +239,7 @@ export default function YouTubePlayer({
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z" />
-              </svg>
-              Auf YouTube ansehen
-            </a>
+              </svg><T value={" Auf YouTube ansehen "} /></a>
           </div>
         </div>
       )}

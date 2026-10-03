@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 
 import React, { useEffect, useState } from 'react'
@@ -41,15 +42,13 @@ function BestellformularModal({ onClose }: { onClose: () => void }) {
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
-          <p className="font-semibold text-white">📋 Bestellformular</p>
+          <p className="font-semibold text-white"><T value={"📋 Bestellformular"} /></p>
           <div className="flex items-center gap-2">
             <a
               href={downloadUrl}
               download="Bestellformular-Schwalmtalzupfer.jpg"
               className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition"
-            >
-              ⬇ Herunterladen
-            </a>
+            ><T value={" ⬇ Herunterladen "} /></a>
             <button onClick={onClose} className="px-1 text-xl text-gray-400 hover:text-white transition">✕</button>
           </div>
         </div>
@@ -59,22 +58,20 @@ function BestellformularModal({ onClose }: { onClose: () => void }) {
           {error ? (
             <div className="flex flex-col items-center justify-center gap-4 p-12 text-center">
               <span className="text-5xl">⚠️</span>
-              <p className="text-sm text-gray-300">Bestellformular konnte nicht geladen werden.</p>
+              <p className="text-sm text-gray-300"><T value={"Bestellformular konnte nicht geladen werden."} /></p>
               <a href={downloadUrl} download="Bestellformular-Schwalmtalzupfer.jpg"
-                className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition">
-                ⬇ Direkt herunterladen
-              </a>
+                className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition"><T value={" ⬇ Direkt herunterladen "} /></a>
             </div>
           ) : !imgSrc ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
                 <div className="animate-pulse text-4xl">📋</div>
-                <p className="mt-3 text-sm text-gray-400">Formular wird geladen…</p>
+                <p className="mt-3 text-sm text-gray-400"><T value={"Formular wird geladen…"} /></p>
               </div>
             </div>
           ) : (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+            <L as="img"
               src={imgSrc}
               alt="Bestellformular Schwalmtalzupfer"
               className="w-full object-contain"
@@ -97,7 +94,7 @@ export default function MerchPage() {
     if (!loading && !user) router.push('/login')
   }, [user, loading, router])
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>
   if (!user) return null
 
   const downloadUrl = `${API_BASE}/api/noten/download?key=${encodeURIComponent(BESTELLFORMULAR_KEY)}`
@@ -106,22 +103,20 @@ export default function MerchPage() {
     <div className="mx-auto max-w-7xl px-6 py-12">
       {/* Breadcrumb */}
       <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/intern" className="hover:text-green-400 transition">Intern</Link>
+        <Link href="/intern" className="hover:text-green-400 transition"><T value={"Intern"} /></Link>
         <span>/</span>
-        <span className="text-gray-300">Merch</span>
+        <span className="text-gray-300"><T value={"Merch"} /></span>
       </div>
 
-      <h1 className="mb-2 text-3xl font-bold text-white">👕 Merch</h1>
-      <p className="mb-10 text-gray-400">Vereinskleidung & Fanartikel der Schwalmtalzupfer</p>
+      <h1 className="mb-2 text-3xl font-bold text-white"><T value={"👕 Merch"} /></h1>
+      <p className="mb-10 text-gray-400"><T value={"Vereinskleidung & Fanartikel der Schwalmtalzupfer"} /></p>
 
 
       {/* Bezugsquelle */}
       <section className="mb-10">
-        <h2 className="mb-4 text-lg font-semibold text-white">Bezugsquelle</h2>
+        <h2 className="mb-4 text-lg font-semibold text-white"><T value={"Bezugsquelle"} /></h2>
         <div className="rounded-xl border border-white/10 bg-slate-900 p-6">
-          <p className="mb-4 text-gray-300 text-sm leading-relaxed">
-            Vereinskleidung erhaltet ihr bei:
-          </p>
+          <p className="mb-4 text-gray-300 text-sm leading-relaxed"><T value={" Vereinskleidung erhaltet ihr bei: "} /></p>
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-10">
             {/* Adresse */}
             <div className="flex items-start gap-3">
@@ -129,9 +124,9 @@ export default function MerchPage() {
                 🏪
               </div>
               <div>
-                <p className="font-bold text-white text-base">Golden Goal Sport &amp; Flock</p>
-                <p className="mt-1 text-sm text-gray-400">Hubertusplatz 21</p>
-                <p className="text-sm text-gray-400">41334 Nettetal</p>
+                <p className="font-bold text-white text-base"><T value={"Golden Goal Sport & Flock"} /></p>
+                <p className="mt-1 text-sm text-gray-400"><T value={"Hubertusplatz 21"} /></p>
+                <p className="text-sm text-gray-400"><T value={"41334 Nettetal"} /></p>
               </div>
             </div>
 
@@ -141,15 +136,13 @@ export default function MerchPage() {
                 🌐
               </div>
               <div>
-                <p className="text-sm text-gray-400 mb-1">Website</p>
+                <p className="text-sm text-gray-400 mb-1"><T value={"Website"} /></p>
                 <a
                   href="https://www.golden-goal.net"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-green-400 hover:text-green-300 transition"
-                >
-                  www.golden-goal.net
-                </a>
+                ><T value={" www.golden-goal.net "} /></a>
               </div>
             </div>
 
@@ -159,15 +152,13 @@ export default function MerchPage() {
                 📍
               </div>
               <div>
-                <p className="text-sm text-gray-400 mb-1">Route</p>
+                <p className="text-sm text-gray-400 mb-1"><T value={"Route"} /></p>
                 <a
                   href="https://www.google.com/maps/search/?api=1&query=Hubertusplatz+21+41334+Nettetal"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-green-400 hover:text-green-300 transition"
-                >
-                  In Google Maps öffnen
-                </a>
+                ><T value={" In Google Maps öffnen "} /></a>
               </div>
             </div>
           </div>
@@ -176,11 +167,9 @@ export default function MerchPage() {
 
       {/* Bestellformular */}
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-white">Bestellformular</h2>
+        <h2 className="mb-4 text-lg font-semibold text-white"><T value={"Bestellformular"} /></h2>
         <div className="rounded-xl border border-white/10 bg-slate-900 p-6">
-          <p className="mb-5 text-sm text-gray-400 leading-relaxed">
-            Das Bestellformular bitte ausgefüllt beim Vorstand abgeben oder direkt bei Golden Goal einreichen.
-          </p>
+          <p className="mb-5 text-sm text-gray-400 leading-relaxed"><T value={" Das Bestellformular bitte ausgefüllt beim Vorstand abgeben oder direkt bei Golden Goal einreichen. "} /></p>
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => setShowForm(true)}
@@ -188,9 +177,7 @@ export default function MerchPage() {
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m0 0l3-3m-3 3l3 3M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
-              </svg>
-              Formular ansehen
-            </button>
+              </svg><T value={" Formular ansehen "} /></button>
             <a
               href={downloadUrl}
               download="Bestellformular-Schwalmtalzupfer.jpg"
@@ -198,9 +185,7 @@ export default function MerchPage() {
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Herunterladen
-            </a>
+              </svg><T value={" Herunterladen "} /></a>
           </div>
         </div>
       </section>

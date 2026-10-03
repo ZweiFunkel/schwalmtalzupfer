@@ -1,4 +1,6 @@
 'use client'
+import { translateBrowserText } from '@/lib/i18n/browser'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 import React, { useEffect, useState } from 'react'
 import { ImageField } from './ImageField'
@@ -92,7 +94,7 @@ export default function VideosTab() {
   const cancelEdit = () => { setEditId(null); setForm(EMPTY_VIDEO) }
 
   const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`„${title}" wirklich löschen?`)) return
+    if (!confirm(translateBrowserText(`„${title}" wirklich löschen?`))) return
     await fetch(`${API_BASE}/api/intern/videos/${id}`, { method: 'DELETE', credentials: 'include' })
     load()
   }
@@ -109,56 +111,54 @@ export default function VideosTab() {
       {/* ── Formular ── */}
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
-          <h3 className="font-bold text-white">{editId ? '✏️ Video bearbeiten' : '+ Video / Playlist hinzufügen'}</h3>
-          <p className="mt-0.5 text-xs text-gray-400">
-            Einfach den vollen YouTube-Link einfügen – ID und Typ werden automatisch erkannt. 🎉
-          </p>
+          <h3 className="font-bold text-white"><T value={editId ? '✏️ Video bearbeiten' : '+ Video / Playlist hinzufügen'} /></h3>
+          <p className="mt-0.5 text-xs text-gray-400"><T value={" Einfach den vollen YouTube-Link einfügen – ID und Typ werden automatisch erkannt. 🎉 "} /></p>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Zeile 1: Kategorie + Typ */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div>
-              <label className="mb-1 block text-xs text-gray-400">Kategorie *</label>
+              <label className="mb-1 block text-xs text-gray-400"><T value={"Kategorie *"} /></label>
               <select value={form.category} onChange={e => set('category', e.target.value)}
                 className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none">
-                <option value="SOMMER">☀️ Sommerkonzert</option>
-                <option value="WINTER">❄️ Winterkonzert</option>
-                <option value="WEITERE">🎤 Weitere Auftritte</option>
+                <option value="SOMMER"><T value={"☀️ Sommerkonzert"} /></option>
+                <option value="WINTER"><T value={"❄️ Winterkonzert"} /></option>
+                <option value="WEITERE"><T value={"🎤 Weitere Auftritte"} /></option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-400">Typ *</label>
+              <label className="mb-1 block text-xs text-gray-400"><T value={"Typ *"} /></label>
               <select value={form.type} onChange={e => set('type', e.target.value)}
                 className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none">
-                <option value="VIDEO">▶ Video</option>
-                <option value="PLAYLIST">☰ Playlist</option>
+                <option value="VIDEO"><T value={"▶ Video"} /></option>
+                <option value="PLAYLIST"><T value={"☰ Playlist"} /></option>
               </select>
             </div>
             {(form.category === 'SOMMER' || form.category === 'WINTER') && (
               <>
                 <div>
-                  <label className="mb-1 block text-xs text-gray-400">Jahr</label>
-                  <input value={form.year} onChange={e => set('year', e.target.value)}
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Jahr"} /></label>
+                  <L as="input" value={form.year} onChange={e => set('year', e.target.value)}
                     placeholder="2024"
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white font-mono focus:border-green-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-gray-400">Tag</label>
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Tag"} /></label>
                   <select value={form.day} onChange={e => set('day', e.target.value)}
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none">
-                    <option value="">– kein Tag –</option>
-                    <option>Montag</option>
-                    <option>Dienstag</option>
-                    <option>Mittwoch</option>
-                    <option>Donnerstag</option>
-                    <option>Freitag</option>
-                    <option>Samstag</option>
-                    <option>Sonntag</option>
+                    <option value=""><T value={"– kein Tag –"} /></option>
+                    <option><T value={"Montag"} /></option>
+                    <option><T value={"Dienstag"} /></option>
+                    <option><T value={"Mittwoch"} /></option>
+                    <option><T value={"Donnerstag"} /></option>
+                    <option><T value={"Freitag"} /></option>
+                    <option><T value={"Samstag"} /></option>
+                    <option><T value={"Sonntag"} /></option>
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="mb-1 block text-xs text-gray-400">Zeitabschnitt (optional, z.B. Morgen/Abend – nur nötig, wenn ein Tag mehrere Playlists hat)</label>
-                  <input value={form.subcategory} onChange={e => set('subcategory', e.target.value)}
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Zeitabschnitt (optional, z.B. Morgen/Abend – nur nötig, wenn ein Tag mehrere Playlists hat)"} /></label>
+                  <L as="input" value={form.subcategory} onChange={e => set('subcategory', e.target.value)}
                     placeholder="Morgen"
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
                 </div>
@@ -167,14 +167,14 @@ export default function VideosTab() {
             {form.category === 'WEITERE' && (
               <>
                 <div className="col-span-2">
-                  <label className="mb-1 block text-xs text-gray-400">Gruppe (z.B. Weihnachts Klüngel)</label>
-                  <input value={form.subcategory} onChange={e => set('subcategory', e.target.value)}
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Gruppe (z.B. Weihnachts Klüngel)"} /></label>
+                  <L as="input" value={form.subcategory} onChange={e => set('subcategory', e.target.value)}
                     placeholder="Weihnachts Klüngel"
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
                 </div>
                 <div className="col-span-2">
-                  <label className="mb-1 block text-xs text-gray-400">Tags (kommagetrennt, z.B. 2023, Waldniel)</label>
-                  <input
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Tags (kommagetrennt, z.B. 2023, Waldniel)"} /></label>
+                  <L as="input"
                     value={(() => { try { return (JSON.parse(form.tags || '[]') as string[]).join(', ') } catch { return form.tags } })()}
                     onChange={e => set('tags', JSON.stringify(e.target.value.split(',').map(s => s.trim()).filter(Boolean)))}
                     placeholder="2023, Waldniel"
@@ -187,8 +187,8 @@ export default function VideosTab() {
           {/* Zeile 2: YT-URL/ID + Titel */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs text-gray-400">YouTube-Link oder -ID *</label>
-              <input
+              <label className="mb-1 block text-xs text-gray-400"><T value={"YouTube-Link oder -ID *"} /></label>
+              <L as="input"
                 value={form.youtubeId}
                 onChange={e => {
                   const raw = e.target.value
@@ -206,14 +206,14 @@ export default function VideosTab() {
               {/* Vorschau: erkannter Typ + extrahierte ID */}
               {form.youtubeId && (
                 <p className="mt-1 text-xs text-green-500/80">
-                  {form.type === 'PLAYLIST' ? '☰ Playlist-ID:' : '▶ Video-ID:'}{' '}
+                  <T value={form.type === 'PLAYLIST' ? '☰ Playlist-ID:' : '▶ Video-ID:'} />{' '}
                   <span className="font-mono">{form.youtubeId}</span>
                 </p>
               )}
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-400">Titel *</label>
-              <input value={form.title} onChange={e => set('title', e.target.value)}
+              <label className="mb-1 block text-xs text-gray-400"><T value={"Titel *"} /></label>
+              <L as="input" value={form.title} onChange={e => set('title', e.target.value)}
                 placeholder="Sommerkonzert 2024 – Freitag Highlights"
                 className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
             </div>
@@ -228,7 +228,7 @@ export default function VideosTab() {
 
           {/* Position */}
           <div className="w-32">
-            <label className="mb-1 block text-xs text-gray-400">Sortierung (niedrig = vorne)</label>
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Sortierung (niedrig = vorne)"} /></label>
             <input type="number" value={form.position} onChange={e => set('position', parseInt(e.target.value) || 0)}
               className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white font-mono focus:border-green-500 focus:outline-none" />
           </div>
@@ -238,13 +238,11 @@ export default function VideosTab() {
           <div className="flex gap-3">
             <button type="submit" disabled={saving}
               className="rounded-lg bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-              {saving ? 'Speichert…' : editId ? '✓ Aktualisieren' : '+ Hinzufügen'}
+              <T value={saving ? 'Speichert…' : editId ? '✓ Aktualisieren' : '+ Hinzufügen'} />
             </button>
             {editId && (
               <button type="button" onClick={cancelEdit}
-                className="rounded-lg border border-white/10 px-4 py-2 text-sm text-gray-400 hover:text-white transition">
-                Abbrechen
-              </button>
+                className="rounded-lg border border-white/10 px-4 py-2 text-sm text-gray-400 hover:text-white transition"><T value={" Abbrechen "} /></button>
             )}
           </div>
         </form>
@@ -252,11 +250,9 @@ export default function VideosTab() {
 
       {/* ── Liste ── */}
       {loading ? (
-        <p className="text-sm text-gray-400">Lade Videos…</p>
+        <p className="text-sm text-gray-400"><T value={"Lade Videos…"} /></p>
       ) : videos.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-gray-500">
-          Noch keine Videos vorhanden.
-        </div>
+        <div className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-gray-500"><T value={" Noch keine Videos vorhanden. "} /></div>
       ) : (
         <div className="space-y-6">
           {(['SOMMER', 'WINTER', 'WEITERE'] as const).map(cat => {
@@ -269,7 +265,7 @@ export default function VideosTab() {
                   </p>
                 </div>
                 {items.length === 0 ? (
-                  <p className="px-5 py-4 text-xs text-gray-600 italic">Noch keine Einträge.</p>
+                  <p className="px-5 py-4 text-xs text-gray-600 italic"><T value={"Noch keine Einträge."} /></p>
                 ) : (
                   <div className="divide-y divide-white/5">
                     {items.map(v => (
@@ -277,7 +273,7 @@ export default function VideosTab() {
                         {/* Mini-Thumbnail */}
                         {(v.thumbnailUrl || v.type === 'VIDEO') && (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <L as="img"
                             src={v.thumbnailUrl || `https://img.youtube.com/vi/${v.youtubeId}/default.jpg`}
                             alt=""
                             className="h-10 w-16 rounded object-cover shrink-0 border border-white/10"
@@ -300,9 +296,9 @@ export default function VideosTab() {
                         <div className="flex gap-2 shrink-0">
                           <a href={`https://www.youtube.com/${v.type === 'PLAYLIST' ? `playlist?list=${v.youtubeId}` : `watch?v=${v.youtubeId}`}`}
                             target="_blank" rel="noopener noreferrer"
-                            className="rounded px-2 py-1 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 transition">↗ YT</a>
+                            className="rounded px-2 py-1 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 transition"><T value={"↗ YT"} /></a>
                           <button onClick={() => startEdit(v)}
-                            className="rounded px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition">✏️ Bearbeiten</button>
+                            className="rounded px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition"><T value={"✏️ Bearbeiten"} /></button>
                           <button onClick={() => handleDelete(v.id!, v.title)}
                             className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">✕</button>
                         </div>

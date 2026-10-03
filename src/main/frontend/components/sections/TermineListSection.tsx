@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 import React, { useState, useEffect, useRef } from 'react'
 import { TermineListContent, Termin, TerminKategorie } from '@/types/page'
 import { useMeldungen, getMeldungById } from '@/lib/useMeldungen'
@@ -94,9 +95,7 @@ function TicketBlock({ tickets }: { tickets: NonNullable<Termin['tickets']> }) {
   if (!hasAny) return null
   return (
     <div className="mt-3 rounded-lg border border-green-200 dark:border-green-500/20 bg-green-50 dark:bg-green-900/10 px-3 py-2.5 flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400 mb-0.5">
-        🎟️ Tickets
-      </div>
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400 mb-0.5"><T value={" 🎟️ Tickets "} /></div>
       <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-600 dark:text-gray-300">
         {tickets.priceAdults && (
           <span>Erwachsene: <strong>{tickets.priceAdults}</strong></span>
@@ -110,9 +109,7 @@ function TicketBlock({ tickets }: { tickets: NonNullable<Termin['tickets']> }) {
       )}
       {tickets.link && (
         <a href={tickets.link} target="_blank" rel="noopener noreferrer"
-          className="mt-0.5 inline-flex items-center gap-1.5 self-start rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition">
-          Tickets kaufen →
-        </a>
+          className="mt-0.5 inline-flex items-center gap-1.5 self-start rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition"><T value={" Tickets kaufen → "} /></a>
       )}
     </div>
   )
@@ -166,10 +163,10 @@ export default function TermineListSection({ content }: { content: TermineListCo
         <div className="mb-10">
           <div className="mb-3 flex items-center gap-3">
             <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-            <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Kalender</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Kalender"} /></span>
           </div>
           <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
-            {content.heading ?? 'Termine'}
+            <T value={content.heading ?? 'Termine'} />
           </h2>
         </div>
 
@@ -184,7 +181,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
                     ? 'bg-green-600 text-white shadow-sm'
                     : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/15 hover:text-gray-700 dark:hover:text-white'
                 }`}>
-                {label}
+                <T value={label} />
               </button>
             )
           })}
@@ -192,7 +189,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
 
         {/* Empty */}
         {termine.length === 0 && (
-          <p className="text-gray-400 italic">Noch keine Termine eingetragen.</p>
+          <p className="text-gray-400 italic"><T value={"Noch keine Termine eingetragen."} /></p>
         )}
 
         {/* List */}
@@ -228,7 +225,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
                     <div key={i} id={terminAnchor(t.date, t.title)} className={`flex gap-4 items-stretch group transition-all duration-500 ${t.cancelled ? 'opacity-60' : ''}`}>
                       {/* Date */}
                       <div className="w-14 shrink-0 flex flex-col items-center justify-center text-center pt-1">
-                        <span className={`text-2xl font-bold leading-none ${t.cancelled ? 'text-gray-400 dark:text-gray-600' : 'text-gray-800 dark:text-white'}`}>{day}</span>
+                        <span className={`text-2xl font-bold leading-none ${t.cancelled ? 'text-gray-400 dark:text-gray-600' : 'text-gray-800 dark:text-white'}`}><T value={day} /></span>
                         <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mt-0.5">
                           {isRange ? '···' : month}
                         </span>
@@ -242,34 +239,28 @@ export default function TermineListSection({ content }: { content: TermineListCo
                       }`}>
                         <div className="flex items-center justify-between gap-3">
                           <h3 className={`text-sm font-semibold leading-snug ${t.cancelled ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
-                            {t.title}
+                            <T value={t.title} />
                           </h3>
                           <div className="flex items-center gap-2 shrink-0">
                             {t.cancelled && (
-                              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                                Abgesagt
-                              </span>
+                              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white"><T value={" Abgesagt "} /></span>
                             )}
                             {isArchived(t.archivedAfter) && !t.cancelled && (
-                              <span className="rounded-full bg-slate-400/20 border border-slate-400/20 px-2 py-0.5 text-[10px] font-medium text-gray-400 dark:text-gray-600">
-                                Archiviert
-                              </span>
+                              <span className="rounded-full bg-slate-400/20 border border-slate-400/20 px-2 py-0.5 text-[10px] font-medium text-gray-400 dark:text-gray-600"><T value={" Archiviert "} /></span>
                             )}
-                            <span className="text-xs text-gray-400 dark:text-gray-500">{cat.icon} {cat.label}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{cat.icon} <T value={cat.label} /></span>
                           </div>
                         </div>
 
                         {/* Absagegrund + Weitere Infos */}
                         {t.cancelled && t.cancellationNote && (
-                          <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">{t.cancellationNote}</p>
+                          <p className="mt-1.5 text-xs text-red-500 dark:text-red-400"><T value={t.cancellationNote} /></p>
                         )}
                         {t.cancelled && t.meldungId && getMeldungById(meldungen, t.meldungId) && (
                           <button
                             onClick={() => setActiveMeldungId(t.meldungId!)}
                             className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-900/30 border border-red-300/50 dark:border-red-700/50 px-2.5 py-1 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition"
-                          >
-                            ℹ️ Weitere Infos
-                          </button>
+                          ><T value={" ℹ️ Weitere Infos "} /></button>
                         )}
 
                         {!t.cancelled && (
@@ -286,10 +277,10 @@ export default function TermineListSection({ content }: { content: TermineListCo
                               ))}
                               {t.location && t.location !== '-' && (
                                 t.mapUrl
-                                  ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition">📍 {t.location}</a>
-                                  : <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">📍 {t.location}</span>
+                                  ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition">📍 <T value={t.location} /></a>
+                                  : <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">📍 <T value={t.location} /></span>
                               )}
-                              {t.note && <span className="flex items-center gap-1 text-xs text-amber-500 dark:text-amber-400/80">ℹ️ {t.note}</span>}
+                              {t.note && <span className="flex items-center gap-1 text-xs text-amber-500 dark:text-amber-400/80">ℹ️ <T value={t.note} /></span>}
                             </div>
 
                             {t.details && (
@@ -303,7 +294,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
                                 {t.parking.map((p, pi) => (
                                   <a key={pi} href={p.mapUrl} target="_blank" rel="noopener noreferrer"
                                     className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-white/10 px-2.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:border-green-400/50 hover:text-green-600 dark:hover:text-green-400 transition">
-                                    🅿️ {p.name ?? `Parkplatz ${pi + 1}`}
+                                    🅿️ <T value={p.name ?? `Parkplatz ${pi + 1}`} />
                                   </a>
                                 ))}
                               </div>
@@ -327,7 +318,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
               className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
             >
               <span className={`transition-transform ${showPast ? 'rotate-90' : ''}`}>▸</span>
-              {showPast ? 'Vergangene ausblenden' : `${past.length} vergangene${past.length === 1 ? 'n' : ''} Termin${past.length === 1 ? '' : 'e'} anzeigen`}
+              <T value={showPast ? 'Vergangene ausblenden' : `${past.length} vergangene${past.length === 1 ? 'n' : ''} Termin${past.length === 1 ? '' : 'e'} anzeigen`} />
             </button>
 
             {showPast && (
@@ -359,7 +350,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
                           return (
                             <div key={i} className={`flex gap-4 items-stretch ${t.cancelled ? 'opacity-75' : ''}`}>
                               <div className="w-14 shrink-0 flex flex-col items-center justify-center text-center pt-1">
-                                <span className="text-2xl font-bold leading-none text-gray-400 dark:text-gray-600">{day}</span>
+                                <span className="text-2xl font-bold leading-none text-gray-400 dark:text-gray-600"><T value={day} /></span>
                                 <span className="text-[10px] font-medium text-gray-400 dark:text-gray-600 uppercase tracking-wide mt-0.5">
                                   {isRange ? '···' : month}
                                 </span>
@@ -370,27 +361,23 @@ export default function TermineListSection({ content }: { content: TermineListCo
                                   : 'border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-slate-900/30'
                               }`}>
                                 <div className="flex items-center justify-between gap-3">
-                                  <h3 className={`text-sm font-semibold leading-snug ${t.cancelled ? 'line-through text-gray-400 dark:text-gray-600' : 'text-gray-500 dark:text-gray-500'}`}>{t.title}</h3>
+                                  <h3 className={`text-sm font-semibold leading-snug ${t.cancelled ? 'line-through text-gray-400 dark:text-gray-600' : 'text-gray-500 dark:text-gray-500'}`}><T value={t.title} /></h3>
                                   <div className="flex items-center gap-2 shrink-0">
                                     {t.cancelled && (
-                                      <span className="rounded-full bg-red-400/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                                        Abgesagt
-                                      </span>
+                                      <span className="rounded-full bg-red-400/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white"><T value={" Abgesagt "} /></span>
                                     )}
-                                    <span className="text-xs text-gray-300 dark:text-gray-700">{cat.icon} {cat.label}</span>
+                                    <span className="text-xs text-gray-300 dark:text-gray-700">{cat.icon} <T value={cat.label} /></span>
                                   </div>
                                 </div>
 
                                 {t.cancelled && t.cancellationNote && (
-                                  <p className="mt-1.5 text-xs text-red-400 dark:text-red-500">{t.cancellationNote}</p>
+                                  <p className="mt-1.5 text-xs text-red-400 dark:text-red-500"><T value={t.cancellationNote} /></p>
                                 )}
                                 {t.cancelled && t.meldungId && getMeldungById(meldungen, t.meldungId) && (
                                   <button
                                     onClick={() => setActiveMeldungId(t.meldungId!)}
                                     className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-red-100/50 dark:bg-red-900/20 border border-red-300/40 dark:border-red-700/40 px-2.5 py-1 text-xs font-semibold text-red-500 dark:text-red-500 hover:bg-red-200/50 dark:hover:bg-red-900/40 transition"
-                                  >
-                                    ℹ️ Weitere Infos
-                                  </button>
+                                  ><T value={" ℹ️ Weitere Infos "} /></button>
                                 )}
 
                                 {!t.cancelled && (
@@ -406,10 +393,10 @@ export default function TermineListSection({ content }: { content: TermineListCo
                                       ))}
                                       {t.location && t.location !== '-' && (
                                         t.mapUrl
-                                          ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-400/70 hover:text-blue-400 transition">📍 {t.location}</a>
-                                          : <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-600">📍 {t.location}</span>
+                                          ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-400/70 hover:text-blue-400 transition">📍 <T value={t.location} /></a>
+                                          : <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-600">📍 <T value={t.location} /></span>
                                       )}
-                                      {t.note && <span className="flex items-center gap-1 text-xs text-amber-400/60 dark:text-amber-500/50">ℹ️ {t.note}</span>}
+                                      {t.note && <span className="flex items-center gap-1 text-xs text-amber-400/60 dark:text-amber-500/50">ℹ️ <T value={t.note} /></span>}
                                     </div>
                                     {t.details && (
                                       <p className="mt-2 text-xs text-gray-400 dark:text-gray-600 whitespace-pre-line leading-relaxed">{t.details}</p>

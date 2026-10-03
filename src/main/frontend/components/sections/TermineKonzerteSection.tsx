@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { terminAnchor } from '@/components/sections/TermineListSection'
@@ -40,10 +41,10 @@ function DaysUntil({ date }: { date: string }) {
   const target = parseDate(date)
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const diff = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  if (diff === 0) return <span className="font-semibold text-green-500">Heute!</span>
-  if (diff === 1) return <span className="text-amber-500 font-medium">Morgen</span>
+  if (diff === 0) return <span className="font-semibold text-green-500"><T value={"Heute!"} /></span>
+  if (diff === 1) return <span className="text-amber-500 font-medium"><T value={"Morgen"} /></span>
   if (diff < 0) return null
-  return <span className="text-gray-400">in {diff} Tagen</span>
+  return <span className="text-gray-400"><T value={"in "} />{diff}<T value={" Tagen"} /></span>
 }
 
 export default function TermineKonzerteSection({ content }: { content: TermineKonzerteContent }) {
@@ -75,10 +76,10 @@ export default function TermineKonzerteSection({ content }: { content: TermineKo
         <div className="mb-12">
           <div className="mb-3 flex items-center gap-3">
             <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-            <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Konzerte</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Konzerte"} /></span>
           </div>
           <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
-            {content.heading ?? 'Konzerte'}
+            <T value={content.heading ?? 'Konzerte'} />
           </h2>
         </div>
 
@@ -93,7 +94,7 @@ export default function TermineKonzerteSection({ content }: { content: TermineKo
         {!loading && termine.length === 0 && (
           <div className="flex items-center gap-4 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-800/40 px-6 py-5">
             <span className="text-3xl opacity-40">🎵</span>
-            <p className="text-gray-500 dark:text-gray-400">Derzeit sind keine Konzerte geplant.</p>
+            <p className="text-gray-500 dark:text-gray-400"><T value={"Derzeit sind keine Konzerte geplant."} /></p>
           </div>
         )}
 
@@ -114,9 +115,7 @@ export default function TermineKonzerteSection({ content }: { content: TermineKo
                   {cancelled && (
                     <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-10">
                       <div className="absolute -top-1 -right-1 w-28 h-28">
-                        <div className="absolute top-7 right-[-28px] w-40 py-1.5 bg-red-500 text-white text-xs font-bold text-center tracking-widest rotate-45 shadow-md">
-                          ABGESAGT
-                        </div>
+                        <div className="absolute top-7 right-[-28px] w-40 py-1.5 bg-red-500 text-white text-xs font-bold text-center tracking-widest rotate-45 shadow-md"><T value={" ABGESAGT "} /></div>
                       </div>
                     </div>
                   )}
@@ -137,11 +136,11 @@ export default function TermineKonzerteSection({ content }: { content: TermineKo
                       cancelled
                         ? 'line-through text-gray-400 dark:text-gray-500'
                         : 'text-gray-900 dark:text-white'
-                    }`}>{t.title}</h3>
+                    }`}><T value={t.title} /></h3>
 
                     {/* Absagegrund */}
                     {cancelled && t.cancellationNote && (
-                      <p className="mb-2 text-sm text-red-500 dark:text-red-400">{t.cancellationNote}</p>
+                      <p className="mb-2 text-sm text-red-500 dark:text-red-400"><T value={t.cancellationNote} /></p>
                     )}
 
                     {!cancelled && (
@@ -149,28 +148,24 @@ export default function TermineKonzerteSection({ content }: { content: TermineKo
                         {t.location && t.location !== '-' && (
                           t.mapUrl
                             ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 transition">
-                                📍 {t.location}
+                                📍 <T value={t.location} />
                               </a>
-                            : <span className="flex items-center gap-1.5">📍 {t.location}</span>
+                            : <span className="flex items-center gap-1.5">📍 <T value={t.location} /></span>
                         )}
                         {t.time && <span className="flex items-center gap-1.5">🕐 {t.time}</span>}
-                        {t.note && <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400/80">ℹ️ {t.note}</span>}
+                        {t.note && <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400/80">ℹ️ <T value={t.note} /></span>}
                       </div>
                     )}
 
                     <div className="mt-auto pt-4 flex items-center gap-3">
                       {!cancelled && <DaysUntil date={t.date} />}
                       <Link href={`/termine#${terminAnchor(t.date, t.title)}`}
-                        className="ml-auto text-xs text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition">
-                        Details →
-                      </Link>
+                        className="ml-auto text-xs text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition"><T value={" Details → "} /></Link>
                       {cancelled && linkedMeldung && (
                         <button
                           onClick={() => setActiveMeldungId(t.meldungId!)}
                           className="inline-flex items-center gap-1.5 rounded-full bg-red-100 dark:bg-red-900/30 border border-red-300/50 dark:border-red-700/50 px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition"
-                        >
-                          ℹ️ Weitere Infos
-                        </button>
+                        ><T value={" ℹ️ Weitere Infos "} /></button>
                       )}
                     </div>
                   </div>

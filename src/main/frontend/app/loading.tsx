@@ -1,3 +1,4 @@
+import { L } from '@/lib/i18n/LanguageProvider'
 export default function Loading() {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-white dark:bg-slate-950">
@@ -7,7 +8,7 @@ export default function Loading() {
         <div className="absolute h-20 w-20 rounded-full bg-green-500/10 animate-ping" />
         {/* Logo */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <L as="img"
           src="/assets/logo.svg"
           alt="Schwalmtalzupfer"
           className="relative h-14 w-14 animate-spin-slow brightness-0 dark:invert"

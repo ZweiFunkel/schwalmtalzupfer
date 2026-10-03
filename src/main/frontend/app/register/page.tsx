@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 
 import React, { useState, Suspense, useEffect, useCallback } from 'react'
@@ -55,7 +56,7 @@ function PaymentStep({
       )}
       <button type="button" onClick={handleConfirm} disabled={submitting || !stripe}
         className="mt-2 rounded-lg bg-green-600 py-2.5 font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-        {submitting ? 'Wird registriert…' : 'Jetzt registrieren'}
+        <T value={submitting ? 'Wird registriert…' : 'Jetzt registrieren'} />
       </button>
     </div>
   )
@@ -157,21 +158,21 @@ function RegisterForm() {
   if (success) {
     return (
       <div className="text-center text-green-400">
-        <p className="text-lg font-semibold">✓ Registrierung erfolgreich!</p>
-        <p className="text-sm text-gray-400 mt-1">Du wirst zur Login-Seite weitergeleitet…</p>
+        <p className="text-lg font-semibold"><T value={"✓ Registrierung erfolgreich!"} /></p>
+        <p className="text-sm text-gray-400 mt-1"><T value={"Du wirst zur Login-Seite weitergeleitet…"} /></p>
       </div>
     )
   }
 
-  if (loadingDetails) return <p className="text-gray-400 text-sm text-center">Laden…</p>
+  if (loadingDetails) return <p className="text-gray-400 text-sm text-center"><T value={"Laden…"} /></p>
   if (detailsError) return <p className="rounded-lg bg-red-900/30 px-3 py-2 text-sm text-red-400">{detailsError}</p>
 
   return (
     <div className="flex flex-col gap-4">
       {details?.gitarrengruppe && (
         <div className="rounded-lg border border-green-500/30 bg-green-900/10 px-4 py-3 text-sm text-gray-300">
-          <p className="font-semibold text-white mb-1">Deine Unterrichtsgruppe</p>
-          <p>{details.gitarrengruppe.wochentag}, {details.gitarrengruppe.vonUhrzeit}–{details.gitarrengruppe.bisUhrzeit} Uhr</p>
+          <p className="font-semibold text-white mb-1"><T value={"Deine Unterrichtsgruppe"} /></p>
+          <p>{details.gitarrengruppe.wochentag}, {details.gitarrengruppe.vonUhrzeit}–{details.gitarrengruppe.bisUhrzeit}<T value={" Uhr"} /></p>
           {details.gitarrengruppe.location && <p>{details.gitarrengruppe.location}</p>}
           {details.amountCents !== undefined && <p className="mt-1 font-semibold text-green-400">{formatEuro(details.amountCents)} / Monat</p>}
         </div>
@@ -180,37 +181,37 @@ function RegisterForm() {
       {step === 'form' && (
         <form onSubmit={handleContinue} className="flex flex-col gap-4">
           <div>
-            <label className={labelClass}>Einladungs-Token</label>
+            <label className={labelClass}><T value={"Einladungs-Token"} /></label>
             <input value={token} readOnly className="w-full rounded-lg border border-white/10 bg-slate-700 px-3 py-2 text-gray-400 text-sm" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelClass}>Vorname</label>
+              <label className={labelClass}><T value={"Vorname"} /></label>
               <input value={vorname} onChange={e => setVorname(e.target.value)} required className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Nachname</label>
+              <label className={labelClass}><T value={"Nachname"} /></label>
               <input value={nachname} onChange={e => setNachname(e.target.value)} required className={inputClass} />
             </div>
           </div>
           <div>
-            <label className={labelClass}>Username (optional)</label>
-            <input value={username} onChange={e => setUsername(e.target.value)} placeholder="z.B. max.mustermann" className={inputClass} />
+            <label className={labelClass}><T value={"Username (optional)"} /></label>
+            <L as="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="z.B. max.mustermann" className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Passwort wählen</label>
+            <label className={labelClass}><T value={"Passwort wählen"} /></label>
             <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className={inputClass} />
           </div>
           {!details?.amountCents && (
             <div>
-              <label className={labelClass}>IBAN (optional, für Beitragsabbuchung)</label>
-              <input type="text" value={iban} onChange={e => setIban(e.target.value)} placeholder="DE00 0000 0000 0000 0000 00" className={inputClass} />
+              <label className={labelClass}><T value={"IBAN (optional, für Beitragsabbuchung)"} /></label>
+              <L as="input" type="text" value={iban} onChange={e => setIban(e.target.value)} placeholder="DE00 0000 0000 0000 0000 00" className={inputClass} />
             </div>
           )}
-          {error && <p className="rounded-lg bg-red-900/30 px-3 py-2 text-sm text-red-400">{error}</p>}
+          {error && <p className="rounded-lg bg-red-900/30 px-3 py-2 text-sm text-red-400"><T value={error} /></p>}
           <button type="submit" disabled={loading}
             className="mt-2 rounded-lg bg-green-600 py-2.5 font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-            {loading ? 'Wird geladen…' : details?.amountCents ? 'Weiter zur Zahlungsart' : 'Konto erstellen'}
+            <T value={loading ? 'Wird geladen…' : details?.amountCents ? 'Weiter zur Zahlungsart' : 'Konto erstellen'} />
           </button>
         </form>
       )}
@@ -231,10 +232,10 @@ export default function RegisterPage() {
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-8 shadow-2xl">
         <div className="mb-6 text-center">
           <div className="mb-2 text-4xl">𝄞</div>
-          <h1 className="text-2xl font-bold text-white">Einladung annehmen</h1>
-          <p className="mt-1 text-sm text-gray-400">Erstelle dein Mitgliedskonto</p>
+          <h1 className="text-2xl font-bold text-white"><T value={"Einladung annehmen"} /></h1>
+          <p className="mt-1 text-sm text-gray-400"><T value={"Erstelle dein Mitgliedskonto"} /></p>
         </div>
-        <Suspense fallback={<p className="text-gray-400 text-sm text-center">Laden…</p>}>
+        <Suspense fallback={<p className="text-gray-400 text-sm text-center"><T value={"Laden…"} /></p>}>
           <RegisterForm />
         </Suspense>
       </div>

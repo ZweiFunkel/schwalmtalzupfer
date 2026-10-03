@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react'
 
 type ToastType = 'success' | 'error' | 'info'
@@ -36,7 +37,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2">
         {toasts.map(t => (
           <div key={t.id} className={`rounded-lg border px-4 py-2.5 text-sm shadow-lg ${TYPE_CLASSES[t.type]}`}>
-            {t.message}
+            <T value={t.message} />
           </div>
         ))}
       </div>

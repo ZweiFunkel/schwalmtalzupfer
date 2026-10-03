@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 import React, { useEffect } from 'react'
 
 interface ModalProps {
@@ -32,7 +33,7 @@ export function Modal({ open, onClose, title, children, maxWidthClassName = 'max
       >
         {title && (
           <div className="border-b border-white/10 px-5 py-3.5">
-            <h3 className="font-semibold text-white">{title}</h3>
+            <h3 className="font-semibold text-white"><T value={title} /></h3>
           </div>
         )}
         <div className="p-5">{children}</div>

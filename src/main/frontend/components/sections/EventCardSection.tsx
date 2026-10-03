@@ -1,3 +1,4 @@
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import React from 'react'
 import { EventCardContent } from '@/types/page'
 
@@ -28,7 +29,7 @@ export default function EventCardSection({ content }: { content: EventCardConten
 
       <div className="mx-auto max-w-7xl px-6">
         <h2 className="mb-12 text-center text-4xl font-bold text-gray-900 dark:text-white">
-          {content.heading ?? 'Konzerte'}
+          <T value={content.heading ?? 'Konzerte'} />
         </h2>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {content.events.map((event, idx) => {
@@ -46,9 +47,7 @@ export default function EventCardSection({ content }: { content: EventCardConten
                 {cancelled && (
                   <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-10">
                     <div className="absolute -top-1 -right-1 w-28 h-28">
-                      <div className="absolute top-7 right-[-28px] w-40 py-1.5 bg-red-500 text-white text-xs font-bold text-center tracking-widest rotate-45 shadow-md">
-                        ABGESAGT
-                      </div>
+                      <div className="absolute top-7 right-[-28px] w-40 py-1.5 bg-red-500 text-white text-xs font-bold text-center tracking-widest rotate-45 shadow-md"><T value={" ABGESAGT "} /></div>
                     </div>
                   </div>
                 )}
@@ -63,7 +62,7 @@ export default function EventCardSection({ content }: { content: EventCardConten
                 {event.imageUrl && (
                   <div className="h-48 overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={event.imageUrl} alt={event.title}
+                    <L as="img" src={event.imageUrl} alt={event.title}
                       className={`h-full w-full object-cover transition duration-500 group-hover:scale-105 ${cancelled ? 'grayscale' : ''}`} />
                   </div>
                 )}
@@ -83,15 +82,15 @@ export default function EventCardSection({ content }: { content: EventCardConten
                       ? 'line-through text-gray-400 dark:text-gray-500'
                       : 'text-gray-900 dark:text-white'
                   }`}>
-                    {event.title}
+                    <T value={event.title} />
                   </h3>
                   <p className="mb-3 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-                    <span>📍</span>{event.location}
+                    <span>📍</span><T value={event.location} />
                   </p>
                   {cancelled && event.cancellationNote && (
                     <div className="mb-2 flex items-start gap-2 rounded-lg border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 px-3 py-2">
                       <span className="mt-0.5 text-red-500 shrink-0">ℹ</span>
-                      <p className="text-sm text-red-600 dark:text-red-400">{event.cancellationNote}</p>
+                      <p className="text-sm text-red-600 dark:text-red-400"><T value={event.cancellationNote} /></p>
                     </div>
                   )}
                   {!cancelled && event.description && (

@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { SponsorGridContent, Sponsor, SponsorLocation } from '@/types/page'
@@ -77,11 +78,11 @@ function SponsorImage({ src, alt, isDarkTheme, onClick, onLoaded }: {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="absolute inset-0 animate-pulse bg-gray-200 dark:bg-slate-800" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/logo.svg" alt="" className="relative h-8 w-8 animate-spin-slow brightness-0 opacity-20 dark:invert" />
+          <L as="img" src="/assets/logo.svg" alt="" className="relative h-8 w-8 animate-spin-slow brightness-0 opacity-20 dark:invert" />
         </div>
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <L as="img"
         ref={imgRef}
         src={src}
         alt={alt}
@@ -206,9 +207,9 @@ export default function SponsorGridSection({ content }: { content: SponsorGridCo
             <div className="mb-4">
               <div className="mb-3 flex items-center gap-3">
                 <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-                <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Unsere Sponsoren</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Unsere Sponsoren"} /></span>
               </div>
-              <h2 className="text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
+              <h2 className="text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>
             </div>
           )}
           {content.intro && (
@@ -219,7 +220,7 @@ export default function SponsorGridSection({ content }: { content: SponsorGridCo
 
         {/* List */}
         {sponsors.length === 0 && (
-          <p className="text-gray-500 italic">Keine Sponsoren eingetragen.</p>
+          <p className="text-gray-500 italic"><T value={"Keine Sponsoren eingetragen."} /></p>
         )}
 
         <div className="columns-1 md:columns-3 gap-8 space-y-8">
@@ -243,12 +244,8 @@ export default function SponsorGridSection({ content }: { content: SponsorGridCo
         <div className={`mt-16 rounded-2xl border p-8 text-center ${isDarkTheme
           ? 'border-green-500/20 bg-green-950/20'
           : 'border-green-200 bg-green-50'}`}>
-          <p className={`text-lg font-semibold ${isDarkTheme ? 'text-green-300' : 'text-green-700'}`}>
-            💚 Herzlichen Dank an alle unsere Sponsoren!
-          </p>
-          <p className={`mt-2 text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}`}>
-            Durch eure Unterstützung ermöglichen wir Kindern und Jugendlichen unvergessliche Erlebnisse.
-          </p>
+          <p className={`text-lg font-semibold ${isDarkTheme ? 'text-green-300' : 'text-green-700'}`}><T value={" 💚 Herzlichen Dank an alle unsere Sponsoren! "} /></p>
+          <p className={`mt-2 text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}`}><T value={" Durch eure Unterstützung ermöglichen wir Kindern und Jugendlichen unvergessliche Erlebnisse. "} /></p>
         </div>
 
       </div>

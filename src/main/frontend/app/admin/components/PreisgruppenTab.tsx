@@ -1,4 +1,6 @@
 'use client'
+import { translateBrowserText } from '@/lib/i18n/browser'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 import React, { useCallback, useEffect, useState } from 'react'
 
@@ -34,7 +36,7 @@ export default function PreisgruppenTab() {
   }
 
   const deletePriceGroup = async (id: string) => {
-    if (!confirm('Preisgruppe wirklich löschen?')) return
+    if (!confirm(translateBrowserText('Preisgruppe wirklich löschen?'))) return
     const res = await fetch(`${API_BASE}/api/pricing/groups/${id}`, { method: 'DELETE', credentials: 'include' })
     if (res.ok) loadPriceGroups()
     else { const d = await res.json().catch(() => ({})); setPriceGroupsMsg(d.error ?? 'Löschen fehlgeschlagen') }
@@ -80,8 +82,8 @@ export default function PreisgruppenTab() {
     <div className="space-y-6">
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-6 py-4">
-          <h3 className="font-semibold text-white">💶 Preisgruppen</h3>
-          <p className="mt-1 text-xs text-gray-500">Beiträge pro Gruppen-Kategorie, historisiert nach "gültig ab"</p>
+          <h3 className="font-semibold text-white"><T value={"💶 Preisgruppen"} /></h3>
+          <p className="mt-1 text-xs text-gray-500"><T value={"Beiträge pro Gruppen-Kategorie, historisiert nach \"gültig ab\""} /></p>
         </div>
         <div className="p-6">
           {priceGroupsMsg && (
@@ -98,16 +100,14 @@ export default function PreisgruppenTab() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-semibold text-green-400">
-                        {pg.currentRate ? `${formatEuro(pg.currentRate.amountCents)} / Monat` : 'kein Preis hinterlegt'}
+                        <T value={pg.currentRate ? `${formatEuro(pg.currentRate.amountCents)} / Monat` : 'kein Preis hinterlegt'} />
                       </span>
                       <button onClick={() => toggleRateHistory(pg.id)}
                         className="rounded px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition">
-                        {rateHistory[pg.id] ? 'Historie ausblenden' : 'Historie'}
+                        <T value={rateHistory[pg.id] ? 'Historie ausblenden' : 'Historie'} />
                       </button>
                       <button onClick={() => deletePriceGroup(pg.id)}
-                        className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">
-                        Löschen
-                      </button>
+                        className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition"><T value={" Löschen "} /></button>
                     </div>
                   </div>
 
@@ -116,13 +116,13 @@ export default function PreisgruppenTab() {
                       <table className="w-full text-xs">
                         <thead className="bg-slate-800 text-gray-400">
                           <tr>
-                            <th className="px-3 py-2 text-left font-medium">Gültig ab</th>
-                            <th className="px-3 py-2 text-left font-medium">Betrag</th>
+                            <th className="px-3 py-2 text-left font-medium"><T value={"Gültig ab"} /></th>
+                            <th className="px-3 py-2 text-left font-medium"><T value={"Betrag"} /></th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
                           {rateHistory[pg.id].length === 0 ? (
-                            <tr><td colSpan={2} className="px-3 py-2 text-gray-500 italic">Noch keine Preise hinterlegt.</td></tr>
+                            <tr><td colSpan={2} className="px-3 py-2 text-gray-500 italic"><T value={"Noch keine Preise hinterlegt."} /></td></tr>
                           ) : rateHistory[pg.id].map(r => (
                             <tr key={r.id} className="bg-slate-900">
                               <td className="px-3 py-2 text-gray-300">{r.validFrom}</td>
@@ -136,50 +136,44 @@ export default function PreisgruppenTab() {
 
                   <div className="mt-3 flex flex-wrap items-end gap-3">
                     <div>
-                      <label className="mb-1 block text-xs text-gray-400">Neuer Preis (€/Monat)</label>
-                      <input value={newRate[pg.id]?.amountEuro ?? ''} placeholder="z.B. 15,00"
+                      <label className="mb-1 block text-xs text-gray-400"><T value={"Neuer Preis (€/Monat)"} /></label>
+                      <L as="input" value={newRate[pg.id]?.amountEuro ?? ''} placeholder="z.B. 15,00"
                         onChange={e => setNewRate(prev => ({ ...prev, [pg.id]: { amountEuro: e.target.value, validFrom: prev[pg.id]?.validFrom ?? '' } }))}
                         className="w-28 rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs text-gray-400">Gültig ab</label>
+                      <label className="mb-1 block text-xs text-gray-400"><T value={"Gültig ab"} /></label>
                       <input type="date" value={newRate[pg.id]?.validFrom ?? ''}
                         onChange={e => setNewRate(prev => ({ ...prev, [pg.id]: { amountEuro: prev[pg.id]?.amountEuro ?? '', validFrom: e.target.value } }))}
                         className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
                     </div>
                     <button onClick={() => addRate(pg.id)}
-                      className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">
-                      + Preis hinzufügen
-                    </button>
+                      className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition"><T value={" + Preis hinzufügen "} /></button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="mb-5 rounded-lg border border-dashed border-white/10 px-4 py-3 text-sm text-gray-500 text-center">
-              Noch keine Preisgruppen angelegt.
-            </p>
+            <p className="mb-5 rounded-lg border border-dashed border-white/10 px-4 py-3 text-sm text-gray-500 text-center"><T value={" Noch keine Preisgruppen angelegt. "} /></p>
           )}
 
           <div className="rounded-lg border border-white/10 bg-slate-800/40 p-4">
-            <p className="mb-3 text-xs font-semibold text-gray-300">+ Neue Preisgruppe anlegen</p>
+            <p className="mb-3 text-xs font-semibold text-gray-300"><T value={"+ Neue Preisgruppe anlegen"} /></p>
             <form onSubmit={createPriceGroup} className="flex flex-wrap gap-3 items-end">
               <div>
-                <label className="mb-1 block text-xs text-gray-400">Name *</label>
-                <input value={newPriceGroup.name} onChange={e => setNewPriceGroup(p => ({ ...p, name: e.target.value }))}
+                <label className="mb-1 block text-xs text-gray-400"><T value={"Name *"} /></label>
+                <L as="input" value={newPriceGroup.name} onChange={e => setNewPriceGroup(p => ({ ...p, name: e.target.value }))}
                   placeholder="z.B. Orchester" required
                   className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-400">Beschreibung (optional)</label>
-                <input value={newPriceGroup.description} onChange={e => setNewPriceGroup(p => ({ ...p, description: e.target.value }))}
+                <label className="mb-1 block text-xs text-gray-400"><T value={"Beschreibung (optional)"} /></label>
+                <L as="input" value={newPriceGroup.description} onChange={e => setNewPriceGroup(p => ({ ...p, description: e.target.value }))}
                   placeholder="z.B. für Mitglieder im Orchester"
                   className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
               </div>
               <button type="submit"
-                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">
-                + Anlegen
-              </button>
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition"><T value={" + Anlegen "} /></button>
             </form>
           </div>
         </div>

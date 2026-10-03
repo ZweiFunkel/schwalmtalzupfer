@@ -1,4 +1,6 @@
 'use client'
+import { translateBrowserText } from '@/lib/i18n/browser'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 import React, { useCallback, useEffect, useState } from 'react'
 
@@ -81,8 +83,8 @@ function LabeledInput({ label, value, onChange, placeholder, type = 'text' }: {
 }) {
   return (
     <div>
-      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={label} /></label>
+      <L as="input" type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none" />
     </div>
   )
@@ -91,14 +93,14 @@ function LabeledInput({ label, value, onChange, placeholder, type = 'text' }: {
 function KategorieChips({ value, onChange }: { value: KalenderKategorie; onChange: (k: KalenderKategorie) => void }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-gray-400">Kategorie</label>
+      <label className="mb-1 block text-xs text-gray-400"><T value={"Kategorie"} /></label>
       <div className="flex gap-2 flex-wrap">
         {KATEGORIEN.map(k => (
           <button key={k} type="button" onClick={() => onChange(k)}
             className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
               value === k ? 'bg-green-900/40 border-green-500/40 text-green-400' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'
             }`}>
-            {KAT_INFO[k].icon} {KAT_INFO[k].label}
+            {KAT_INFO[k].icon} <T value={KAT_INFO[k].label} />
           </button>
         ))}
       </div>
@@ -109,12 +111,11 @@ function KategorieChips({ value, onChange }: { value: KalenderKategorie; onChang
 function GruppeSelect({ value, onChange, gruppen }: { value: string; onChange: (v: string) => void; gruppen: Gruppe[] }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-gray-400">
-        Gitarrengruppe <span className="text-gray-600">(optional, für Unterrichtstermine)</span>
+      <label className="mb-1 block text-xs text-gray-400"><T value={" Gitarrengruppe "} /><span className="text-gray-600"><T value={"(optional, für Unterrichtstermine)"} /></span>
       </label>
       <select value={value} onChange={e => onChange(e.target.value)}
         className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none">
-        <option value="">– keine Gruppe –</option>
+        <option value=""><T value={"– keine Gruppe –"} /></option>
         {gruppen.map(g => (
           <option key={g.id} value={g.id}>
             {g.wochentag} {g.vonUhrzeit}–{g.bisUhrzeit}{g.location ? ` (${g.location.name})` : ''}
@@ -211,7 +212,7 @@ export default function KalenderTab() {
   const saveEdit = async (id: string) => {
     const draft = drafts[id]
     if (!draft) return
-    if (!draft.titel?.trim() || !draft.startDatum) { alert('Titel und Start-Datum sind Pflichtfelder.'); return }
+    if (!draft.titel?.trim() || !draft.startDatum) { alert(translateBrowserText('Titel und Start-Datum sind Pflichtfelder.')); return }
     setSaving(id)
     try {
       const res = await fetch(`${API_BASE}/api/kalender/termine/${id}`, {
@@ -220,19 +221,19 @@ export default function KalenderTab() {
         body: JSON.stringify(toBody(draft)),
       })
       if (res.ok) { setExpanded(null); loadTermine() }
-      else { const d = await res.json().catch(() => ({})); alert(d.error ?? 'Speichern fehlgeschlagen.') }
+      else { const d = await res.json().catch(() => ({})); alert(translateBrowserText(d.error ?? 'Speichern fehlgeschlagen.')) }
     } finally { setSaving(null) }
   }
 
   const deleteTermin = async (id: string) => {
-    if (!confirm('Termin wirklich löschen?')) return
+    if (!confirm(translateBrowserText('Termin wirklich löschen?'))) return
     const res = await fetch(`${API_BASE}/api/kalender/termine/${id}`, { method: 'DELETE', credentials: 'include' })
     if (res.ok) { setExpanded(null); loadTermine() }
-    else alert('Löschen fehlgeschlagen.')
+    else alert(translateBrowserText('Löschen fehlgeschlagen.'))
   }
 
   const createTermin = async () => {
-    if (!newDraft.titel?.trim() || !newDraft.startDatum) { alert('Titel und Start-Datum sind Pflichtfelder.'); return }
+    if (!newDraft.titel?.trim() || !newDraft.startDatum) { alert(translateBrowserText('Titel und Start-Datum sind Pflichtfelder.')); return }
     setSaving('__new__')
     try {
       const res = await fetch(`${API_BASE}/api/kalender/termine`, {
@@ -241,7 +242,7 @@ export default function KalenderTab() {
         body: JSON.stringify(toBody(newDraft)),
       })
       if (res.ok) { setCreating(false); setNewDraft(emptyDraft()); loadTermine() }
-      else { const d = await res.json().catch(() => ({})); alert(d.error ?? 'Anlegen fehlgeschlagen.') }
+      else { const d = await res.json().catch(() => ({})); alert(translateBrowserText(d.error ?? 'Anlegen fehlgeschlagen.')) }
     } finally { setSaving(null) }
   }
 
@@ -252,7 +253,7 @@ export default function KalenderTab() {
       body: JSON.stringify({ datum: t.startDatum, grund: ausfallGrund.trim() || 'Kein Unterricht', gitarrengruppeId: t.gitarrengruppeId ?? null }),
     })
     if (res.ok) { setAusfallExpanded(null); setAusfallGrund('Kein Unterricht'); loadAusnahmen(); loadTermine() }
-    else alert('Ausnahme konnte nicht angelegt werden.')
+    else alert(translateBrowserText('Ausnahme konnte nicht angelegt werden.'))
   }
 
   const addAusnahme = async (e: React.FormEvent) => {
@@ -268,7 +269,7 @@ export default function KalenderTab() {
   }
 
   const deleteAusnahme = async (id: string) => {
-    if (!confirm('Ausnahme wirklich löschen?')) return
+    if (!confirm(translateBrowserText('Ausnahme wirklich löschen?'))) return
     const res = await fetch(`${API_BASE}/api/kalender/ausnahmen/${id}`, { method: 'DELETE', credentials: 'include' })
     if (res.ok) { loadAusnahmen(); loadTermine() }
   }
@@ -336,32 +337,22 @@ export default function KalenderTab() {
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {isGenerated && (
-              <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] text-gray-400 font-semibold uppercase" title="Automatisch aus der Gitarrengruppe erzeugt">
-                🔒 Automatisch
-              </span>
+              <L as="span" className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] text-gray-400 font-semibold uppercase" title="Automatisch aus der Gitarrengruppe erzeugt"><T value={" 🔒 Automatisch "} /></L>
             )}
-            {t.abgesagt && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] text-red-400 font-bold uppercase">Abgesagt</span>}
+            {t.abgesagt && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] text-red-400 font-bold uppercase"><T value={"Abgesagt"} /></span>}
             <span className="text-gray-600 text-xs">{isOpen ? '▲' : '▼'}</span>
           </div>
         </div>
 
         {isGenerated && isAusfallOpen && (
           <div className="border-t border-white/8 p-3 flex flex-col gap-2 bg-slate-950/40">
-            <p className="text-xs text-gray-400">
-              Dieser Unterrichtstermin wird automatisch aus der Gitarrengruppe erzeugt und kann nicht direkt bearbeitet oder
-              gelöscht werden. Um ihn am <strong className="text-white">{isoToDe(t.startDatum)}</strong> ausfallen zu lassen,
-              wird eine Ausnahme für diesen Tag angelegt.
-            </p>
+            <p className="text-xs text-gray-400"><T value={" Dieser Unterrichtstermin wird automatisch aus der Gitarrengruppe erzeugt und kann nicht direkt bearbeitet oder gelöscht werden. Um ihn am "} /><strong className="text-white">{isoToDe(t.startDatum)}</strong><T value={" ausfallen zu lassen, wird eine Ausnahme für diesen Tag angelegt. "} /></p>
             <LabeledInput label="Grund" value={ausfallGrund} onChange={setAusfallGrund} placeholder="z.B. Ferien, Feiertag, Krankheit" />
             <div className="flex gap-2">
               <button onClick={() => confirmAusfall(t)}
-                className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 transition">
-                🚫 Unterricht ausfallen lassen
-              </button>
+                className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 transition"><T value={" 🚫 Unterricht ausfallen lassen "} /></button>
               <button onClick={() => setAusfallExpanded(null)}
-                className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition">
-                Abbrechen
-              </button>
+                className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition"><T value={" Abbrechen "} /></button>
             </div>
           </div>
         )}
@@ -372,7 +363,7 @@ export default function KalenderTab() {
             <KategorieChips value={(draft.kategorie as KalenderKategorie) ?? 'sonstige'} onChange={k => updateDraft(t.id, { kategorie: k })} />
 
             <div className="rounded-lg border border-white/8 bg-slate-800/50 p-3 flex flex-col gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">📅 Datum</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={"📅 Datum"} /></p>
               <div className="grid grid-cols-2 gap-2">
                 <LabeledInput type="date" label="Start" value={draft.startDatum ?? ''} onChange={v => updateDraft(t.id, { startDatum: v })} />
                 <LabeledInput type="date" label="Ende (optional)" value={draft.endDatum ?? ''} onChange={v => updateDraft(t.id, { endDatum: v })} />
@@ -385,7 +376,7 @@ export default function KalenderTab() {
 
             <LabeledInput label="Ort" value={draft.ort ?? ''} onChange={v => updateDraft(t.id, { ort: v })} />
             <div>
-              <label className="mb-1 block text-xs text-gray-400">Beschreibung</label>
+              <label className="mb-1 block text-xs text-gray-400"><T value={"Beschreibung"} /></label>
               <textarea value={draft.beschreibung ?? ''} onChange={e => updateDraft(t.id, { beschreibung: e.target.value })} rows={3}
                 className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
             </div>
@@ -396,8 +387,8 @@ export default function KalenderTab() {
               <input type="checkbox" checked={draft.istUnterricht ?? false}
                 onChange={e => updateDraft(t.id, { istUnterricht: e.target.checked })}
                 className="h-4 w-4 accent-green-500 rounded" />
-              <span className="text-sm text-gray-300">Ist ein Unterrichtstermin</span>
-              <span className="text-xs text-gray-500">(überschreibt einen automatischen Termin dieser Gruppe am selben Tag)</span>
+              <span className="text-sm text-gray-300"><T value={"Ist ein Unterrichtstermin"} /></span>
+              <span className="text-xs text-gray-500"><T value={"(überschreibt einen automatischen Termin dieser Gruppe am selben Tag)"} /></span>
             </label>
 
             <div className={`rounded-lg border p-3 flex flex-col gap-2 ${draft.abgesagt ? 'border-red-500/20 bg-red-900/10' : 'border-white/5 bg-slate-800/40'}`}>
@@ -405,7 +396,7 @@ export default function KalenderTab() {
                 <input type="checkbox" checked={draft.abgesagt ?? false}
                   onChange={e => updateDraft(t.id, { abgesagt: e.target.checked })}
                   className="h-4 w-4 accent-red-500 rounded" />
-                <span className="text-sm font-medium text-red-400">Veranstaltung absagen</span>
+                <span className="text-sm font-medium text-red-400"><T value={"Veranstaltung absagen"} /></span>
               </label>
               {draft.abgesagt && (
                 <LabeledInput label="Absagegrund (optional)" value={draft.absageGrund ?? ''}
@@ -417,16 +408,12 @@ export default function KalenderTab() {
             <div className="flex gap-2 items-center">
               <button onClick={() => saveEdit(t.id)} disabled={saving === t.id}
                 className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-                {saving === t.id ? 'Speichert…' : '✓ Speichern'}
+                <T value={saving === t.id ? 'Speichert…' : '✓ Speichern'} />
               </button>
               <button onClick={() => deleteTermin(t.id)}
-                className="rounded-lg border border-red-900/50 bg-red-950/40 px-3 py-1.5 text-xs text-red-400 hover:bg-red-900/50 transition">
-                🗑 Löschen
-              </button>
+                className="rounded-lg border border-red-900/50 bg-red-950/40 px-3 py-1.5 text-xs text-red-400 hover:bg-red-900/50 transition"><T value={" 🗑 Löschen "} /></button>
               <button onClick={() => setExpanded(null)}
-                className="ml-auto rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition">
-                Abbrechen
-              </button>
+                className="ml-auto rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition"><T value={" Abbrechen "} /></button>
             </div>
           </div>
         )}
@@ -439,13 +426,13 @@ export default function KalenderTab() {
       {/* ── Ferien-Sync ──────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
-          <h3 className="text-sm font-bold text-white">🏖 NRW-Schulferien</h3>
-          <p className="mt-0.5 text-xs text-gray-400">Unterricht fällt während der Schulferien automatisch aus – hier manuell aktualisieren.</p>
+          <h3 className="text-sm font-bold text-white"><T value={"🏖 NRW-Schulferien"} /></h3>
+          <p className="mt-0.5 text-xs text-gray-400"><T value={"Unterricht fällt während der Schulferien automatisch aus – hier manuell aktualisieren."} /></p>
         </div>
         <div className="p-5 flex flex-wrap items-center gap-3">
           <button onClick={syncFerien} disabled={syncing}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-            {syncing ? 'Synchronisiert…' : '🔄 Ferien jetzt synchronisieren'}
+            <T value={syncing ? 'Synchronisiert…' : '🔄 Ferien jetzt synchronisieren'} />
           </button>
           {syncMsg && (
             <span className={`rounded-lg px-3 py-1.5 text-sm ${syncMsg.ok ? 'bg-green-900/30 border border-green-500/20 text-green-400' : 'bg-red-900/30 border border-red-500/20 text-red-400'}`}>
@@ -458,8 +445,8 @@ export default function KalenderTab() {
       {/* ── Agenda ───────────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
-          <h3 className="text-sm font-bold text-white">🗓️ Termine</h3>
-          <p className="mt-0.5 text-xs text-gray-400">Konzerte, Ausflüge, Unterricht & Sonstiges im gewählten Zeitraum.</p>
+          <h3 className="text-sm font-bold text-white"><T value={"🗓️ Termine"} /></h3>
+          <p className="mt-0.5 text-xs text-gray-400"><T value={"Konzerte, Ausflüge, Unterricht & Sonstiges im gewählten Zeitraum."} /></p>
         </div>
         <div className="p-5 flex flex-col gap-4">
           {/* Zeitraum */}
@@ -468,11 +455,11 @@ export default function KalenderTab() {
             <LabeledInput type="date" label="Bis" value={bis} onChange={setBis} />
             <div className="flex gap-1.5">
               <button onClick={() => { setVon(todayIso()); setBis(addDaysIso(todayIso(), 30)) }}
-                className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition">30 Tage</button>
+                className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition"><T value={"30 Tage"} /></button>
               <button onClick={() => { setVon(todayIso()); setBis(addDaysIso(todayIso(), 90)) }}
-                className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition">3 Monate</button>
+                className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition"><T value={"3 Monate"} /></button>
               <button onClick={() => { setVon(todayIso()); setBis(addDaysIso(todayIso(), 365)) }}
-                className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition">1 Jahr</button>
+                className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition"><T value={"1 Jahr"} /></button>
             </div>
           </div>
 
@@ -481,24 +468,22 @@ export default function KalenderTab() {
             <button onClick={() => setFilter('alle')}
               className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
                 filter === 'alle' ? 'bg-green-900/40 border-green-500/40 text-green-400' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'
-              }`}>Alle</button>
+              }`}><T value={"Alle"} /></button>
             {KATEGORIEN.map(k => (
               <button key={k} onClick={() => setFilter(k)}
                 className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
                   filter === k ? 'bg-green-900/40 border-green-500/40 text-green-400' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'
-                }`}>{KAT_INFO[k].icon} {KAT_INFO[k].label}</button>
+                }`}>{KAT_INFO[k].icon} <T value={KAT_INFO[k].label} /></button>
             ))}
           </div>
 
           {/* Neuer Termin */}
           {!creating ? (
             <button type="button" onClick={() => { setNewDraft(emptyDraft()); setCreating(true) }}
-              className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-green-500/40 bg-green-900/10 py-2.5 text-sm text-green-400 hover:bg-green-900/20 hover:border-green-500/70 transition">
-              + Neuer Termin
-            </button>
+              className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-green-500/40 bg-green-900/10 py-2.5 text-sm text-green-400 hover:bg-green-900/20 hover:border-green-500/70 transition"><T value={" + Neuer Termin "} /></button>
           ) : (
             <div className="rounded-xl border border-green-500/30 bg-slate-900 p-3 flex flex-col gap-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Neuer Termin</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={"Neuer Termin"} /></p>
               <LabeledInput label="Titel" value={newDraft.titel ?? ''} onChange={v => setNewDraft(d => ({ ...d, titel: v }))} />
               <KategorieChips value={(newDraft.kategorie as KalenderKategorie) ?? 'sonstige'} onChange={k => setNewDraft(d => ({ ...d, kategorie: k }))} />
               <div className="grid grid-cols-2 gap-2">
@@ -511,7 +496,7 @@ export default function KalenderTab() {
               </div>
               <LabeledInput label="Ort" value={newDraft.ort ?? ''} onChange={v => setNewDraft(d => ({ ...d, ort: v }))} />
               <div>
-                <label className="mb-1 block text-xs text-gray-400">Beschreibung</label>
+                <label className="mb-1 block text-xs text-gray-400"><T value={"Beschreibung"} /></label>
                 <textarea value={newDraft.beschreibung ?? ''} onChange={e => setNewDraft(d => ({ ...d, beschreibung: e.target.value }))} rows={2}
                   className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
               </div>
@@ -520,30 +505,28 @@ export default function KalenderTab() {
                 <input type="checkbox" checked={newDraft.istUnterricht ?? false}
                   onChange={e => setNewDraft(d => ({ ...d, istUnterricht: e.target.checked }))}
                   className="h-4 w-4 accent-green-500 rounded" />
-                <span className="text-sm text-gray-300">Ist ein Unterrichtstermin</span>
+                <span className="text-sm text-gray-300"><T value={"Ist ein Unterrichtstermin"} /></span>
               </label>
               <div className="flex gap-2">
                 <button onClick={createTermin} disabled={saving === '__new__'}
                   className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-                  {saving === '__new__' ? 'Legt an…' : '✓ Anlegen'}
+                  <T value={saving === '__new__' ? 'Legt an…' : '✓ Anlegen'} />
                 </button>
                 <button onClick={() => setCreating(false)}
-                  className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition">
-                  Abbrechen
-                </button>
+                  className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition"><T value={" Abbrechen "} /></button>
               </div>
             </div>
           )}
 
           {/* Liste */}
-          {loadingTermine && <p className="text-center text-sm text-gray-500 py-4">Lädt…</p>}
+          {loadingTermine && <p className="text-center text-sm text-gray-500 py-4"><T value={"Lädt…"} /></p>}
           {loadError && <p className="rounded-lg border border-red-500/30 bg-red-900/10 px-4 py-2 text-sm text-red-400">⚠ {loadError}</p>}
           {!loadingTermine && !loadError && groups.length === 0 && (
-            <p className="text-center text-sm text-gray-600 py-4">Keine Termine im gewählten Zeitraum.</p>
+            <p className="text-center text-sm text-gray-600 py-4"><T value={"Keine Termine im gewählten Zeitraum."} /></p>
           )}
           {!loadingTermine && groups.map(g => (
             <div key={g.key} className="flex flex-col gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mt-1">{g.label}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mt-1"><T value={g.label} /></p>
               {g.items.map(renderTermin)}
             </div>
           ))}
@@ -553,17 +536,14 @@ export default function KalenderTab() {
       {/* ── Unterrichts-Ausnahmen ────────────────────────────────────────── */}
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
-          <h3 className="text-sm font-bold text-white">🚫 Unterrichts-Ausnahmen</h3>
-          <p className="mt-0.5 text-xs text-gray-400">
-            Einzelne Tage ohne Unterricht (z.B. Karneval) – unabhängig von den Schulferien.
-            Gilt für eine einzelne Gruppe oder – ohne Auswahl – für alle Gruppen.
-          </p>
+          <h3 className="text-sm font-bold text-white"><T value={"🚫 Unterrichts-Ausnahmen"} /></h3>
+          <p className="mt-0.5 text-xs text-gray-400"><T value={" Einzelne Tage ohne Unterricht (z.B. Karneval) – unabhängig von den Schulferien. Gilt für eine einzelne Gruppe oder – ohne Auswahl – für alle Gruppen. "} /></p>
         </div>
         <div className="p-5 flex flex-col gap-4">
           {ausnahmeMsg && <p className="rounded-lg bg-red-900/30 border border-red-500/20 px-4 py-2 text-sm text-red-400">{ausnahmeMsg}</p>}
 
           {ausnahmen.length === 0 ? (
-            <p className="text-sm text-gray-600">Noch keine Ausnahmen angelegt.</p>
+            <p className="text-sm text-gray-600"><T value={"Noch keine Ausnahmen angelegt."} /></p>
           ) : (
             <div className="flex flex-col gap-2">
               {ausnahmen.map(a => (
@@ -571,7 +551,7 @@ export default function KalenderTab() {
                   <span className="text-sm font-mono text-white">{isoToDe(a.datum)}</span>
                   <span className="flex-1 text-sm text-gray-300 truncate">{a.grund}</span>
                   <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] text-gray-400 whitespace-nowrap">
-                    {a.gitarrengruppeId ? (gruppeLabel(a.gitarrengruppeId) ?? 'Gruppe') : 'Alle Gruppen'}
+                    <T value={a.gitarrengruppeId ? (gruppeLabel(a.gitarrengruppeId) ?? 'Gruppe') : 'Alle Gruppen'} />
                   </span>
                   <button onClick={() => deleteAusnahme(a.id)}
                     className="rounded px-2 py-1 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-400 transition">🗑</button>
@@ -589,9 +569,7 @@ export default function KalenderTab() {
               <GruppeSelect value={newAusnahme.gitarrengruppeId} onChange={v => setNewAusnahme(a => ({ ...a, gitarrengruppeId: v }))} gruppen={gruppen} />
             </div>
             <button type="submit"
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition">
-              + Ausnahme hinzufügen
-            </button>
+              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition"><T value={" + Ausnahme hinzufügen "} /></button>
           </form>
         </div>
       </div>

@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 
 import React from 'react'
 import { QuoteContent } from '@/types/page'
@@ -14,9 +15,7 @@ export default function QuoteSection({ content }: { content: QuoteContent }) {
           <span
             className="pointer-events-none select-none absolute -top-10 left-1/2 -translate-x-1/2 text-[10rem] leading-none font-serif text-green-200 dark:text-green-900"
             aria-hidden="true"
-          >
-            &bdquo;
-          </span>
+          ><T value={" „ "} /></span>
 
           <blockquote className="relative">
             <p className="text-2xl sm:text-3xl font-semibold italic leading-snug text-gray-800 dark:text-gray-100">

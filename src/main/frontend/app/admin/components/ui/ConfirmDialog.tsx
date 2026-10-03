@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 import React from 'react'
 import { Modal } from './Modal'
 import { Button } from './Button'
@@ -22,7 +23,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Modal open={open} onClose={onCancel} title={title} maxWidthClassName="max-w-sm">
-      <p className="mb-5 text-sm text-gray-300">{message}</p>
+      <p className="mb-5 text-sm text-gray-300"><T value={message} /></p>
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onCancel}>{cancelLabel}</Button>
         <Button variant={destructive ? 'destructive' : 'primary'} onClick={onConfirm}>{confirmLabel}</Button>

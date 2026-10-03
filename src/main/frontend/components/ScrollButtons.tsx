@@ -1,4 +1,5 @@
 'use client'
+import { L } from '@/lib/i18n/LanguageProvider'
 
 import React, { useEffect, useState } from 'react'
 import { useTheme } from '@/lib/ThemeProvider'
@@ -20,7 +21,7 @@ export default function ScrollButtons() {
     : 'bg-slate-900/90 border-green-500/30 text-green-400 shadow-black/40'
 
   return (
-    <button
+    <L as="button"
       onClick={scrollTop}
       aria-label="Nach oben scrollen"
       className={`fixed bottom-7 right-7 z-50 flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-sm shadow-lg transition-all duration-300 hover:bg-green-500 hover:text-white hover:border-green-500 hover:scale-110 active:scale-95
@@ -30,7 +31,7 @@ export default function ScrollButtons() {
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
       </svg>
-    </button>
+    </L>
   )
 }
 

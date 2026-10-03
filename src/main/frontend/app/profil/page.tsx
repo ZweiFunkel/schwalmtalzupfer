@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 
 import React, { useEffect, useState } from 'react'
@@ -84,7 +85,7 @@ export default function ProfilPage() {
     setTimeout(() => setPwMsg(null), 4000)
   }
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>
   if (!user) return null
   // Gäste dürfen ihre Daten nicht ändern - Redirect oben läuft asynchron, hier zusätzlich
   // sofort nichts rendern, damit das Formular nicht kurz aufblitzt, bevor er greift.
@@ -106,7 +107,7 @@ export default function ProfilPage() {
 
   return (
     <div className="mx-auto max-w-xl px-6 py-12">
-      <h1 className="mb-8 text-3xl font-bold text-white">Mein Profil</h1>
+      <h1 className="mb-8 text-3xl font-bold text-white"><T value={"Mein Profil"} /></h1>
 
       {/* Übersichtskarte */}
       <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6">
@@ -127,11 +128,10 @@ export default function ProfilPage() {
       {/* Gruppeninformation (nur Lesezugriff) */}
       {gruppe ? (
         <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6">
-          <h2 className="mb-3 text-lg font-semibold text-white">Meine Gitarrengruppe</h2>
+          <h2 className="mb-3 text-lg font-semibold text-white"><T value={"Meine Gitarrengruppe"} /></h2>
 
           {naechsteAenderung && (
-            <div className="mb-4 rounded-lg border border-yellow-500/20 bg-yellow-900/10 px-4 py-2.5 text-sm text-yellow-300">
-              Ab <strong>{naechsteAenderung.gueltigAb}</strong> ändert sich das: {naechsteAenderung.gruppeLabel}
+            <div className="mb-4 rounded-lg border border-yellow-500/20 bg-yellow-900/10 px-4 py-2.5 text-sm text-yellow-300"><T value={" Ab "} /><strong>{naechsteAenderung.gueltigAb}</strong><T value={" ändert sich das: "} />{naechsteAenderung.gruppeLabel}
               {naechsteAenderung.monatsbeitragCents != null && (
                 <> · {(naechsteAenderung.monatsbeitragCents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}/Monat</>
               )}
@@ -140,16 +140,16 @@ export default function ProfilPage() {
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-gray-400">Wochentag</p>
+              <p className="text-gray-400"><T value={"Wochentag"} /></p>
               <p className="text-white font-medium">{gruppe.wochentag}</p>
             </div>
             <div>
-              <p className="text-gray-400">Uhrzeit</p>
-              <p className="text-white font-medium">{gruppe.vonUhrzeit} – {gruppe.bisUhrzeit} Uhr</p>
+              <p className="text-gray-400"><T value={"Uhrzeit"} /></p>
+              <p className="text-white font-medium">{gruppe.vonUhrzeit} – {gruppe.bisUhrzeit}<T value={" Uhr"} /></p>
             </div>
             {monatsbeitragCents != null && (
               <div>
-                <p className="text-gray-400">Monatsbeitrag</p>
+                <p className="text-gray-400"><T value={"Monatsbeitrag"} /></p>
                 <p className="text-white font-medium">
                   {(monatsbeitragCents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
                 </p>
@@ -158,11 +158,11 @@ export default function ProfilPage() {
             {gruppe.location && (
               <>
                 <div>
-                  <p className="text-gray-400">Ort</p>
+                  <p className="text-gray-400"><T value={"Ort"} /></p>
                   <p className="text-white font-medium">{gruppe.location.name}</p>
                 </div>
                 <div>
-                  <p className="text-gray-400">Adresse</p>
+                  <p className="text-gray-400"><T value={"Adresse"} /></p>
                   {gruppe.location.adresse ? (
                     (() => {
                       const adr: string = gruppe.location.adresse
@@ -181,7 +181,7 @@ export default function ProfilPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
-                          {isUrl ? 'In Maps öffnen' : adr}
+                          <T value={isUrl ? 'In Maps öffnen' : adr} />
                         </a>
                       )
                     })()
@@ -195,65 +195,65 @@ export default function ProfilPage() {
               </>
             )}
           </div>
-          <p className="mt-3 text-xs text-gray-500">Die Gruppe kann nur vom Vorstand oder Admin geändert werden.</p>
+          <p className="mt-3 text-xs text-gray-500"><T value={"Die Gruppe kann nur vom Vorstand oder Admin geändert werden."} /></p>
         </div>
       ) : (
         <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6">
-          <h2 className="mb-1 text-lg font-semibold text-white">Meine Gitarrengruppe</h2>
-          <p className="text-sm text-gray-400">Noch keiner Gruppe zugewiesen.</p>
+          <h2 className="mb-1 text-lg font-semibold text-white"><T value={"Meine Gitarrengruppe"} /></h2>
+          <p className="text-sm text-gray-400"><T value={"Noch keiner Gruppe zugewiesen."} /></p>
         </div>
       )}
 
       {/* Daten bearbeiten */}
       <form onSubmit={handleSave} className="rounded-xl border border-white/10 bg-slate-900 p-6 flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-white mb-2">Daten bearbeiten</h2>
+        <h2 className="text-lg font-semibold text-white mb-2"><T value={"Daten bearbeiten"} /></h2>
         {saveError && (
           <div className="rounded-lg bg-red-900/30 px-4 py-2 text-sm text-red-400">{saveError}</div>
         )}
         <div>
-          <label className="mb-1 block text-sm text-gray-400">Benutzername</label>
-          <input value={username} onChange={e => setUsername(e.target.value)}
+          <label className="mb-1 block text-sm text-gray-400"><T value={"Benutzername"} /></label>
+          <L as="input" value={username} onChange={e => setUsername(e.target.value)}
             placeholder="z.B. max.mustermann"
             className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
-          <p className="mt-1 text-xs text-gray-500">Damit kannst du dich alternativ zur E-Mail-Adresse einloggen. 3–50 Zeichen, nur Buchstaben, Zahlen, Punkt, Unterstrich oder Bindestrich.</p>
+          <p className="mt-1 text-xs text-gray-500"><T value={"Damit kannst du dich alternativ zur E-Mail-Adresse einloggen. 3–50 Zeichen, nur Buchstaben, Zahlen, Punkt, Unterstrich oder Bindestrich."} /></p>
         </div>
         <div>
-          <label className="mb-1 block text-sm text-gray-400">Vorname</label>
+          <label className="mb-1 block text-sm text-gray-400"><T value={"Vorname"} /></label>
           <input value={vorname} onChange={e => setVorname(e.target.value)}
             className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-gray-400">Nachname</label>
+          <label className="mb-1 block text-sm text-gray-400"><T value={"Nachname"} /></label>
           <input value={nachname} onChange={e => setNachname(e.target.value)}
             className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
         </div>
         <button type="submit" disabled={saving}
           className="rounded-lg bg-green-600 py-2.5 font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-          {saved ? '✓ Gespeichert' : saving ? 'Speichern…' : 'Speichern'}
+          <T value={saved ? '✓ Gespeichert' : saving ? 'Speichern…' : 'Speichern'} />
         </button>
       </form>
 
       {/* Passwort ändern */}
       <form onSubmit={handleChangePassword} className="mt-6 rounded-xl border border-white/10 bg-slate-900 p-6 flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-white mb-2">Passwort ändern</h2>
+        <h2 className="text-lg font-semibold text-white mb-2"><T value={"Passwort ändern"} /></h2>
         {pwMsg && (
           <div className={`rounded-lg px-4 py-2 text-sm ${pwMsg.error ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
             {pwMsg.text}
           </div>
         )}
         <div>
-          <label className="mb-1 block text-sm text-gray-400">Aktuelles Passwort</label>
+          <label className="mb-1 block text-sm text-gray-400"><T value={"Aktuelles Passwort"} /></label>
           <input type="password" value={aktuellesPasswort} onChange={e => setAktuellesPasswort(e.target.value)} required
             className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-gray-400">Neues Passwort (mind. 8 Zeichen)</label>
+          <label className="mb-1 block text-sm text-gray-400"><T value={"Neues Passwort (mind. 8 Zeichen)"} /></label>
           <input type="password" value={neuesPasswort} onChange={e => setNeuesPasswort(e.target.value)} required minLength={8}
             className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
         </div>
         <button type="submit" disabled={pwSaving}
           className="rounded-lg bg-green-600 py-2.5 font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-          {pwSaving ? 'Ändern…' : 'Passwort ändern'}
+          <T value={pwSaving ? 'Ändern…' : 'Passwort ändern'} />
         </button>
       </form>
     </div>

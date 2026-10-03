@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 
 import React, { useState } from 'react'
 import { FaqContent } from '@/types/page'
@@ -20,15 +21,15 @@ export default function FaqSection({ content }: { content: FaqContent }) {
           <div className="mb-12">
             <div className="mb-3 flex items-center gap-3">
               <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-              <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">FAQ</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"FAQ"} /></span>
             </div>
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white">{content.heading}</h2>
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white"><T value={content.heading} /></h2>
           </div>
         )}
 
         {/* Accordion */}
         {items.length === 0 && (
-          <p className="text-gray-400 italic">Keine Fragen eingetragen.</p>
+          <p className="text-gray-400 italic"><T value={"Keine Fragen eingetragen."} /></p>
         )}
         <div className="flex flex-col gap-3">
           {items.map((item, i) => {

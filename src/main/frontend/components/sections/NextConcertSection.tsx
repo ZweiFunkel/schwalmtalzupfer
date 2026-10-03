@@ -1,4 +1,5 @@
 'use client'
+import { T } from '@/lib/i18n/LanguageProvider'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { terminAnchor } from '@/components/sections/TermineListSection'
@@ -83,7 +84,7 @@ function Digit({ value, label }: { value: number; label: string }) {
       <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 dark:bg-slate-800/80 border border-gray-200 dark:border-white/8 shadow-sm dark:shadow-inner">
         <span className="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{String(value).padStart(2, '0')}</span>
       </div>
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-500">{label}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-500"><T value={label} /></span>
     </div>
   )
 }
@@ -132,7 +133,7 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
         {/* Section label */}
         <div className="mb-8 flex items-center gap-3">
           <span className="h-0.5 w-10 bg-green-500 rounded-full" />
-          <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400">Nächstes Konzert</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400"><T value={"Nächstes Konzert"} /></span>
         </div>
 
         {/* Loading skeleton */}
@@ -144,7 +145,7 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
         {next === null && (
           <div className="flex items-center gap-4 rounded-2xl border border-gray-200 dark:border-white/8 bg-white dark:bg-slate-900/60 px-6 py-6">
             <span className="text-3xl opacity-30">🎵</span>
-            <p className="text-gray-500 dark:text-gray-400">Derzeit sind keine Konzerte geplant.</p>
+            <p className="text-gray-500 dark:text-gray-400"><T value={"Derzeit sind keine Konzerte geplant."} /></p>
           </div>
         )}
 
@@ -165,23 +166,21 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
                   <div className="flex items-center gap-3 flex-wrap mb-1">
                     <h3 className={`text-2xl font-bold leading-tight ${
                       next.cancelled ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
-                    }`}>{next.title}</h3>
+                    }`}><T value={next.title} /></h3>
                     {next.cancelled && (
-                      <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-white shrink-0">
-                        Abgesagt
-                      </span>
+                      <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-white shrink-0"><T value={" Abgesagt "} /></span>
                     )}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
                     {next.location && (
-                      <span className="flex items-center gap-1.5">📍 {next.location}</span>
+                      <span className="flex items-center gap-1.5">📍 <T value={next.location} /></span>
                     )}
                   </div>
                   {next.note && !next.cancelled && (
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{next.note}</p>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed"><T value={next.note} /></p>
                   )}
                   {next.cancelled && next.cancellationNote && (
-                    <p className="mt-2 text-sm text-red-500 dark:text-red-400">{next.cancellationNote}</p>
+                    <p className="mt-2 text-sm text-red-500 dark:text-red-400"><T value={next.cancellationNote} /></p>
                   )}
                 </div>
                 <div className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold whitespace-nowrap ${
@@ -196,7 +195,7 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
               {/* Countdown (nur wenn nicht abgesagt) */}
               {!next.cancelled && cd && !isToday && cd.days > 0 && (
                 <div>
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600">Noch</p>
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600"><T value={"Noch"} /></p>
                   <div className="flex items-end gap-3">
                     <Digit value={cd.days}    label="Tage"    />
                     <span className="mb-4 text-xl font-light text-gray-400 dark:text-gray-700">:</span>
@@ -217,7 +216,7 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
                   </span>
                   <span className="text-lg font-bold text-green-400">
-                    {cd.days === 0 && cd.hours === 0 && cd.minutes < 60 ? 'Es ist soweit!' : 'Heute!'}
+                    <T value={cd.days === 0 && cd.hours === 0 && cd.minutes < 60 ? 'Es ist soweit!' : 'Heute!'} />
                   </span>
                 </div>
               )}
@@ -227,9 +226,7 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
                 <button
                   onClick={() => setShowMeldung(true)}
                   className="inline-flex items-center gap-1.5 rounded-full bg-red-100 dark:bg-red-900/30 border border-red-300/50 dark:border-red-700/50 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition"
-                >
-                  ℹ️ Weitere Infos
-                </button>
+                ><T value={" ℹ️ Weitere Infos "} /></button>
               )}
             </div>
           </div>
@@ -239,13 +236,9 @@ export default function NextConcertSection({ content }: { content: NextConcertCo
       {next && (
         <div className="relative mt-4 mx-auto max-w-3xl px-6 flex items-center gap-4">
           <Link href={`/termine#${terminAnchor(next.date, next.title)}`}
-            className="text-xs font-semibold text-green-600 dark:text-green-400 hover:text-green-500 transition">
-            Zum Termineintrag →
-          </Link>
+            className="text-xs font-semibold text-green-600 dark:text-green-400 hover:text-green-500 transition"><T value={" Zum Termineintrag → "} /></Link>
           <span className="text-gray-300 dark:text-gray-700">·</span>
-          <Link href="/termine" className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
-            Alle Termine
-          </Link>
+          <Link href="/termine" className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"><T value={" Alle Termine "} /></Link>
         </div>
       )}
 

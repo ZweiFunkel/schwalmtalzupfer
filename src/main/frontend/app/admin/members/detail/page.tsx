@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 
 import React, { useEffect, useState, Suspense } from 'react'
@@ -155,7 +156,7 @@ function MemberDetailContent() {
     setTimeout(() => setMsg(''), 2500)
   }
 
-  if (loading || !member) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
+  if (loading || !member) return <div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>
 
   const roleLabel: Record<string, string> = {
     GUEST: 'Gast', MEMBER: 'Mitglied', BOARD: 'Vorstand', CHEF: 'Chef', ADMIN: 'Administrator',
@@ -167,66 +168,66 @@ function MemberDetailContent() {
     <div className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">{displayName}</h1>
-        <Link href="/admin/members" className="text-sm text-gray-400 hover:text-white transition">← Zurück</Link>
+        <Link href="/admin/members" className="text-sm text-gray-400 hover:text-white transition"><T value={"← Zurück"} /></Link>
       </div>
 
       {msg && <div className="mb-4 rounded-lg bg-green-900/30 px-4 py-2 text-sm text-green-400">{msg}</div>}
 
       {/* Basisdaten */}
       <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6 grid grid-cols-2 gap-4 text-sm">
-        <div><p className="text-gray-400">E-Mail</p><p className="text-white">{member.email || '–'}</p></div>
-        <div><p className="text-gray-400">Username</p><p className="text-white">{member.username || '–'}</p></div>
+        <div><p className="text-gray-400"><T value={"E-Mail"} /></p><p className="text-white">{member.email || '–'}</p></div>
+        <div><p className="text-gray-400"><T value={"Username"} /></p><p className="text-white">{member.username || '–'}</p></div>
         <div>
-          <p className="text-gray-400">Rolle</p>
+          <p className="text-gray-400"><T value={"Rolle"} /></p>
           <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-gray-300">{roleLabel[member.role] ?? member.role}</span>
         </div>
         <div>
-          <p className="text-gray-400">Status</p>
+          <p className="text-gray-400"><T value={"Status"} /></p>
           {member.istAktiv
-            ? <span className="rounded-full bg-green-900/40 px-2 py-0.5 text-xs text-green-400">Aktiv</span>
-            : <span className="rounded-full bg-red-900/40 px-2 py-0.5 text-xs text-red-400">Archiviert</span>}
+            ? <span className="rounded-full bg-green-900/40 px-2 py-0.5 text-xs text-green-400"><T value={"Aktiv"} /></span>
+            : <span className="rounded-full bg-red-900/40 px-2 py-0.5 text-xs text-red-400"><T value={"Archiviert"} /></span>}
         </div>
-        {member.eintrittsdatum && <div><p className="text-gray-400">Eintrittsdatum</p><p className="text-white">{member.eintrittsdatum}</p></div>}
-        {member.austrittsdatum && <div><p className="text-gray-400">Austrittsdatum</p><p className="text-white">{member.austrittsdatum}</p></div>}
+        {member.eintrittsdatum && <div><p className="text-gray-400"><T value={"Eintrittsdatum"} /></p><p className="text-white">{member.eintrittsdatum}</p></div>}
+        {member.austrittsdatum && <div><p className="text-gray-400"><T value={"Austrittsdatum"} /></p><p className="text-white">{member.austrittsdatum}</p></div>}
       </div>
 
       {/* Mitgliedsvertrag (read-only, nie Kartendaten) */}
       {member.vertrag && (
         <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6 grid grid-cols-3 gap-4 text-sm">
           <div>
-            <p className="text-gray-400">Vertragsstatus</p>
+            <p className="text-gray-400"><T value={"Vertragsstatus"} /></p>
             <span className={`rounded-full px-2 py-0.5 text-xs ${
               member.vertrag.status === 'ACTIVE' ? 'bg-green-900/40 text-green-400' :
               member.vertrag.status === 'PAST_DUE' ? 'bg-yellow-900/40 text-yellow-300' :
               'bg-red-900/40 text-red-400'
             }`}>
-              {{ ACTIVE: 'Aktiv', PAST_DUE: 'Zahlung ausstehend', CANCELLED: 'Gekündigt' }[member.vertrag.status]}
+              <T value={{ ACTIVE: 'Aktiv', PAST_DUE: 'Zahlung ausstehend', CANCELLED: 'Gekündigt' }[member.vertrag.status]} />
             </span>
           </div>
-          <div><p className="text-gray-400">Beitrag</p><p className="text-white">{(member.vertrag.amountCents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} / Monat</p></div>
-          <div><p className="text-gray-400">Vertrag seit</p><p className="text-white">{member.vertrag.startDate}</p></div>
+          <div><p className="text-gray-400"><T value={"Beitrag"} /></p><p className="text-white">{(member.vertrag.amountCents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} / Monat</p></div>
+          <div><p className="text-gray-400"><T value={"Vertrag seit"} /></p><p className="text-white">{member.vertrag.startDate}</p></div>
         </div>
       )}
 
       {/* Aktuelle Gitarrengruppe + Beitrag */}
       <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6">
-        <h2 className="mb-3 text-lg font-semibold text-white">Gitarrenunterricht - aktuell</h2>
+        <h2 className="mb-3 text-lg font-semibold text-white"><T value={"Gitarrenunterricht - aktuell"} /></h2>
         {member.gruppe ? (
           <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-            <div><p className="text-gray-400">Wochentag / Zeit</p><p className="text-white">{member.gruppe.wochentag}, {member.gruppe.vonUhrzeit}–{member.gruppe.bisUhrzeit} Uhr</p></div>
+            <div><p className="text-gray-400"><T value={"Wochentag / Zeit"} /></p><p className="text-white">{member.gruppe.wochentag}, {member.gruppe.vonUhrzeit}–{member.gruppe.bisUhrzeit}<T value={" Uhr"} /></p></div>
             <div>
-              <p className="text-gray-400">Monatsbeitrag</p>
+              <p className="text-gray-400"><T value={"Monatsbeitrag"} /></p>
               <p className="text-white">
                 {member.monatsbeitragCents != null ? euro(member.monatsbeitragCents) : '–'}
-                {member.monatsbeitragCents != null && !member.individuellerPreis && <span className="ml-1 text-xs text-gray-500">(Preisgruppen-Satz)</span>}
-                {member.individuellerPreis && <span className="ml-1 text-xs text-gray-500">(individuell)</span>}
+                {member.monatsbeitragCents != null && !member.individuellerPreis && <span className="ml-1 text-xs text-gray-500"><T value={"(Preisgruppen-Satz)"} /></span>}
+                {member.individuellerPreis && <span className="ml-1 text-xs text-gray-500"><T value={"(individuell)"} /></span>}
               </p>
             </div>
             {member.gruppe.location && (
               <>
-                <div><p className="text-gray-400">Ort</p><p className="text-white">{member.gruppe.location.name}</p></div>
+                <div><p className="text-gray-400"><T value={"Ort"} /></p><p className="text-white">{member.gruppe.location.name}</p></div>
                 <div>
-                  <p className="text-gray-400">Adresse</p>
+                  <p className="text-gray-400"><T value={"Adresse"} /></p>
                   {member.gruppe.location.adresse ? (
                     <a
                       href={member.gruppe.location.adresse.startsWith('http')
@@ -235,7 +236,7 @@ function MemberDetailContent() {
                       target="_blank" rel="noopener noreferrer"
                       className="text-green-400 hover:text-green-300 font-medium transition"
                     >
-                      {member.gruppe.location.adresse.startsWith('http') ? 'In Maps öffnen' : member.gruppe.location.adresse}
+                      <T value={member.gruppe.location.adresse.startsWith('http') ? 'In Maps öffnen' : member.gruppe.location.adresse} />
                     </a>
                   ) : <p className="text-white">–</p>}
                   {member.gruppe.location.parkplatzInfo && (
@@ -246,30 +247,26 @@ function MemberDetailContent() {
             )}
           </div>
         ) : (
-          <p className="mb-4 text-sm text-gray-500">Keiner Gruppe zugewiesen.</p>
+          <p className="mb-4 text-sm text-gray-500"><T value={"Keiner Gruppe zugewiesen."} /></p>
         )}
 
         {member.naechsteAenderung && (
-          <div className="mb-4 rounded-lg border border-yellow-500/20 bg-yellow-900/10 px-4 py-2.5 text-sm text-yellow-300">
-            Ab <strong>{member.naechsteAenderung.gueltigAb}</strong>: {member.naechsteAenderung.gruppeLabel}
+          <div className="mb-4 rounded-lg border border-yellow-500/20 bg-yellow-900/10 px-4 py-2.5 text-sm text-yellow-300"><T value={" Ab "} /><strong>{member.naechsteAenderung.gueltigAb}</strong>: {member.naechsteAenderung.gruppeLabel}
             {member.naechsteAenderung.monatsbeitragCents != null && <> · {euro(member.naechsteAenderung.monatsbeitragCents)}/Monat</>}
           </div>
         )}
 
-        <h3 className="mb-2 text-sm font-semibold text-gray-300">Gruppe/Beitrag ändern</h3>
-        <p className="mb-3 text-xs text-gray-500">
-          Ohne Datum wirkt die Änderung sofort. Mit einem Datum in der Zukunft bleibt bis dahin die
-          bisherige Gruppe/der bisherige Beitrag sichtbar - z.B. bei einem geplanten Wechsel.
-        </p>
+        <h3 className="mb-2 text-sm font-semibold text-gray-300"><T value={"Gruppe/Beitrag ändern"} /></h3>
+        <p className="mb-3 text-xs text-gray-500"><T value={" Ohne Datum wirkt die Änderung sofort. Mit einem Datum in der Zukunft bleibt bis dahin die bisherige Gruppe/der bisherige Beitrag sichtbar - z.B. bei einem geplanten Wechsel. "} /></p>
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex-1 min-w-[220px]">
-            <label className="mb-1 block text-xs text-gray-400">Gruppe</label>
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Gruppe"} /></label>
             <select
               value={selectedGruppe}
               onChange={e => setSelectedGruppe(e.target.value)}
               className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none"
             >
-              <option value="">– Keine Gruppe –</option>
+              <option value=""><T value={"– Keine Gruppe –"} /></option>
               {gruppen.map(g => (
                 <option key={g.id} value={g.id}>
                   {g.wochentag} {g.vonUhrzeit}–{g.bisUhrzeit} {g.location ? `(${g.location.name})` : ''}
@@ -278,8 +275,8 @@ function MemberDetailContent() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Beitrag € (leer = Preisgruppen-Satz)</label>
-            <input
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Beitrag € (leer = Preisgruppen-Satz)"} /></label>
+            <L as="input"
               value={beitragEuro}
               onChange={e => setBeitragEuro(e.target.value)}
               placeholder="z.B. 23"
@@ -288,7 +285,7 @@ function MemberDetailContent() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Gültig ab (leer = sofort)</label>
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Gültig ab (leer = sofort)"} /></label>
             <input
               type="date"
               value={gueltigAb}
@@ -300,13 +297,11 @@ function MemberDetailContent() {
             onClick={saveGruppe}
             disabled={saving}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition"
-          >
-            Speichern
-          </button>
+          ><T value={" Speichern "} /></button>
         </div>
         <div className="mt-3">
-          <label className="mb-1 block text-xs text-gray-400">Notiz (optional, z.B. Anlass des Wechsels)</label>
-          <input
+          <label className="mb-1 block text-xs text-gray-400"><T value={"Notiz (optional, z.B. Anlass des Wechsels)"} /></label>
+          <L as="input"
             value={notiz}
             onChange={e => setNotiz(e.target.value)}
             placeholder="z.B. Zeit angepasst, älter geworden"
@@ -319,16 +314,16 @@ function MemberDetailContent() {
             <table className="w-full text-sm">
               <thead className="bg-slate-800 text-gray-400">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium">Gültig ab</th>
-                  <th className="px-4 py-2 text-left font-medium">Gruppe</th>
-                  <th className="px-4 py-2 text-left font-medium">Beitrag</th>
-                  <th className="px-4 py-2 text-left font-medium">Notiz</th>
+                  <th className="px-4 py-2 text-left font-medium"><T value={"Gültig ab"} /></th>
+                  <th className="px-4 py-2 text-left font-medium"><T value={"Gruppe"} /></th>
+                  <th className="px-4 py-2 text-left font-medium"><T value={"Beitrag"} /></th>
+                  <th className="px-4 py-2 text-left font-medium"><T value={"Notiz"} /></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {gruppenHistorie.map(h => (
                   <tr key={h.id} className={h.zukuenftig ? 'bg-yellow-900/10 text-yellow-200' : 'bg-slate-900 text-gray-300'}>
-                    <td className="px-4 py-2">{h.gueltigAb}{h.zukuenftig && <span className="ml-1.5 text-[10px] uppercase tracking-wide">geplant</span>}</td>
+                    <td className="px-4 py-2">{h.gueltigAb}{h.zukuenftig && <span className="ml-1.5 text-[10px] uppercase tracking-wide"><T value={"geplant"} /></span>}</td>
                     <td className="px-4 py-2">{h.gruppeLabel}</td>
                     <td className="px-4 py-2">{h.monatsbeitragCents != null ? euro(h.monatsbeitragCents) : '–'}</td>
                     <td className="px-4 py-2 text-gray-500">{h.notiz || '–'}</td>
@@ -343,44 +338,42 @@ function MemberDetailContent() {
       {/* Rolle ändern (CHEF/ADMIN - die Admin-Rolle selbst darf nur ein bestehender Admin vergeben) */}
       {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_CHEF') && (
         <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6">
-          <h2 className="mb-3 text-lg font-semibold text-white">Rolle ändern</h2>
+          <h2 className="mb-3 text-lg font-semibold text-white"><T value={"Rolle ändern"} /></h2>
           <div className="flex gap-3">
             <select
               value={selectedRolle}
               onChange={e => setSelectedRolle(e.target.value)}
               className="flex-1 rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none"
             >
-              <option value="GUEST">Gast</option>
-              <option value="MEMBER">Mitglied</option>
-              <option value="BOARD">Vorstand</option>
-              <option value="CHEF">Chef</option>
-              {user?.role === 'ROLE_ADMIN' && <option value="ADMIN">Administrator</option>}
+              <option value="GUEST"><T value={"Gast"} /></option>
+              <option value="MEMBER"><T value={"Mitglied"} /></option>
+              <option value="BOARD"><T value={"Vorstand"} /></option>
+              <option value="CHEF"><T value={"Chef"} /></option>
+              {user?.role === 'ROLE_ADMIN' && <option value="ADMIN"><T value={"Administrator"} /></option>}
             </select>
             <button
               onClick={saveRolle}
               disabled={saving}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50 transition"
-            >
-              Speichern
-            </button>
+            ><T value={" Speichern "} /></button>
           </div>
         </div>
       )}
 
       {/* Änderungshistorie */}
       <div className="rounded-xl border border-white/10 bg-slate-900 p-6">
-        <h2 className="mb-3 text-lg font-semibold text-white">Änderungshistorie</h2>
+        <h2 className="mb-3 text-lg font-semibold text-white"><T value={"Änderungshistorie"} /></h2>
         {history.length === 0 ? (
-          <p className="text-sm text-gray-500">Noch keine Änderungen protokolliert.</p>
+          <p className="text-sm text-gray-500"><T value={"Noch keine Änderungen protokolliert."} /></p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-400 border-b border-white/10">
-                  <th className="pb-2 pr-4">Typ</th>
-                  <th className="pb-2 pr-4">Alter Wert</th>
-                  <th className="pb-2 pr-4">Neuer Wert</th>
-                  <th className="pb-2">Zeitstempel</th>
+                  <th className="pb-2 pr-4"><T value={"Typ"} /></th>
+                  <th className="pb-2 pr-4"><T value={"Alter Wert"} /></th>
+                  <th className="pb-2 pr-4"><T value={"Neuer Wert"} /></th>
+                  <th className="pb-2"><T value={"Zeitstempel"} /></th>
                 </tr>
               </thead>
               <tbody>
@@ -403,7 +396,7 @@ function MemberDetailContent() {
 
 export default function MemberDetailPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>}>
+    <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>}>
       <MemberDetailContent />
     </Suspense>
   )

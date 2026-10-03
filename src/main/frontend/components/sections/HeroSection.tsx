@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 
 import React, { useEffect, useRef } from 'react'
 import { HeroContent } from '@/types/page'
@@ -85,8 +86,8 @@ export default function HeroSection({ content }: { content: HeroContent }) {
 
       {/* Scroll-Down-Indikator / Button */}
       <div className="absolute bottom-16 left-1/2 z-20 -translate-x-1/2 flex flex-col items-center gap-2">
-        <span className="text-xs uppercase tracking-widest text-gray-400 opacity-60">Scroll</span>
-        <button
+        <span className="text-xs uppercase tracking-widest text-gray-400 opacity-60"><T value={"Scroll"} /></span>
+        <L as="button"
           aria-label="Nach unten scrollen"
           onClick={() => {
             const next = document.querySelector('main > *:nth-child(2)') as HTMLElement
@@ -96,7 +97,7 @@ export default function HeroSection({ content }: { content: HeroContent }) {
           className="group flex h-10 w-6 items-start justify-center rounded-full border border-gray-500/50 pt-2 transition hover:border-green-500/70"
         >
           <div className="h-2 w-1 rounded-full bg-gray-400 animate-bounce group-hover:bg-green-400 transition" />
-        </button>
+        </L>
       </div>
 
       {/* Wellen-Übergang nach unten */}

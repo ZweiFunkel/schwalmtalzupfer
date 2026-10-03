@@ -1,4 +1,5 @@
 'use client'
+import { T, L } from '@/lib/i18n/LanguageProvider'
 import { getApiBase } from '@/lib/api'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -173,14 +174,12 @@ function UploadSection({
       <div className={`mb-6 rounded-xl border p-4 ${panelCl}`}>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <p className={`text-sm font-semibold ${headCl}`}>📤 Noten hochladen</p>
-            <p className={`text-xs mt-0.5 ${subCl}`}>Mehrere Dateien gleichzeitig möglich · Duplikate werden automatisch übersprungen</p>
+            <p className={`text-sm font-semibold ${headCl}`}><T value={"📤 Noten hochladen"} /></p>
+            <p className={`text-xs mt-0.5 ${subCl}`}><T value={"Mehrere Dateien gleichzeitig möglich · Duplikate werden automatisch übersprungen"} /></p>
           </div>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition shadow shadow-green-500/20">
-            📂 Dateien auswählen
-          </button>
+            className="rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 transition shadow shadow-green-500/20"><T value={" 📂 Dateien auswählen "} /></button>
         </div>
         <input ref={fileInputRef} type="file" multiple className="hidden" onChange={onFilesSelected} />
       </div>
@@ -193,21 +192,16 @@ function UploadSection({
     return (
       <div className={`mb-6 rounded-xl border p-4 ${panelCl}`}>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <p className={`text-sm font-semibold ${headCl}`}>📤 {total} Datei{total !== 1 ? 'en' : ''} ausgewählt</p>
+          <p className={`text-sm font-semibold ${headCl}`}>📤 {total}<T value={" Datei"} />{total !== 1 ? 'en' : ''}<T value={" ausgewählt"} /></p>
           <div className="flex gap-2">
-            <button onClick={reset} className={`rounded-lg border px-3 py-1.5 text-xs transition ${dk ? 'border-white/10 text-gray-400 hover:text-white' : 'border-gray-300 text-gray-500 hover:text-gray-800'}`}>
-              Abbrechen
-            </button>
+            <button onClick={reset} className={`rounded-lg border px-3 py-1.5 text-xs transition ${dk ? 'border-white/10 text-gray-400 hover:text-white' : 'border-gray-300 text-gray-500 hover:text-gray-800'}`}><T value={" Abbrechen "} /></button>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className={`rounded-lg border px-3 py-1.5 text-xs transition ${dk ? 'border-white/10 text-gray-400 hover:text-white' : 'border-gray-300 text-gray-500 hover:text-gray-800'}`}>
-              Neu wählen
-            </button>
+              className={`rounded-lg border px-3 py-1.5 text-xs transition ${dk ? 'border-white/10 text-gray-400 hover:text-white' : 'border-gray-300 text-gray-500 hover:text-gray-800'}`}><T value={" Neu wählen "} /></button>
             {status.toUpload.length > 0 && (
               <button onClick={startUpload}
                 className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition">
-                ⬆ {status.toUpload.length} Datei{status.toUpload.length !== 1 ? 'en' : ''} hochladen
-              </button>
+                ⬆ {status.toUpload.length}<T value={" Datei"} />{status.toUpload.length !== 1 ? 'en' : ''}<T value={" hochladen "} /></button>
             )}
           </div>
         </div>
@@ -215,12 +209,10 @@ function UploadSection({
         {/* Übersicht-Badges */}
         <div className="flex gap-3 mb-3 flex-wrap">
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeNew}`}>
-            ✅ {status.toUpload.length} neu
-          </span>
+            ✅ {status.toUpload.length}<T value={" neu "} /></span>
           {status.duplicates.length > 0 && (
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeDup}`}>
-              ⚠️ {status.duplicates.length} bereits vorhanden
-            </span>
+              ⚠️ {status.duplicates.length}<T value={" bereits vorhanden "} /></span>
           )}
         </div>
 
@@ -234,17 +226,15 @@ function UploadSection({
                   {fileIcon(f.name)} {f.name}
                 </span>
                 {isDup
-                  ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${badgeDup}`}>vorhanden</span>
-                  : <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${badgeNew}`}>neu</span>
+                  ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${badgeDup}`}><T value={"vorhanden"} /></span>
+                  : <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${badgeNew}`}><T value={"neu"} /></span>
                 }
               </div>
             )
           })}
         </div>
         {status.toUpload.length === 0 && (
-          <p className={`mt-3 text-xs text-center ${subCl}`}>
-            Alle ausgewählten Dateien sind bereits vorhanden. Nichts zum Hochladen.
-          </p>
+          <p className={`mt-3 text-xs text-center ${subCl}`}><T value={" Alle ausgewählten Dateien sind bereits vorhanden. Nichts zum Hochladen. "} /></p>
         )}
         <input ref={fileInputRef} type="file" multiple className="hidden" onChange={onFilesSelected} />
       </div>
@@ -257,7 +247,7 @@ function UploadSection({
     const pct = total > 0 ? Math.round((status.processed / total) * 100) : 0
     return (
       <div className={`mb-6 rounded-xl border p-4 ${panelCl}`}>
-        <p className={`text-sm font-semibold mb-3 ${headCl}`}>⬆ Upload läuft…</p>
+        <p className={`text-sm font-semibold mb-3 ${headCl}`}><T value={"⬆ Upload läuft…"} /></p>
 
         {/* Fortschrittsbalken */}
         <div className={`h-2 rounded-full overflow-hidden mb-3 ${dk ? 'bg-slate-700' : 'bg-gray-200'}`}>
@@ -287,11 +277,8 @@ function UploadSection({
     <div className={`mb-6 rounded-xl border p-4 ${panelCl}`}>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <p className={`text-sm font-semibold ${headCl}`}>
-          {status.errors > 0 ? '⚠️' : '✅'} Upload abgeschlossen
-        </p>
-        <button onClick={reset} className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition">
-          Weiteren Upload starten
-        </button>
+          {status.errors > 0 ? '⚠️' : '✅'}<T value={" Upload abgeschlossen "} /></p>
+        <button onClick={reset} className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition"><T value={" Weiteren Upload starten "} /></button>
       </div>
 
       {/* Abschluss-Statistik */}
@@ -305,8 +292,7 @@ function UploadSection({
       {/* Detail-Listen */}
       {status.addedFiles.length > 0 && (
         <details className="mt-4">
-          <summary className={`cursor-pointer text-xs font-semibold text-green-400 select-none`}>
-            ✅ Hinzugefügte Dateien ({status.addedFiles.length})
+          <summary className={`cursor-pointer text-xs font-semibold text-green-400 select-none`}><T value={" ✅ Hinzugefügte Dateien ("} />{status.addedFiles.length})
           </summary>
           <ul className={`mt-2 text-xs space-y-1 ${subCl}`}>
             {status.addedFiles.map((f, i) => <li key={i} className="truncate">· {f}</li>)}
@@ -315,8 +301,7 @@ function UploadSection({
       )}
       {status.skippedFiles.length > 0 && (
         <details className="mt-3">
-          <summary className={`cursor-pointer text-xs font-semibold text-amber-400 select-none`}>
-            ⚠️ Bereits vorhanden ({status.skippedFiles.length})
+          <summary className={`cursor-pointer text-xs font-semibold text-amber-400 select-none`}><T value={" ⚠️ Bereits vorhanden ("} />{status.skippedFiles.length})
           </summary>
           <ul className={`mt-2 text-xs space-y-1 ${subCl}`}>
             {status.skippedFiles.map((f, i) => <li key={i} className="truncate">· {f}</li>)}
@@ -325,8 +310,7 @@ function UploadSection({
       )}
       {status.errorFiles.length > 0 && (
         <details className="mt-3">
-          <summary className={`cursor-pointer text-xs font-semibold text-red-400 select-none`}>
-            ❌ Fehler ({status.errorFiles.length})
+          <summary className={`cursor-pointer text-xs font-semibold text-red-400 select-none`}><T value={" ❌ Fehler ("} />{status.errorFiles.length})
           </summary>
           <ul className={`mt-2 text-xs space-y-1 ${subCl}`}>
             {status.errorFiles.map((f, i) => <li key={i} className="truncate">· {f}</li>)}
@@ -341,7 +325,7 @@ function StatBox({ label, value, dk, color }: { label: string; value: number; dk
   return (
     <div className={`rounded-lg p-3 text-center ${dk ? 'bg-slate-700/50' : 'bg-white border border-gray-200'}`}>
       <div className={`text-xl font-bold ${color ?? (dk ? 'text-white' : 'text-gray-900')}`}>{value}</div>
-      <div className={`text-xs mt-0.5 ${dk ? 'text-gray-400' : 'text-gray-500'}`}>{label}</div>
+      <div className={`text-xs mt-0.5 ${dk ? 'text-gray-400' : 'text-gray-500'}`}><T value={label} /></div>
     </div>
   )
 }
@@ -397,9 +381,7 @@ function PreviewModal({ note, onClose }: { note: Note; onClose: () => void }) {
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <a href={downloadUrl} target="_blank" rel="noopener noreferrer"
-              className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition">
-              ⬇ Download
-            </a>
+              className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition"><T value={" ⬇ Download "} /></a>
             <button onClick={onClose} className="text-gray-400 hover:text-white text-xl leading-none px-1">✕</button>
           </div>
         </div>
@@ -409,17 +391,15 @@ function PreviewModal({ note, onClose }: { note: Note; onClose: () => void }) {
           {loadError ? (
             <div className="flex flex-col items-center justify-center gap-4 p-12 text-center">
               <span className="text-5xl">⚠️</span>
-              <p className="text-gray-300 text-sm">Datei konnte nicht geladen werden.</p>
+              <p className="text-gray-300 text-sm"><T value={"Datei konnte nicht geladen werden."} /></p>
               <a href={downloadUrl} target="_blank" rel="noopener noreferrer"
-                className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition">
-                ⬇ Direkt herunterladen
-              </a>
+                className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition"><T value={" ⬇ Direkt herunterladen "} /></a>
             </div>
           ) : !blobUrl ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
                 <div className="text-4xl mb-3 animate-pulse">{fileIcon(note.name)}</div>
-                <p className="text-gray-400 text-sm">Lade Vorschau…</p>
+                <p className="text-gray-400 text-sm"><T value={"Lade Vorschau…"} /></p>
               </div>
             </div>
           ) : isAudio(note.name) ? (
@@ -427,14 +407,12 @@ function PreviewModal({ note, onClose }: { note: Note; onClose: () => void }) {
               <span className="text-7xl">🎵</span>
               <p className="text-white font-semibold text-lg text-center">{note.name}</p>
               {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-              <audio controls autoPlay className="w-full max-w-lg" src={blobUrl}>
-                Dein Browser unterstützt kein Audio.
-              </audio>
+              <audio controls autoPlay className="w-full max-w-lg" src={blobUrl}><T value={" Dein Browser unterstützt kein Audio. "} /></audio>
             </div>
           ) : isImage(note.name) ? (
             <div className="flex items-center justify-center p-4 min-h-[400px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={blobUrl} alt={note.name} className="max-w-full max-h-[75vh] object-contain rounded-lg" />
+              <L as="img" src={blobUrl} alt={note.name} className="max-w-full max-h-[75vh] object-contain rounded-lg" />
             </div>
           ) : note.name.toLowerCase().endsWith('.pdf') ? (
             isMobile ? (
@@ -442,18 +420,14 @@ function PreviewModal({ note, onClose }: { note: Note; onClose: () => void }) {
               <div className="flex flex-col items-center justify-center gap-5 p-12 text-center">
                 <span className="text-6xl">📄</span>
                 <p className="text-white font-semibold">{note.name}</p>
-                <p className="text-gray-400 text-sm">PDF-Vorschau wird auf diesem Gerät nicht unterstützt.</p>
+                <p className="text-gray-400 text-sm"><T value={"PDF-Vorschau wird auf diesem Gerät nicht unterstützt."} /></p>
                 <a href={blobUrl!} target="_blank" rel="noopener noreferrer"
-                  className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition">
-                  📄 PDF im Browser öffnen
-                </a>
+                  className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition"><T value={" 📄 PDF im Browser öffnen "} /></a>
                 <a href={downloadUrl} target="_blank" rel="noopener noreferrer"
-                  className="rounded-lg border border-white/20 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:text-white transition">
-                  ⬇ Herunterladen
-                </a>
+                  className="rounded-lg border border-white/20 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:text-white transition"><T value={" ⬇ Herunterladen "} /></a>
               </div>
             ) : (
-              <iframe
+              <L as="iframe"
                 src={blobUrl!}
                 title={note.name}
                 className="w-full"
@@ -463,11 +437,9 @@ function PreviewModal({ note, onClose }: { note: Note; onClose: () => void }) {
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 p-12 text-center">
               <span className="text-6xl">{fileIcon(note.name)}</span>
-              <p className="text-gray-300 text-sm">Keine Vorschau verfügbar für diesen Dateityp.</p>
+              <p className="text-gray-300 text-sm"><T value={"Keine Vorschau verfügbar für diesen Dateityp."} /></p>
               <a href={downloadUrl} target="_blank" rel="noopener noreferrer"
-                className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition">
-                ⬇ Datei herunterladen
-              </a>
+                className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition"><T value={" ⬇ Datei herunterladen "} /></a>
             </div>
           )}
         </div>
@@ -589,7 +561,7 @@ export default function NotenPage() {
   }
 
   if (authLoading || prefix === null) return (
-    <div className="flex min-h-[60vh] items-center justify-center text-gray-400">Laden…</div>
+    <div className="flex min-h-[60vh] items-center justify-center text-gray-400"><T value={"Laden…"} /></div>
   )
   if (!user) return null
 
@@ -599,21 +571,19 @@ export default function NotenPage() {
     <div className={`mx-auto max-w-7xl px-6 py-12 ${pageBg}`}>
       {/* Breadcrumb */}
       <div className={`mb-6 flex items-center gap-2 text-sm ${subCl}`}>
-        <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition">Intern</Link>
+        <Link href="/intern" className="hover:text-green-500 dark:hover:text-green-400 transition"><T value={"Intern"} /></Link>
         <span>/</span>
-        <span className={headingCl}>Notenarchiv</span>
+        <span className={headingCl}><T value={"Notenarchiv"} /></span>
       </div>
 
       {/* Header */}
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className={`text-3xl font-bold ${headingCl}`}>🎼 Noten</h1>
-          <p className={`mt-1 text-sm ${subCl}`}>Download-Bereich für Vereinsmitglieder</p>
+          <h1 className={`text-3xl font-bold ${headingCl}`}><T value={"🎼 Noten"} /></h1>
+          <p className={`mt-1 text-sm ${subCl}`}><T value={"Download-Bereich für Vereinsmitglieder"} /></p>
         </div>
         <button onClick={downloadAll}
-          className="rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition shadow-lg shadow-green-500/20">
-          ⬇ Alle Noten als ZIP
-        </button>
+          className="rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition shadow-lg shadow-green-500/20"><T value={" ⬇ Alle Noten als ZIP "} /></button>
       </div>
 
       {/* Upload-Bereich (nur BOARD / ADMIN) */}
@@ -629,7 +599,7 @@ export default function NotenPage() {
       {/* Suche */}
       <div className="mb-6 flex gap-3">
         <div className="flex-1">
-          <input value={search} onChange={e => setSearch(e.target.value)}
+          <L as="input" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="🔍 Noten suchen…"
             className={`w-full rounded-xl border px-4 py-2.5 text-sm focus:outline-none transition ${inputCl}`} />
         </div>
@@ -641,14 +611,12 @@ export default function NotenPage() {
       {/* Auswahl-Aktionen */}
       {selected.size > 0 && (
         <div className="mb-4 flex items-center gap-3 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-3">
-          <span className="text-sm text-green-400 font-semibold">{selected.size} Datei(en) ausgewählt</span>
+          <span className="text-sm text-green-400 font-semibold">{selected.size}<T value={" Datei(en) ausgewählt"} /></span>
           <button onClick={downloadSelected} disabled={downloading}
             className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50 transition">
-            {downloading ? 'Packe ZIP…' : '⬇ Auswahl als ZIP'}
+            <T value={downloading ? 'Packe ZIP…' : '⬇ Auswahl als ZIP'} />
           </button>
-          <button onClick={() => setSelected(new Set())} className={`ml-auto text-xs transition ${subCl} hover:text-green-400`}>
-            Auswahl aufheben
-          </button>
+          <button onClick={() => setSelected(new Set())} className={`ml-auto text-xs transition ${subCl} hover:text-green-400`}><T value={" Auswahl aufheben "} /></button>
         </div>
       )}
 
@@ -657,14 +625,14 @@ export default function NotenPage() {
         <div className={`flex items-center justify-center py-20 ${subCl}`}>
           <div className="text-center">
             <div className="text-4xl mb-3 animate-pulse">🎼</div>
-            <p>Lade Noten…</p>
+            <p><T value={"Lade Noten…"} /></p>
           </div>
         </div>
       ) : filtered.length === 0 ? (
         <div className={`flex items-center justify-center py-20 ${subCl}`}>
           <div className="text-center">
             <div className="text-4xl mb-3">🗂</div>
-            <p>{search ? 'Keine Noten gefunden.' : 'Noch keine Noten vorhanden.'}</p>
+            <p><T value={search ? 'Keine Noten gefunden.' : 'Noch keine Noten vorhanden.'} /></p>
           </div>
         </div>
       ) : (
@@ -676,10 +644,10 @@ export default function NotenPage() {
                   <input type="checkbox" checked={allSelected} onChange={toggleAll}
                     className={`rounded accent-green-500 cursor-pointer ${checkboxCl}`} />
                 </th>
-                <th className="px-4 py-3 text-left">Dateiname</th>
-                <th className="px-4 py-3 text-left hidden sm:table-cell">Ordner</th>
-                <th className="px-4 py-3 text-left hidden md:table-cell">Größe</th>
-                <th className="px-4 py-3 text-left">Aktionen</th>
+                <th className="px-4 py-3 text-left"><T value={"Dateiname"} /></th>
+                <th className="px-4 py-3 text-left hidden sm:table-cell"><T value={"Ordner"} /></th>
+                <th className="px-4 py-3 text-left hidden md:table-cell"><T value={"Größe"} /></th>
+                <th className="px-4 py-3 text-left"><T value={"Aktionen"} /></th>
               </tr>
             </thead>
             <tbody className={`divide-y ${divideCl}`}>
@@ -709,13 +677,13 @@ export default function NotenPage() {
                         <button onClick={() => setPreview(note)}
                           className={`rounded-lg px-2 sm:px-3 py-1.5 text-xs transition ${dlBtnCl}`}>
                           <span className="sm:hidden">👁</span>
-                          <span className="hidden sm:inline whitespace-nowrap">👁 Vorschau</span>
+                          <span className="hidden sm:inline whitespace-nowrap"><T value={"👁 Vorschau"} /></span>
                         </button>
                       )}
                       <button onClick={() => downloadSingle(note.key)}
                         className={`rounded-lg px-2 sm:px-3 py-1.5 text-xs transition ${dlBtnCl}`}>
                         <span className="sm:hidden">⬇</span>
-                        <span className="hidden sm:inline whitespace-nowrap">⬇ Download</span>
+                        <span className="hidden sm:inline whitespace-nowrap"><T value={"⬇ Download"} /></span>
                       </button>
                     </div>
                   </td>
@@ -724,12 +692,11 @@ export default function NotenPage() {
             </tbody>
           </table>
           <div className={`px-4 py-2.5 flex items-center justify-between text-xs ${footerCl}`}>
-            <span>{filtered.length} Datei(en){search && ` (gefiltert von ${notes.length})`}</span>
+            <span>{filtered.length}<T value={" Datei(en)"} /><T value={search && ` (gefiltert von ${notes.length})`} /></span>
             {selected.size > 0 && (
               <button onClick={downloadSelected} disabled={downloading}
                 className="text-green-400 hover:text-green-300 transition">
-                ⬇ {selected.size} ausgewählte als ZIP
-              </button>
+                ⬇ {selected.size}<T value={" ausgewählte als ZIP "} /></button>
             )}
           </div>
         </div>
