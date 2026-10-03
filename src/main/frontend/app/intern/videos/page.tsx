@@ -1162,7 +1162,7 @@ function SidebarNav({ nav, selection, onSelect }: {
           <div className="flex flex-col gap-0.5">
             {nav.weitere.map(sub => (
               <NavItem key={sub} active={isSel(selection, { cat: 'WEITERE', sub })} onClick={() => onSelect({ cat: 'WEITERE', sub })}>
-                {sub}
+                <T value={sub} />
               </NavItem>
             ))}
           </div>
