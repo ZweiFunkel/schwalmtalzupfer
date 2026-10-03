@@ -8,7 +8,7 @@ export default function GuitarLessons({ compact = false }: { compact?: boolean }
       <h2 id="guitar-lessons-title" className="text-2xl font-bold sm:text-3xl"><T value={"Gitarrenunterricht ab dem 2. Schuljahr"} /></h2>
       <p className="mt-4 max-w-2xl text-gray-700 dark:text-gray-300"><T value={"Du möchtest Gitarre spielen lernen, hast schon Erfahrung oder möchtest einfach Teil einer großen musikalischen Gemeinschaft sein? Bei uns sind Anfänger und Fortgeschrittene, Kinder, Jugendliche und Erwachsene willkommen. Gemeinsam musizieren macht in jeder Altersgruppe Spaß - egal, ob du gerade anfängst oder deine Gitarrenkenntnisse weiterentwickeln möchtest. Unsere Gruppen beginnen ab dem 2. Schuljahr; für Fragen und Anfragen schreib uns über das Kontaktformular oder an info@schwalmtalzupfer.de."} /></p>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <Link href={compact ? '/gitarrenunterricht' : '/kontakt?betreff=Gitarrenunterricht'} className="rounded-xl bg-green-700 px-5 py-3 text-center font-semibold text-white hover:bg-green-800"><T value={compact ? 'Zum Gitarrenunterricht' : 'Unterricht anfragen'} /></Link>
+        <Link href="/kontakt?betreff=Gitarrenunterricht" className="rounded-xl bg-green-700 px-5 py-3 text-center font-semibold text-white hover:bg-green-800"><T value={'Unterricht anfragen'} /></Link>
         <a href="mailto:info@schwalmtalzupfer.de?subject=Gitarrenunterricht" className="break-all rounded-xl border border-green-700/30 px-5 py-3 text-center text-green-800 dark:text-green-300"><T value={"info@schwalmtalzupfer.de"} /></a>
       </div>
     </section>
