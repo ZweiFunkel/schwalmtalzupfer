@@ -254,7 +254,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 dark:border-white/5 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         {/* Logo */}
         <a href="/" className="flex items-center gap-3 shrink-0">
           <Image src={logoUrl} alt="Logo Schwalmtalzupfer" width={56} height={56}
@@ -264,7 +264,7 @@ export default function Navbar() {
         </a>
 
         {/* Desktop Nav */}
-        <nav className="hidden items-center gap-5 text-sm font-medium text-gray-600 dark:text-gray-300 md:flex">
+        <nav className="hidden items-center gap-5 text-sm font-medium text-gray-600 dark:text-gray-300 xl:flex">
           <Link href="/" className="transition hover:text-green-600 dark:hover:text-green-400"><T value={"Startseite"} /></Link>
           {cfg.dropdowns.filter(g => isVisible(g.visibility)).map((group, i) => {
             const items = resolveItems(group.items)
@@ -283,7 +283,7 @@ export default function Navbar() {
         </nav>
 
         {/* User / Login */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden xl:flex items-center gap-3">
           <form onSubmit={(e) => e.preventDefault()} className={`relative flex items-center rounded-xl border transition-all ${searchOpen ? 'w-56 border-green-500/60 bg-white dark:bg-slate-900' : 'w-10 border-transparent'}`} role="search">
             {searchOpen && <L as="input" autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Gitarre, Dä Staer ..." aria-label={language === 'en' ? 'Search' : 'Suche'} className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none" />}
             <button type="button" onClick={() => { setSearchOpen(o => !o); if (searchOpen) setSearchQuery('') }} aria-label={language === 'en' ? 'Open search' : 'Suche öffnen'} title={language === 'en' ? 'Search' : 'Suche'} className="flex h-9 w-10 shrink-0 items-center justify-center text-gray-500 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400">
@@ -350,21 +350,40 @@ export default function Navbar() {
           )}
         </div>
 
+        {/* Mobile controls */}
+        <div className="ml-auto flex items-center gap-2 xl:hidden [&>div>button]:min-h-11 [&>div>button]:min-w-11">
+          <LanguageSwitch />
         {/* Mobile Burger */}
-        <L as="button" onClick={() => setMenuOpen(o => !o)} className="flex flex-col gap-1.5 md:hidden" aria-label="Menü öffnen">
+        <L as="button" onClick={() => setMenuOpen(o => !o)} className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 xl:hidden" aria-expanded={menuOpen} aria-controls="mobile-navigation" aria-label={language === 'en' ? (menuOpen ? 'Close menu' : 'Open menu') : (menuOpen ? 'Menü schließen' : 'Menü öffnen')}>
           <span className={`block h-0.5 w-6 bg-gray-600 dark:bg-gray-300 transition-transform duration-200 ${menuOpen ? 'translate-y-2 rotate-45' : ''}`} />
           <span className={`block h-0.5 w-6 bg-gray-600 dark:bg-gray-300 transition-opacity duration-200 ${menuOpen ? 'opacity-0' : ''}`} />
           <span className={`block h-0.5 w-6 bg-gray-600 dark:bg-gray-300 transition-transform duration-200 ${menuOpen ? '-translate-y-2 -rotate-45' : ''}`} />
         </L>
       </div>
 
+      </div>
       {/* Mobile Menu */}
       {menuOpen && (
-        <nav className="border-t border-gray-200 dark:border-white/5 bg-white dark:bg-slate-950 px-6 py-5 md:hidden">
+        <nav id="mobile-navigation" className="max-h-[calc(100dvh-9rem)] overflow-y-auto overscroll-contain border-t border-gray-200 dark:border-white/5 bg-white dark:bg-slate-950 px-4 py-5 pb-8 xl:hidden [&_li>a]:block [&_li>a]:py-2">
           <ul className="flex flex-col gap-4 text-sm font-medium text-gray-600 dark:text-gray-300">
             <li><Link href="/" className="hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}><T value={"Startseite"} /></Link></li>
-            <li className="flex items-center gap-2"><LanguageSwitch /><span className="text-sm text-gray-500"><T value="Sprache wählen" /></span></li>
-            <li><Link href="/suche" className="flex items-center gap-2 hover:text-green-600 dark:hover:text-green-400 transition" onClick={() => setMenuOpen(false)}><span aria-hidden="true">⌕</span><T value={"Suche"} /></Link></li>
+
+            <li>
+              <form role="search" onSubmit={e => e.preventDefault()}>
+                <label htmlFor="mobile-search" className="sr-only"><T value="Suche" /></label>
+                <div className="flex items-center gap-3 rounded-xl border border-gray-300 px-3 focus-within:border-green-500 dark:border-white/20">
+                  <svg aria-hidden="true" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+                  <input id="mobile-search" type="search" maxLength={150} value={searchQuery} onChange={e => { setSearchOpen(true); setSearchQuery(e.target.value) }} placeholder={language === 'en' ? 'Search ...' : 'Suchen ...'} className="min-w-0 w-full bg-transparent py-3 text-base outline-none" />
+                </div>
+                {searchQuery.trim().length >= 2 && <div aria-live="polite" aria-busy={searchBusy} className="mt-2 space-y-1 rounded-xl bg-gray-50 p-2 dark:bg-slate-900">
+                  {searchBusy ? <p className="p-3"><T value="Suche läuft…" /></p> : searchResults.length === 0 ? <p className="p-3"><T value="Keine passenden Inhalte gefunden." /></p> : searchResults.map((result, index) => <Link key={`${result.href}-${index}`} href={result.href} onClick={() => { setMenuOpen(false); setSearchOpen(false); setSearchQuery('') }} className="block rounded-lg p-3 hover:bg-green-500/10">
+                    <span className="block text-xs text-gray-500"><T value={result.kind} /></span>
+                    <span className="block break-words font-semibold"><T value={result.title} /></span>
+                    <span className="block line-clamp-2 break-words text-xs text-gray-500"><T value={result.excerpt} /></span>
+                  </Link>)}
+                </div>}
+              </form>
+            </li>
             {cfg.dropdowns.filter(g => isVisible(g.visibility)).map((group, i) => (
               <li key={i} className="border-t border-gray-100 dark:border-white/5 pt-3">
                 {group.target
