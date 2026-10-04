@@ -22,6 +22,7 @@ interface KalenderTermin {
   uhrzeitBis: string | null
   ort: string | null
   beschreibung: string | null
+  interneInfos?: string | null
   abgesagt: boolean
   absageGrund: string | null
   gitarrengruppeId: string | null
@@ -149,6 +150,10 @@ function EventDetailModal({ event, onClose }: { event: KalenderTermin; onClose: 
               <span>{event.ort}</span>
             </div>
           )}
+          {event.interneInfos && <div className="mt-3 rounded-lg bg-green-50 p-3 dark:bg-green-950/30">
+            <p className="font-semibold"><T value="Interne Infos" /></p>
+            <p className="mt-1 whitespace-pre-wrap break-words">{event.interneInfos}</p>
+          </div>}
           {event.beschreibung && (
             <p className="mt-1 whitespace-pre-line text-gray-500 dark:text-gray-400">{event.beschreibung}</p>
           )}

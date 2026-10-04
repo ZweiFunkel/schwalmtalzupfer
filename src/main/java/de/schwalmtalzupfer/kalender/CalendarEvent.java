@@ -19,6 +19,7 @@ public record CalendarEvent(
         LocalTime uhrzeitBis,
         String ort,
         String beschreibung,
+        String interneInfos,
         boolean abgesagt,
         String absageGrund,
         UUID gitarrengruppeId,

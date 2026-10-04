@@ -19,6 +19,7 @@ export interface KalenderTermin {
   uhrzeitBis?: string | null
   ort?: string | null
   beschreibung?: string | null
+  interneInfos?: string | null
   abgesagt?: boolean
   absageGrund?: string | null
   gitarrengruppeId?: string | null
@@ -196,6 +197,7 @@ export default function KalenderTab() {
     uhrzeitBis: d.uhrzeitBis || null,
     ort: d.ort || null,
     beschreibung: d.beschreibung || null,
+    interneInfos: d.interneInfos ?? '',
     abgesagt: d.abgesagt ?? false,
     absageGrund: d.absageGrund || null,
     gitarrengruppeId: d.gitarrengruppeId || null,
@@ -381,6 +383,9 @@ export default function KalenderTab() {
                 className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
             </div>
 
+            <label className="block text-xs text-gray-400"><T value="Interne Infos (nur im internen Kalender)" />
+              <textarea value={draft.interneInfos ?? ''} onChange={e => updateDraft(t.id, { interneInfos: e.target.value })} rows={3} className="mt-1 w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white" />
+            </label>
             <GruppeSelect value={draft.gitarrengruppeId ?? ''} onChange={v => updateDraft(t.id, { gitarrengruppeId: v })} gruppen={gruppen} />
 
             <label className="flex cursor-pointer items-center gap-2.5">
@@ -500,6 +505,9 @@ export default function KalenderTab() {
                 <textarea value={newDraft.beschreibung ?? ''} onChange={e => setNewDraft(d => ({ ...d, beschreibung: e.target.value }))} rows={2}
                   className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
               </div>
+                <label className="block text-xs text-gray-400"><T value="Interne Infos (nur im internen Kalender)" />
+                  <textarea value={newDraft.interneInfos ?? ''} onChange={e => setNewDraft(d => ({ ...d, interneInfos: e.target.value }))} rows={3} className="mt-1 w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white" />
+                </label>
               <GruppeSelect value={newDraft.gitarrengruppeId ?? ''} onChange={v => setNewDraft(d => ({ ...d, gitarrengruppeId: v }))} gruppen={gruppen} />
               <label className="flex cursor-pointer items-center gap-2.5">
                 <input type="checkbox" checked={newDraft.istUnterricht ?? false}

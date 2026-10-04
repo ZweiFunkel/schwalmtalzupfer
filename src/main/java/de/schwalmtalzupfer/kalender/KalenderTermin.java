@@ -56,6 +56,9 @@ public class KalenderTermin {
     @Column(columnDefinition = "TEXT")
     private String beschreibung;
 
+    @Column(name = "interne_infos", columnDefinition = "TEXT")
+    private String interneInfos;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean abgesagt = false;

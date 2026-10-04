@@ -46,6 +46,7 @@ public class KalenderTerminController {
      * sehen alle (für Verwaltungszwecke), alle anderen nur ihre eigene Gruppe.
      */
     @GetMapping("/termine")
+    @PreAuthorize("isAuthenticated()")
     public List<Map<String, Object>> getTermine(
             @RequestParam(required = false) String von,
             @RequestParam(required = false) String bis,
@@ -80,6 +81,7 @@ public class KalenderTerminController {
                 .uhrzeitBis(req.uhrzeitBis() != null ? LocalTime.parse(req.uhrzeitBis()) : null)
                 .ort(req.ort())
                 .beschreibung(req.beschreibung())
+                .interneInfos(req.interneInfos())
                 .abgesagt(Boolean.TRUE.equals(req.abgesagt()))
                 .absageGrund(req.absageGrund())
                 .istUnterricht(Boolean.TRUE.equals(req.istUnterricht()));
@@ -109,6 +111,7 @@ public class KalenderTerminController {
         termin.setUhrzeitBis(req.uhrzeitBis() != null ? LocalTime.parse(req.uhrzeitBis()) : null);
         termin.setOrt(req.ort());
         termin.setBeschreibung(req.beschreibung());
+        if (req.interneInfos() != null) termin.setInterneInfos(req.interneInfos());
         termin.setAbgesagt(Boolean.TRUE.equals(req.abgesagt()));
         termin.setAbsageGrund(req.absageGrund());
         termin.setIstUnterricht(Boolean.TRUE.equals(req.istUnterricht()));
@@ -176,6 +179,7 @@ public class KalenderTerminController {
             String uhrzeitBis,
             String ort,
             String beschreibung,
+            String interneInfos,
             Boolean abgesagt,
             String absageGrund,
             String gitarrengruppeId,

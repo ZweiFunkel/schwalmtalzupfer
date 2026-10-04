@@ -118,6 +118,7 @@ public class KalenderCalendarService {
                 gruppe.getBisUhrzeit(),
                 ort,
                 null,
+                null,
                 false,
                 null,
                 gruppe.getId(),
@@ -138,6 +139,7 @@ public class KalenderCalendarService {
                 t.getUhrzeitBis(),
                 t.getOrt(),
                 t.getBeschreibung(),
+                t.getInterneInfos(),
                 t.isAbgesagt(),
                 t.getAbsageGrund(),
                 t.getGitarrengruppe() != null ? t.getGitarrengruppe().getId() : null,
@@ -157,6 +159,7 @@ public class KalenderCalendarService {
         map.put("uhrzeitBis", e.uhrzeitBis() != null ? e.uhrzeitBis().toString() : null);
         map.put("ort", e.ort());
         map.put("beschreibung", e.beschreibung());
+        map.put("interneInfos", e.interneInfos());
         map.put("abgesagt", e.abgesagt());
         map.put("absageGrund", e.absageGrund());
         map.put("gitarrengruppeId", e.gitarrengruppeId() != null ? e.gitarrengruppeId().toString() : null);

@@ -88,6 +88,7 @@ public class LegacyTermineSource {
                 null,
                 str(t.get("location")),
                 str(t.get("note")),
+                null,
                 Boolean.TRUE.equals(t.get("cancelled")),
                 str(t.get("cancellationNote")),
                 null,
