@@ -65,7 +65,7 @@ export function LanguageSwitch() {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => { const close = (event: MouseEvent) => { if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false) }; document.addEventListener('mousedown', close); return () => document.removeEventListener('mousedown', close) }, [])
   return <div ref={ref} className="relative shrink-0">
-    <button type="button" aria-label={language === 'de' ? 'Sprache wählen' : 'Choose language'} title={language === 'de' ? 'Sprache wählen' : 'Choose language'} onClick={() => setOpen(value => !value)} className="rounded-lg border border-gray-200 bg-gray-100 p-1.5 text-gray-500 transition hover:border-green-500/50 hover:text-green-600 dark:border-white/10 dark:bg-slate-800 dark:text-gray-400 dark:hover:text-green-400">
+    <button type="button" aria-label={language === 'de' ? 'Sprache wählen' : 'Choose language'} title={language === 'de' ? 'Sprache wählen' : 'Choose language'} onClick={() => setOpen(value => !value)} className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-gray-100 p-1.5 text-gray-500 transition hover:border-green-500/50 hover:text-green-600 dark:border-white/10 dark:bg-slate-800 dark:text-gray-400 dark:hover:text-green-400">
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" d="M3 12h18M12 3c2.2 2.5 3.3 5.5 3.3 9S14.2 18.5 12 21c-2.2-2.5-3.3-5.5-3.3-9S9.8 5.5 12 3Z" /></svg>
     </button>
     {open && <div className="absolute right-0 top-full z-50 mt-2 w-36 rounded-xl border border-gray-200 bg-white p-1 shadow-2xl dark:border-white/10 dark:bg-slate-900">
