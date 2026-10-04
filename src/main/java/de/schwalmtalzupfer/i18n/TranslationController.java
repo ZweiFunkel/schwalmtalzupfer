@@ -21,7 +21,7 @@ public class TranslationController {
         pages.findAll().stream().filter(page -> PageVisibility.canRead(page, auth)).forEach(page -> {
             translations.collect(page.getTitle(), result);
             page.getSections().stream().filter(section -> PageVisibility.signedIn(auth) || section.getType() != SectionType.INTERN_CHANGELOG)
-                .forEach(section -> result.putAll(translations.forContent(section.getContent())));
+                .forEach(section -> result.putAll(translations.forContent(PublicPageContent.sanitize(section.getContent()))));
         });
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(result);
     }

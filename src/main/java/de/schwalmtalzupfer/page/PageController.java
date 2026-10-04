@@ -213,7 +213,9 @@ public class PageController {
     private PageDto.PageResponse forReader(Page page, Authentication auth) {
         PageDto.PageResponse dto = toDto(page);
         return new PageDto.PageResponse(dto.id(), dto.slug(), dto.title(), dto.published(), dto.sections().stream()
-                .filter(section -> PageVisibility.signedIn(auth) || section.type() != SectionType.INTERN_CHANGELOG).toList());
+                .filter(section -> PageVisibility.signedIn(auth) || section.type() != SectionType.INTERN_CHANGELOG)
+                .map(section -> isAdmin(auth) ? section : new PageDto.SectionResponse(section.id(), section.type(), section.position(), PublicPageContent.sanitize(section.content())))
+                .toList());
     }
 
     private PageDto.PageResponse toDto(Page page) {

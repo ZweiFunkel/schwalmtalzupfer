@@ -33,6 +33,7 @@ public class TerminController {
                             .map(t -> (Map<String, Object>) t)
                             .filter(t -> "konzert".equals(t.get("kategorie")));
                 })
+                .map(PublicPageContent::sanitize)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(konzerte);
     }

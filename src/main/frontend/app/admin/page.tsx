@@ -576,7 +576,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
   interface ParkingItem { name?: string; mapUrl: string }
   interface TicketsItem { link?: string; priceAdults?: string; priceChildren?: string; info?: string }
   // _key: ephemeral per-session ID for stable expanded state (not saved to backend)
-  interface TerminItem { title: string; date: string; time?: string; location?: string; mapUrl?: string; parking?: ParkingItem[]; note?: string; details?: string; tickets?: TicketsItem; kategorie: string; cancelled?: boolean; cancellationNote?: string; meldungId?: string; archivedAfter?: string; _key?: string }
+  interface TerminItem { title: string; date: string; time?: string; location?: string; mapUrl?: string; parking?: ParkingItem[]; note?: string; internalNotes?: string; details?: string; tickets?: TicketsItem; kategorie: string; cancelled?: boolean; cancellationNote?: string; meldungId?: string; archivedAfter?: string; _key?: string }
   interface MeldungRef { id: string; title: string }
 
   const [meldungen, setMeldungen] = useState<MeldungRef[]>([])
@@ -794,6 +794,9 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
               </div>
             </div>
 
+            <label className="block text-xs text-gray-400"><T value="Interne Infos (nur im internen Kalender)" />
+              <textarea value={t.internalNotes ?? ''} onChange={e => update(key, { internalNotes: e.target.value })} rows={3} className="mt-1 w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-base text-white sm:text-sm" />
+            </label>
             {/* Archivierung */}
             <div className="rounded-lg border border-white/5 bg-slate-800/40 p-3 flex flex-col gap-1.5">
               <label className="mb-0.5 block text-xs text-gray-400 font-medium"><T value={" Nicht mehr anzeigen ab "} /><span className="ml-1 font-normal text-gray-600"><T value={"(optional – versteckt in Konzert- & Next-Ansicht, bleibt im Kalender)"} /></span>
