@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Web-Export legt Assets unter assets/node_modules ab - die muessen eingecheckt werden
+!web-dist/assets/node_modules/
+!web-dist/assets/node_modules/**/build/
