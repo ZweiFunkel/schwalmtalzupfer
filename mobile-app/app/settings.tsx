@@ -1,39 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, Switch, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Switch, Alert, ActivityIndicator, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import type { Directory } from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import { useAppTheme, type ThemeMode } from '../lib/ThemeContext';
 import {
   getNotenDir, defaultNotenDir, prettyDirLabel, pickNotenDir,
   setCustomNotenDir, resetNotenDirToDefault, listCachedNoten, moveCachedNotesToCurrentDir,
 } from '../lib/notenCache';
 import { fetchBenachrichtigungen, updateBenachrichtigungen } from '../lib/kalender';
+import { registerForPushNotifications, enableWebPush, webPushState, type WebPushState } from '../lib/push';
 import { font, radius, spacing, type ColorTokens } from '../lib/theme';
 
 type NotifKey = 'konzerte' | 'freizeiten' | 'unterrichtErinnerung';
-
-/**
- * Bestmögliche Push-Registrierung: fragt Berechtigung an (falls noch unbekannt) und holt den
- * Expo-Push-Token. Schlägt bei fehlender Berechtigung oder fehlendem EAS-Projekt lautlos fehl -
- * blockiert nie den Rest der App.
- */
-async function registerForPushNotifications(): Promise<string | null> {
-  try {
-    const { status: existing } = await Notifications.getPermissionsAsync();
-    let status = existing;
-    if (status !== 'granted') {
-      const req = await Notifications.requestPermissionsAsync();
-      status = req.status;
-    }
-    if (status !== 'granted') return null;
-    const token = await Notifications.getExpoPushTokenAsync();
-    return token.data;
-  } catch {
-    return null;
-  }
-}
 
 const MODE_OPTIONS: Array<{ key: ThemeMode; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
   { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
@@ -54,6 +33,8 @@ export default function SettingsScreen() {
   const [freizeiten, setFreizeiten] = useState(true);
   const [unterrichtErinnerung, setUnterrichtErinnerung] = useState(false);
   const [savingNotif, setSavingNotif] = useState<NotifKey | null>(null);
+  const [pushState, setPushState] = useState<WebPushState>(() => webPushState());
+  const [enablingPush, setEnablingPush] = useState(false);
 
   const refreshLocalDir = useCallback(async () => {
     setLocalDir(await getNotenDir());
@@ -135,6 +116,18 @@ export default function SettingsScreen() {
     });
   }, []);
 
+  // Im Browser muss die Berechtigung aus einem Tipp heraus angefragt werden (iOS-Pflicht).
+  async function activateWebPush() {
+    setEnablingPush(true);
+    try {
+      const token = await enableWebPush();
+      if (token) await updateBenachrichtigungen({ pushToken: token }).catch(() => {});
+    } finally {
+      setPushState(webPushState());
+      setEnablingPush(false);
+    }
+  }
+
   // Toggles speichern sofort (kein separater Speichern-Button nötig, kein Risiko eines
   // halb ausgefüllten Werts wie bei Textfeldern) - bei Fehler wird der alte Wert wiederhergestellt.
   const toggleNotif = useCallback(async (key: NotifKey, value: boolean) => {
@@ -196,6 +189,7 @@ export default function SettingsScreen() {
           {localDir ? prettyDirLabel(localDir) : '…'}
         </Text>
       </View>
+      {Platform.OS !== 'web' && (
       <View style={styles.dirButtonRow}>
         <Pressable style={styles.dirButton} onPress={chooseFolder} disabled={changingDir}>
           {changingDir ? <ActivityIndicator size="small" color={colors.primary700} /> : (
@@ -210,10 +204,31 @@ export default function SettingsScreen() {
           <Text style={styles.dirButtonOutlineText}>Auf Standard zurücksetzen</Text>
         </Pressable>
       </View>
+      )}
       <Text style={styles.hint}>Bereits heruntergeladene Noten bleiben unabhängig vom gewählten Ordner nutzbar.</Text>
 
       <Text style={styles.sectionTitle}>Benachrichtigungen</Text>
       {notifError && <Text style={styles.hint}>{notifError}</Text>}
+      {Platform.OS === 'web' && pushState !== 'granted' && (
+        <View style={{ marginBottom: spacing.sm }}>
+          {pushState === 'needs-install' ? (
+            <Text style={styles.hint}>
+              Für Benachrichtigungen auf iPhone/iPad: In Safari auf „Teilen“ tippen, „Zum Home-Bildschirm“ wählen
+              und die App von dort öffnen.
+            </Text>
+          ) : pushState === 'unsupported' ? (
+            <Text style={styles.hint}>Dieser Browser unterstützt keine Benachrichtigungen.</Text>
+          ) : pushState === 'denied' ? (
+            <Text style={styles.hint}>Benachrichtigungen sind in den Browser-/Geräteeinstellungen blockiert.</Text>
+          ) : (
+            <Pressable style={styles.dirButton} onPress={activateWebPush} disabled={enablingPush}>
+              {enablingPush ? <ActivityIndicator size="small" color="#fff" /> : (
+                <Text style={styles.dirButtonText}>Benachrichtigungen aktivieren</Text>
+              )}
+            </Pressable>
+          )}
+        </View>
+      )}
 
       <View style={styles.notifRow}>
         <View style={styles.notifLabelBox}>

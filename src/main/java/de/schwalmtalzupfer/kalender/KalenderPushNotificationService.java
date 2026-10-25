@@ -2,6 +2,7 @@ package de.schwalmtalzupfer.kalender;
 
 import de.schwalmtalzupfer.member.Member;
 import de.schwalmtalzupfer.member.MemberRepository;
+import de.schwalmtalzupfer.push.WebPushService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -37,6 +38,7 @@ public class KalenderPushNotificationService {
     private final KalenderCalendarService calendarService;
     private final KalenderBenachrichtigungEinstellungRepository einstellungRepository;
     private final MemberRepository memberRepository;
+    private final WebPushService webPushService;
 
     @Scheduled(cron = "0 0 18 * * *")
     public void scheduledDailyReminder() {
@@ -92,6 +94,17 @@ public class KalenderPushNotificationService {
             }
             if (!relevant) continue;
 
+            if (WebPushService.isWebPushToken(token)) {
+                // Browser-Gerät der Web-App: bei abgelaufener Subscription Token löschen, damit nicht erneut versucht wird.
+                WebPushService.Outcome outcome = webPushService.send(token, titleFor(e), bodyFor(e), "/app/termine");
+                if (outcome == WebPushService.Outcome.GONE) {
+                    einstellung.setPushToken(null);
+                    einstellungRepository.save(einstellung);
+                    break;
+                }
+                if (outcome == WebPushService.Outcome.OK) verschickt++;
+                continue;
+            }
             sendExpoPush(token, titleFor(e), bodyFor(e));
             verschickt++;
         }

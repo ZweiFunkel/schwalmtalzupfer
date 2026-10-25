@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
-import { WebView } from 'react-native-webview';
-import Pdf from 'react-native-pdf';
-import * as Sharing from 'expo-sharing';
+import { WebView } from '../../../components/WebView';
+import PdfView from '../../../components/PdfView';
+import { canShareFile, shareFile } from '../../../lib/share';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ensureNoteAvailable } from '../../../lib/notenCache';
@@ -26,8 +26,8 @@ export default function NoteViewer() {
   const [attempt, setAttempt] = useState(0);
 
   const share = useCallback(async (uri: string) => {
-    if (await Sharing.isAvailableAsync()) {
-      Sharing.shareAsync(uri, { dialogTitle: name }).catch(() => {});
+    if (await canShareFile()) {
+      shareFile(uri, name).catch(() => {});
     }
   }, [name]);
 
@@ -80,12 +80,9 @@ export default function NoteViewer() {
 
   if (pdf) {
     return (
-      <Pdf
-        source={{ uri: localUri }}
-        style={styles.pdf}
-        trustAllCerts={false}
-        onError={() => setError('PDF konnte nicht angezeigt werden')}
-      />
+      <View style={styles.pdf}>
+        <PdfView uri={localUri} onError={() => setError('PDF konnte nicht angezeigt werden')} />
+      </View>
     );
   }
 

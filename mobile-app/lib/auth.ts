@@ -1,25 +1,16 @@
-import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { API_BASE } from './config';
+import { readToken, writeToken, clearToken } from './tokenStore';
 
-const TOKEN_KEY = 'auth_token';
-
-export async function getToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(TOKEN_KEY);
-}
-
-async function setToken(token: string): Promise<void> {
-  await SecureStore.setItemAsync(TOKEN_KEY, token);
-}
-
-export async function logout(): Promise<void> {
-  await SecureStore.deleteItemAsync(TOKEN_KEY);
-}
+export const getToken = readToken;
+const setToken = writeToken;
+export const logout = clearToken;
 
 export async function login(username: string, password: string): Promise<{ role: string }> {
   const res = await fetch(`${API_BASE}/api/auth/mobile/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, client: Platform.OS === 'web' ? 'web' : 'app' }),
   });
 
   if (!res.ok) {
@@ -64,7 +55,13 @@ export async function fetchMe(): Promise<MemberProfile | null> {
   if (!res.ok) return null;
 
   const text = await res.text();
-  return text ? JSON.parse(text) : null;
+  const profile: MemberProfile | null = text ? JSON.parse(text) : null;
+  // Die Web-App ist nur für Mitglieder, nicht für Gäste (serverseitig zusätzlich beim Login geprüft).
+  if (Platform.OS === 'web' && profile?.role === 'ROLE_GUEST') {
+    await logout();
+    return null;
+  }
+  return profile;
 }
 
 // Rollen-Helper analog src/main/frontend/lib/auth.tsx - ersetzt die bisher pro Screen

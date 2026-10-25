@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator, ScrollView, Linking } from 'react-native';
-import * as Sharing from 'expo-sharing';
+import { canShareFile, shareFile } from '../../../lib/share';
 import { Ionicons } from '@expo/vector-icons';
 import { ensureNoteAvailable } from '../../../lib/notenCache';
 import { font, radius, spacing, type ColorTokens } from '../../../lib/theme';
@@ -26,8 +26,8 @@ export default function MerchScreen() {
   }, []);
 
   const share = useCallback(async () => {
-    if (localUri && await Sharing.isAvailableAsync()) {
-      Sharing.shareAsync(localUri, { dialogTitle: 'Bestellformular' }).catch(() => {});
+    if (localUri && await canShareFile()) {
+      shareFile(localUri, 'Bestellformular').catch(() => {});
     }
   }, [localUri]);
 

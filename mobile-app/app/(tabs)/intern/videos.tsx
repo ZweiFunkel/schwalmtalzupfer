@@ -3,7 +3,7 @@ import {
   View, Text, Image, Pressable, StyleSheet, ActivityIndicator, FlatList,
   Modal, useWindowDimensions, Linking,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { WebView } from '../../../components/WebView';
 import { Ionicons } from '@expo/vector-icons';
 import {
   fetchVideos, thumbnailFor, buildVideoPlayerHtml, buildPlaylistEmbedHtml, fetchPlaylistItems,

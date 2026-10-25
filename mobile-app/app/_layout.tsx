@@ -11,6 +11,7 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { ThemeProvider, useAppTheme } from '../lib/ThemeContext';
+import '../lib/webShims';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

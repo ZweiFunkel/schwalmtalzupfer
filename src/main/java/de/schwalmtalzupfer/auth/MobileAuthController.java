@@ -34,6 +34,11 @@ public class MobileAuthController {
 
             String role = auth.getAuthorities().stream()
                     .findFirst().map(GrantedAuthority::getAuthority).orElse("ROLE_MEMBER");
+            // Die Web-App ist Mitgliedern vorbehalten; Gäste dürfen weiter die native App nutzen.
+            if ("web".equals(request.client()) && "ROLE_GUEST".equals(role)) {
+                return ResponseEntity.status(403).body(Map.of("error",
+                        "Die Web-App ist nur für Mitglieder. Gast-Konten können sich hier nicht anmelden."));
+            }
             String token = jwtService.generateToken(auth.getName(), role);
 
             return ResponseEntity.ok(Map.of("token", token, "role", role));

@@ -48,6 +48,12 @@ app:
     # Absichtlich KEIN Standardwert - ohne diese beiden Variablen wird kein Admin angelegt.
     admin-email: ${APP_BOOTSTRAP_ADMIN_EMAIL:}
     admin-password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:}
+  push:
+    # Web Push für die Web-App (/app). Schlüssel einmalig erzeugen: npx web-push generate-vapid-keys
+    # Den öffentlichen Schlüssel danach nie mehr ändern - sonst werden alle registrierten Browser ungültig.
+    vapid-public: ${APP_PUSH_VAPID_PUBLIC:}
+    vapid-private: ${APP_PUSH_VAPID_PRIVATE:}
+    subject: mailto:billing@novexlabs.de
   cors:
     # Komma-getrennte Liste erlaubter Origins (die öffentliche URL der App + localhost für Dev)
     allowed-origins: ${APP_CORS_ORIGINS:https://schwalmtalzupfer.de,https://159.195.70.118.nip.io,http://localhost:3000,https://localhost:3000}

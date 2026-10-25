@@ -60,6 +60,19 @@ public class WebConfig implements WebMvcConfigurer {
                             }
                         }
 
+                        // 1b. Web-App (Expo-SPA unter /app): alles ohne Dateiendung liefert die App-Shell,
+                        //     die Routing und Login im Browser selbst erledigt.
+                        if (path.equals("app") || path.startsWith("app/")) {
+                            boolean hasExtension = path.lastIndexOf('.') > path.lastIndexOf('/');
+                            if (!hasExtension) {
+                                Resource appShell = location.createRelative("app/index.html");
+                                if (isServeableFile(appShell)) {
+                                    return appShell;
+                                }
+                            }
+                            return null;
+                        }
+
                         // 2. Fehlende Build-Assets (_next/static/…) → 404, nicht index.html (sonst MIME-Fehler).
                         if (isStaticAssetPath(path)) {
                             return null;

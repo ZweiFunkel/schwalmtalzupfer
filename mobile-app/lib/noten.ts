@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { apiFetch, API_BASE } from './api';
 
 export interface NotenBrowseResult {
@@ -68,11 +69,17 @@ export interface UploadResult {
 /** Nur für BOARD/ADMIN - selber Endpoint wie im Web-Admin. */
 export async function uploadNote(prefix: string, file: UploadFile): Promise<UploadResult> {
   const form = new FormData();
-  form.append('files', {
-    uri: file.uri,
-    name: file.name,
-    type: file.mimeType ?? 'application/octet-stream',
-  } as unknown as Blob);
+  if (Platform.OS === 'web') {
+    // Im Browser erwartet FormData ein echtes Blob/File statt des React-Native-Dateiobjekts.
+    const blob = await (await fetch(file.uri)).blob();
+    form.append('files', new File([blob], file.name, { type: file.mimeType ?? blob.type }));
+  } else {
+    form.append('files', {
+      uri: file.uri,
+      name: file.name,
+      type: file.mimeType ?? 'application/octet-stream',
+    } as unknown as Blob);
+  }
   form.append('prefix', prefix);
 
   const res = await apiFetch('/api/noten/upload', { method: 'POST', body: form });
