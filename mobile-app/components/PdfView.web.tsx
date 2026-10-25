@@ -7,11 +7,22 @@ const PDFJS_BASE = `${window.location.origin}/app/pdfjs`;
 let pdfjsPromise: Promise<any> | null = null;
 function loadPdfJs(): Promise<any> {
   if (!pdfjsPromise) {
-    const dynamicImport = new Function('u', 'return import(u)') as (u: string) => Promise<any>;
-    pdfjsPromise = dynamicImport(`${PDFJS_BASE}/pdf.min.mjs`).then(lib => {
-      lib.GlobalWorkerOptions.workerSrc = `${PDFJS_BASE}/pdf.worker.min.mjs`;
-      return lib;
+    // Dynamischer import() über new Function wäre durch die CSP (kein unsafe-eval) blockiert; ein
+    // Inline-Modul-Script ist erlaubt und legt die Bibliothek auf window ab.
+    pdfjsPromise = new Promise((resolve, reject) => {
+      const w = window as any;
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.textContent =
+        `import * as lib from '${PDFJS_BASE}/pdf.min.mjs';` +
+        `lib.GlobalWorkerOptions.workerSrc='${PDFJS_BASE}/pdf.worker.min.mjs';` +
+        `window.__pdfjs=lib;window.dispatchEvent(new Event('pdfjs-ready'));`;
+      script.onerror = () => reject(new Error('pdf.js konnte nicht geladen werden'));
+      window.addEventListener('pdfjs-ready', () => resolve(w.__pdfjs), { once: true });
+      setTimeout(() => reject(new Error('pdf.js Zeitüberschreitung')), 15000);
+      document.head.appendChild(script);
     });
+    pdfjsPromise.catch(() => { pdfjsPromise = null; });
   }
   return pdfjsPromise;
 }
@@ -26,7 +37,7 @@ export default function PdfView({ uri, onError }: { uri: string; onError: () => 
     container.innerHTML = '';
     (async () => {
       const lib = await loadPdfJs();
-      const doc = await lib.getDocument({ data: new Uint8Array(await (await fetch(uri)).arrayBuffer()) }).promise;
+      const doc = await lib.getDocument({ data: new Uint8Array(await (await fetch(uri)).arrayBuffer()), isEvalSupported: false }).promise;
       const width = container.clientWidth || window.innerWidth;
       const ratio = Math.min(window.devicePixelRatio || 1, 2.5);
       for (let n = 1; n <= doc.numPages && !cancelled; n++) {
