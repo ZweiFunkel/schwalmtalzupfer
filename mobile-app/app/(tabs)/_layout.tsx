@@ -6,6 +6,7 @@ import { font } from '../../lib/theme';
 import { useAppTheme } from '../../lib/ThemeContext';
 import { fetchMe, isChef } from '../../lib/auth';
 import UpdateBanner from '../../components/UpdateBanner';
+import InstallBanner from '../../components/InstallBanner';
 
 export default function TabsLayout() {
   const { colors } = useAppTheme();
@@ -20,6 +21,7 @@ export default function TabsLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <UpdateBanner />
+      <InstallBanner />
       <Tabs
         screenOptions={{
           headerTitleAlign: 'center',
