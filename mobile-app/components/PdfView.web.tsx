@@ -55,5 +55,10 @@ export default function PdfView({ uri, onError }: { uri: string; onError: () => 
     return () => { cancelled = true; };
   }, [uri, onError]);
 
-  return <div ref={host} style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties} />;
+  // Auf dem Handy volle Breite, am PC auf Notenblatt-Größe begrenzt und zentriert.
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+      <div ref={host} style={{ width: '100%', maxWidth: 820, margin: '0 auto' }} />
+    </div>
+  );
 }
