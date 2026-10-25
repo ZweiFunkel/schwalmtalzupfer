@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import { API_BASE } from './config';
 import { readToken, writeToken, clearToken } from './tokenStore';
 
@@ -10,7 +9,7 @@ export async function login(username: string, password: string): Promise<{ role:
   const res = await fetch(`${API_BASE}/api/auth/mobile/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password, client: Platform.OS === 'web' ? 'web' : 'app' }),
+    body: JSON.stringify({ username, password }),
   });
 
   if (!res.ok) {
@@ -55,13 +54,7 @@ export async function fetchMe(): Promise<MemberProfile | null> {
   if (!res.ok) return null;
 
   const text = await res.text();
-  const profile: MemberProfile | null = text ? JSON.parse(text) : null;
-  // Die Web-App ist nur für Mitglieder, nicht für Gäste (serverseitig zusätzlich beim Login geprüft).
-  if (Platform.OS === 'web' && profile?.role === 'ROLE_GUEST') {
-    await logout();
-    return null;
-  }
-  return profile;
+  return text ? JSON.parse(text) : null;
 }
 
 // Rollen-Helper analog src/main/frontend/lib/auth.tsx - ersetzt die bisher pro Screen
