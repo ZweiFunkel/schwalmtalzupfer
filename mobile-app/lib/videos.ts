@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { apiFetch, absoluteApiUrl } from './api';
 
 export interface VideoEntry {
@@ -6,6 +7,8 @@ export interface VideoEntry {
   year: string | null;
   day: string | null;
   subcategory: string | null;
+  /** JSON-Array als String (z.B. '["2024"]'), wird bei "Weitere Auftritte" zur Jahresgruppierung genutzt. */
+  tags?: string | null;
   type: 'VIDEO' | 'PLAYLIST';
   youtubeId: string;
   title: string;
@@ -39,11 +42,40 @@ export interface PlaylistItem {
   thumbnail: string;
 }
 
-/** Einzelne Videos einer Playlist, gleicher Endpoint wie im Web (WatchArea). */
-export async function fetchPlaylistItems(youtubeId: string): Promise<PlaylistItem[]> {
-  const res = await apiFetch(`/api/intern/videos/playlist/${youtubeId}`);
-  if (!res.ok) return [];
-  return res.json();
+// Playlist-Inhalte werden an mehreren Stellen gleichzeitig gebraucht (Tages-Kachel,
+// Playlist-Abschnitt in der Übersicht, Player) - ein gemeinsamer Cache verhindert, dass
+// dieselbe Playlist beim Durchklicken immer wieder neu vom Server geholt wird.
+const playlistCache = new Map<string, Promise<PlaylistItem[]>>();
+
+/** Einzelne Videos einer Playlist, gleicher Endpoint wie im Web (WatchArea). Liefert bei Fehlern []. */
+export function fetchPlaylistItems(youtubeId: string): Promise<PlaylistItem[]> {
+  const cached = playlistCache.get(youtubeId);
+  if (cached) return cached;
+  const promise = apiFetch(`/api/intern/videos/playlist/${youtubeId}`)
+    .then(res => (res.ok ? res.json() : []))
+    .then((items: PlaylistItem[]) => (Array.isArray(items) ? items : []))
+    .catch(() => [] as PlaylistItem[]);
+  // Leere/fehlgeschlagene Antworten nicht dauerhaft merken, damit ein späterer Versuch klappen kann.
+  promise.then(items => { if (items.length === 0) playlistCache.delete(youtubeId); });
+  playlistCache.set(youtubeId, promise);
+  return promise;
+}
+
+export function clearPlaylistCache() {
+  playlistCache.clear();
+}
+
+/** null = lädt noch, [] = leer bzw. nicht ladbar. */
+export function usePlaylistItems(youtubeId: string | null): PlaylistItem[] | null {
+  const [items, setItems] = useState<PlaylistItem[] | null>(null);
+  useEffect(() => {
+    if (!youtubeId) { setItems(null); return; }
+    let cancelled = false;
+    setItems(null);
+    fetchPlaylistItems(youtubeId).then(list => { if (!cancelled) setItems(list); });
+    return () => { cancelled = true; };
+  }, [youtubeId]);
+  return items;
 }
 
 /**
@@ -113,7 +145,32 @@ export function buildPlaylistEmbedHtml(playlistId: string, width: number, height
   return playerHtmlTemplate('', `listType: 'playlist', list: '${playlistId}',`, width, height);
 }
 
-const DAYS_ORDER = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+// ─── Archiv-Struktur (identisch zur Webseite /intern/videos) ─────────────────
+
+export const DAYS_ORDER = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+
+// Zeitabschnitte (z.B. Sonntag Morgen/Abend) sind Freitext in subcategory - bekannte Begriffe
+// chronologisch, unbekannte danach alphabetisch (wie im Web).
+const TIME_SLOT_ORDER = ['Morgen', 'Vormittag', 'Mittag', 'Nachmittag', 'Abend', 'Nacht'];
+
+export function sortSlots(slots: string[]): string[] {
+  return [...slots].sort((a, b) => {
+    const ia = TIME_SLOT_ORDER.indexOf(a);
+    const ib = TIME_SLOT_ORDER.indexOf(b);
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? TIME_SLOT_ORDER.length : ia) - (ib === -1 ? TIME_SLOT_ORDER.length : ib);
+    return a.localeCompare(b);
+  });
+}
+
+export function extractYearTag(tags: string | null | undefined): string | null {
+  if (!tags) return null;
+  try {
+    const parsed = JSON.parse(tags);
+    return Array.isArray(parsed) ? parsed.find((t: unknown) => typeof t === 'string' && /^\d{4}$/.test(t)) ?? null : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface KonzertNavYear { year: string; days: string[] }
 export interface NavStructure { sommer: KonzertNavYear[]; winter: KonzertNavYear[]; weitere: string[] }
@@ -132,4 +189,36 @@ export function buildNav(videos: VideoEntry[]): NavStructure {
     winter: konzertYears('WINTER'),
     weitere: [...new Set(videos.filter(v => v.category === 'WEITERE').map(v => v.subcategory).filter(Boolean) as string[])],
   };
+}
+
+export type Selection =
+  | { cat: 'SOMMER' | 'WINTER'; year: string; day: string | null; slot: string | null }
+  | { cat: 'WEITERE'; sub: string };
+
+export function defaultSelection(nav: NavStructure): Selection | null {
+  if (nav.sommer.length > 0) return { cat: 'SOMMER', year: nav.sommer[0].year, day: null, slot: null };
+  if (nav.winter.length > 0) return { cat: 'WINTER', year: nav.winter[0].year, day: null, slot: null };
+  if (nav.weitere.length > 0) return { cat: 'WEITERE', sub: nav.weitere[0] };
+  return null;
+}
+
+/** Prüft, ob eine (z.B. vor dem Neuladen gemerkte) Auswahl in den aktuellen Daten noch existiert. */
+export function selectionStillValid(nav: NavStructure, sel: Selection): boolean {
+  if (sel.cat === 'WEITERE') return nav.weitere.includes(sel.sub);
+  const years = sel.cat === 'SOMMER' ? nav.sommer : nav.winter;
+  const y = years.find(x => x.year === sel.year);
+  if (!y) return false;
+  return sel.day === null || y.days.includes(sel.day);
+}
+
+export function categoryLabel(cat: VideoEntry['category']): string {
+  return cat === 'SOMMER' ? 'Sommerkonzert' : cat === 'WINTER' ? 'Winterkonzert' : 'Weitere Auftritte';
+}
+
+export function selectionLabel(sel: Selection): string {
+  if (sel.cat === 'WEITERE') return sel.sub;
+  let label = `${categoryLabel(sel.cat)} ${sel.year}`;
+  if (sel.day) label += ` – ${sel.day}`;
+  if (sel.slot) label += ` (${sel.slot})`;
+  return label;
 }
