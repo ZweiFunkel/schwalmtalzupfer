@@ -59,7 +59,10 @@ jobs:
           java-version: '17'
 
       - name: Android SDK einrichten
-        uses: android-actions/setup-android@v3
+        # Das SDK ist auf ubuntu-latest vorinstalliert (ANDROID_HOME). android-actions/setup-android
+        # scheitert dort seit der Runner-Umstellung auf neue cmdline-tools ("Failed to find package 'tools'").
+        # Es genügt, die Lizenzen zu akzeptieren; Gradle lädt fehlende Plattformen/Build-Tools selbst nach.
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Abhängigkeiten installieren
         run: npm ci
