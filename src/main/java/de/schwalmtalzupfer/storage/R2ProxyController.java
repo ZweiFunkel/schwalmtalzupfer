@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriUtils;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -15,6 +16,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Proxies R2 objects at /r2/** when no public CDN URL is configured.
@@ -33,7 +35,9 @@ public class R2ProxyController {
     public void proxy(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String uri = request.getRequestURI();
         // Strip leading "/r2/"
-        String key = uri.replaceFirst("^/r2/", "");
+        // getRequestURI() liefert den rohen, prozentkodierten Pfad ("Logo%20Coenen.jpg") - der R2-Key
+        // enthält aber das echte Zeichen, sonst werden Dateien mit Leerzeichen/Umlauten nie gefunden.
+        String key = UriUtils.decode(uri.replaceFirst("^/r2/", ""), StandardCharsets.UTF_8);
         if (key.isBlank()) {
             response.setStatus(404);
             return;
