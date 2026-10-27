@@ -14,12 +14,15 @@ function formatBytes(b: number) {
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`
   return `${(b / 1024 / 1024).toFixed(2)} MB`
 }
+const PREFIX_STORAGE_KEY = 'admin_assets_prefix'
 function isImage(key: string) { return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(key) }
 
 // ─── R2 Asset Browser ─────────────────────────────────────────────────────────
 export default function AssetsTab() {
   const [data, setData] = useState<AssetListResponse>({ folders: [], files: [], prefix: '' })
   const [prefix, setPrefix] = useState('')
+  // Zuletzt geöffneter Ordner wird erst nach dem Mount aus dem Browser geladen (Static Export: kein localStorage beim Rendern)
+  const [prefixReady, setPrefixReady] = useState(false)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [copied, setCopied] = useState('')
@@ -33,6 +36,7 @@ export default function AssetsTab() {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [moving, setMoving] = useState(false)
+  const [deletingSelected, setDeletingSelected] = useState(false)
 
   // Copy
   const [showCopyFilesModal, setShowCopyFilesModal] = useState(false)
@@ -51,7 +55,15 @@ export default function AssetsTab() {
     } finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { load(prefix) }, [load, prefix])
+  useEffect(() => {
+    try { setPrefix(localStorage.getItem(PREFIX_STORAGE_KEY) ?? '') } catch { /* Speicher gesperrt */ }
+    setPrefixReady(true)
+  }, [])
+  useEffect(() => {
+    if (!prefixReady) return
+    load(prefix)
+    try { localStorage.setItem(PREFIX_STORAGE_KEY, prefix) } catch { /* Speicher gesperrt */ }
+  }, [load, prefix, prefixReady])
   // Clear selection when navigating
   useEffect(() => { setSelectedKeys(new Set()) }, [prefix])
 
@@ -77,6 +89,24 @@ export default function AssetsTab() {
     if (!confirm(translateBrowserText(`"${key.split('/').pop()}" wirklich löschen?`))) return
     await fetch(`${API_BASE}/api/admin/assets?key=${encodeURIComponent(key)}`, { method: 'DELETE', credentials: 'include' })
     setSelectedKeys(prev => { const n = new Set(prev); n.delete(key); return n })
+    load(prefix)
+  }
+
+  const handleDeleteSelected = async () => {
+    const keys = Array.from(selectedKeys)
+    if (keys.length === 0) return
+    if (!confirm(translateBrowserText(`${keys.length} Datei(en) wirklich löschen? Das kann nicht rückgängig gemacht werden.`))) return
+    setDeletingSelected(true)
+    let errors = 0
+    for (const key of keys) {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/assets?key=${encodeURIComponent(key)}`, { method: 'DELETE', credentials: 'include' })
+        if (!res.ok) errors++
+      } catch { errors++ }
+    }
+    setSelectedKeys(new Set())
+    setDeletingSelected(false)
+    if (errors > 0) alert(translateBrowserText(`⚠️ ${errors} Datei(en) konnten nicht gelöscht werden.`))
     load(prefix)
   }
 
@@ -260,13 +290,17 @@ export default function AssetsTab() {
       {selectedKeys.size > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-blue-500/30 bg-blue-900/20 px-4 py-3">
           <span className="text-sm text-blue-300 font-semibold">{selectedKeys.size}<T value={" Datei(en) ausgewählt"} /></span>
-          <button onClick={() => setShowMoveModal(true)} disabled={moving || copying}
+          <button onClick={() => setShowMoveModal(true)} disabled={moving || copying || deletingSelected}
             className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50 transition">
             <T value={moving ? 'Verschiebe…' : '📁 Verschieben nach…'} />
           </button>
           <button onClick={() => setShowCopyFilesModal(true)} disabled={moving || copying}
             className="rounded-lg bg-slate-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-slate-500 disabled:opacity-50 transition">
             <T value={copying ? 'Kopiere…' : '📋 Kopieren nach…'} />
+          </button>
+          <button onClick={handleDeleteSelected} disabled={moving || copying || deletingSelected}
+            className="rounded-lg bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-500 disabled:opacity-50 transition">
+            <T value={deletingSelected ? 'Lösche…' : '🗑 Löschen'} />
           </button>
           <button onClick={() => setSelectedKeys(new Set())} className="ml-auto text-xs text-gray-500 hover:text-white transition"><T value={" Auswahl aufheben "} /></button>
         </div>
