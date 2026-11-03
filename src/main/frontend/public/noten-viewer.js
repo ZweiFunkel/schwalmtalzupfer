@@ -518,13 +518,11 @@
   async function init() {
     bind();
     if (!KEY || !/\.pdf$/i.test(KEY)) { setState('Keine PDF-Note angegeben.', true, true); return; }
-    // Leiste anfangs kurz zeigen, damit man sie findet
     detectRole();
     try {
       var bytes = HOST ? await waitForHostBytes() : await fetchBytes();
       await openDocument(bytes);
       hideState();
-      showBar(true); setTimeout(function () { if (!editing && $('zoomSheet').classList.contains('hidden')) showBar(false); }, 2500);
     } catch (e) {
       setState(e && e.message ? e.message : 'PDF konnte nicht angezeigt werden.', true, true);
     }
