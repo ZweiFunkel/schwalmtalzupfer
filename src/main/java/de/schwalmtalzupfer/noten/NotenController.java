@@ -48,6 +48,7 @@ public class NotenController {
 
         return s3Client.listObjectsV2Paginator(req).contents().stream()
                 .filter(obj -> !obj.key().endsWith("/")) // Ordner-Platzhalter überspringen
+                .filter(obj -> !isVersionKey(obj.key())) // Sicherungen alter PDF-Fassungen nicht anzeigen
                 .map(obj -> Map.<String, Object>of(
                         "key", obj.key(),
                         "name", obj.key().contains("/") ? obj.key().substring(obj.key().lastIndexOf('/') + 1) : obj.key(),
@@ -71,10 +72,12 @@ public class NotenController {
 
         List<String> folders = result.commonPrefixes().stream()
                 .map(CommonPrefix::prefix)
+                .filter(p -> !isVersionKey(p))
                 .toList();
         List<String> files = result.contents().stream()
                 .map(S3Object::key)
                 .filter(k -> !k.equals(prefix))
+                .filter(k -> !isVersionKey(k))
                 .toList();
 
         return Map.of("folders", folders, "files", files, "prefix", prefix);
@@ -85,6 +88,7 @@ public class NotenController {
      */
     @GetMapping("/preview")
     public void previewSingle(@RequestParam String key, HttpServletResponse response) throws IOException {
+        if (isVersionKey(key)) { response.setStatus(404); return; }
         try {
             GetObjectRequest req = GetObjectRequest.builder().bucket(bucket).key(key).build();
             ResponseInputStream<GetObjectResponse> obj = s3Client.getObject(req);
@@ -109,6 +113,11 @@ public class NotenController {
         }
     }
 
+    /** Sicherungen alter Fassungen (siehe NotenEditController) sind nur über den Wiederherstellen-Weg erreichbar. */
+    private static boolean isVersionKey(String key) {
+        return key != null && key.startsWith(NotenEditController.VERSIONS_PREFIX);
+    }
+
     private String guessMimeType(String key) {
         String lower = key.toLowerCase();
         if (lower.endsWith(".pdf")) return "application/pdf";
@@ -129,6 +138,7 @@ public class NotenController {
      */
     @GetMapping("/download")
     public void downloadSingle(@RequestParam String key, HttpServletResponse response) throws IOException {
+        if (isVersionKey(key)) { response.setStatus(404); return; }
         try {
             GetObjectRequest req = GetObjectRequest.builder().bucket(bucket).key(key).build();
             ResponseInputStream<GetObjectResponse> obj = s3Client.getObject(req);
@@ -159,7 +169,7 @@ public class NotenController {
     public void downloadZip(@RequestBody KeysRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/zip");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Noten.zip\"");
-        r2Service.downloadKeysAsZip(request.keys(), response.getOutputStream());
+        r2Service.downloadKeysAsZip(request.keys().stream().filter(k -> !isVersionKey(k)).toList(), response.getOutputStream());
     }
 
     /**
@@ -172,6 +182,7 @@ public class NotenController {
         ).contents().stream()
                 .map(S3Object::key)
                 .filter(k -> !k.endsWith("/"))
+                .filter(k -> !isVersionKey(k))
                 .toList();
 
         response.setContentType("application/zip");

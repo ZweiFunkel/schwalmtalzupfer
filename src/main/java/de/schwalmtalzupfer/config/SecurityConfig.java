@@ -68,7 +68,7 @@ public class SecurityConfig {
                     .policyDirectives("default-src 'self'; " +
                                      "script-src 'self' 'unsafe-inline' www.youtube.com www.youtube-nocookie.com s.ytimg.com js.stripe.com; " +
                                      "style-src 'self' 'unsafe-inline'; " +
-                                     "frame-src www.youtube.com youtube.com www.youtube-nocookie.com blob: js.stripe.com hooks.stripe.com; " +
+                                     "frame-src 'self' www.youtube.com youtube.com www.youtube-nocookie.com blob: js.stripe.com hooks.stripe.com; " +
                                      "connect-src 'self' blob: www.youtube.com www.youtube-nocookie.com s.ytimg.com api.stripe.com; " +
                                      // schwalmtalzupfer.de (ohne www) explizit erlaubt: R2ProxyController baut
                                      // Bild-URLs aus app.invitation.base-url, das serverseitig auf die Apex-
@@ -79,6 +79,8 @@ public class SecurityConfig {
                                      "media-src 'self' blob:; " +
                                      "worker-src 'self' blob:;")
                 )
+                // Noten-Viewer wird als same-origin iframe eingebettet (Website + Web-App)
+                .frameOptions(frame -> frame.sameOrigin())
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/pages/**").permitAll()

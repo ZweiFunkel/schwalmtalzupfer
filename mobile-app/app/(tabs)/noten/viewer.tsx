@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable, Platform } from 'react-native';
+import { API_BASE } from '../../../lib/config';
+import { getToken } from '../../../lib/auth';
 import { WebView } from '../../../components/WebView';
 import PdfView from '../../../components/PdfView';
 import { canShareFile, shareFile } from '../../../lib/share';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ensureNoteAvailable } from '../../../lib/notenCache';
+import { downloadNote, ensureNoteAvailable } from '../../../lib/notenCache';
 import { font, radius, spacing, type ColorTokens } from '../../../lib/theme';
 import { useAppTheme } from '../../../lib/ThemeContext';
 
@@ -24,6 +26,11 @@ export default function NoteViewer() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
+  const [viewerToken, setViewerToken] = useState('');
+  const [viewerFailed, setViewerFailed] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => { getToken().then(t => setViewerToken(t ?? '')).catch(() => {}); }, []);
 
   const share = useCallback(async (uri: string) => {
     if (await canShareFile()) {
@@ -34,6 +41,8 @@ export default function NoteViewer() {
   useEffect(() => {
     navigation.setOptions({
       title: name ?? 'Note',
+      // Web: der Noten-Viewer bringt eigene Leiste (Zurück, Zoom, Bearbeiten) mit
+      headerShown: !(pdf && Platform.OS === 'web'),
       headerRight: () =>
         localUri ? (
           <Pressable onPress={() => share(localUri)} hitSlop={12} style={{ paddingHorizontal: spacing.sm }}>
@@ -41,7 +50,7 @@ export default function NoteViewer() {
           </Pressable>
         ) : null,
     });
-  }, [name, navigation, localUri, share, colors]);
+  }, [name, navigation, localUri, share, colors, pdf]);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,9 +88,35 @@ export default function NoteViewer() {
   }
 
   if (pdf) {
+    // Online: gemeinsamer Noten-Viewer (Zoomstufen, Bearbeiten für Vorstand/Admin, Versionen).
+    // Offline oder bei Fehler: wie bisher die lokale Datei im nativen PDF-Viewer.
+    const useWebViewer = Platform.OS !== 'web' && !viewerFailed && !!viewerToken;
+    if (useWebViewer) {
+      const uri = `${API_BASE}/noten-viewer?key=${encodeURIComponent(key)}#token=${encodeURIComponent(viewerToken)}`;
+      return (
+        <View style={styles.pdf}>
+          <WebView
+            source={{ uri }}
+            originWhitelist={[API_BASE]}
+            style={styles.pdf}
+            onError={() => setViewerFailed(true)}
+            onHttpError={() => setViewerFailed(true)}
+            onMessage={e => {
+              try {
+                const msg = JSON.parse(e.nativeEvent.data);
+                if (msg?.source !== 'noten-viewer') return;
+                if (msg.type === 'close') router.back();
+                // Gespeicherte Fassung in den Offline-Speicher übernehmen
+                else if (msg.type === 'saved') downloadNote(key).catch(() => {});
+              } catch {}
+            }}
+          />
+        </View>
+      );
+    }
     return (
       <View style={styles.pdf}>
-        <PdfView uri={localUri} onError={() => setError('PDF konnte nicht angezeigt werden')} />
+        <PdfView uri={localUri} noteKey={key} onClose={() => router.back()} onError={() => setError('PDF konnte nicht angezeigt werden')} />
       </View>
     );
   }

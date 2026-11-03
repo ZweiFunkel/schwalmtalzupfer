@@ -29,7 +29,7 @@ public class StorageSearchService {
         if (hit != null && hit.expires > System.currentTimeMillis()) return hit.keys;
         List<String> result = s3.listObjectsV2Paginator(ListObjectsV2Request.builder().bucket(bucket).prefix(root)
             .overrideConfiguration(c -> c.apiCallTimeout(Duration.ofSeconds(8)).apiCallAttemptTimeout(Duration.ofSeconds(4))).build())
-            .contents().stream().map(o -> o.key()).filter(k -> !k.endsWith("/")).toList();
+            .contents().stream().map(o -> o.key()).filter(k -> !k.endsWith("/") && !k.startsWith("_versions/")).toList();
         cache.entrySet().removeIf(e -> e.getValue().expires <= System.currentTimeMillis());
         cache.put(root, new Snapshot(System.currentTimeMillis() + 60000, result));
         return result;

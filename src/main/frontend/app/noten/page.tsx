@@ -344,7 +344,20 @@ function PreviewModal({ note, onClose }: { note: Note; onClose: () => void }) {
   }, [])
 
   // Datei mit Auth-Credentials laden und als Blob-URL bereitstellen
+  const isPdf = note.name.toLowerCase().endsWith('.pdf')
+
+  // PDFs zeigt der gemeinsame Noten-Viewer (Zoom, Bearbeiten für Vorstand/Admin, Versionen)
   useEffect(() => {
+    if (!isPdf) return
+    const handler = (e: MessageEvent) => {
+      if (e.origin === window.location.origin && e.data?.source === 'noten-viewer' && e.data.type === 'close') onClose()
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [isPdf, onClose])
+
+  useEffect(() => {
+    if (isPdf) return
     let objectUrl: string | null = null
     fetch(apiUrl, { credentials: 'include' })
       .then(r => {
@@ -357,14 +370,28 @@ function PreviewModal({ note, onClose }: { note: Note; onClose: () => void }) {
       })
       .catch(() => setLoadError(true))
     return () => { if (objectUrl) URL.revokeObjectURL(objectUrl) }
-  }, [apiUrl])
+  }, [apiUrl, isPdf])
 
-  // ESC zum Schließen
+  // ESC zum Schließen (beim PDF-Viewer behandelt dieser ESC selbst)
   useEffect(() => {
+    if (isPdf) return
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
+  }, [onClose, isPdf])
+
+  if (isPdf) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black">
+        <iframe
+          src={`/noten-viewer?key=${encodeURIComponent(note.key)}`}
+          title={note.name}
+          className="w-full h-full"
+          style={{ border: 'none' }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={onClose}>

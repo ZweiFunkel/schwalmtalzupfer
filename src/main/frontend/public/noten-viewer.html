@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1c1f1e">
+<title>Note</title>
+<style>
+  :root {
+    --bg: #1c1f1e; --surface: #262a29; --surface2: #2f3433; --border: #3a403e;
+    --text: #f3f5f4; --muted: #9aa5a1; --accent: #22c55e; --accent-dark: #16a34a; --danger: #ef4444;
+    --top: env(safe-area-inset-top, 0px); --bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden;
+    font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  /* Kein Kontextmenü / keine Auswahl / kein Bild-Callout (Rechtsklick, langes Drücken) */
+  body, canvas, button { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  textarea { -webkit-user-select: text; user-select: text; }
+  button { font: inherit; color: inherit; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 12px; cursor: pointer; min-height: 40px; }
+  button:active { filter: brightness(1.2); }
+  button.primary { background: var(--accent-dark); border-color: var(--accent-dark); font-weight: 600; }
+  button.danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+  button.on { outline: 2px solid var(--accent); background: #1f3a2b; }
+  button[disabled] { opacity: .5; pointer-events: none; }
+  .hidden { display: none !important; }
+
+  #scroller { position: absolute; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  #pages { display: flex; flex-direction: column; align-items: center; width: max-content; min-width: 100%;
+    padding: calc(var(--top) + 12px) 0 calc(var(--bottom) + 24px); gap: 10px; }
+  body.editing #pages { padding-bottom: calc(var(--bottom) + 170px); }
+  .page { position: relative; background: #fff; box-shadow: 0 2px 14px rgba(0,0,0,.45); flex: none; }
+  .page canvas { position: absolute; left: 0; top: 0; display: block; }
+  .page canvas.ink { pointer-events: none; touch-action: auto; }
+  body.editing .page canvas.ink { pointer-events: auto; touch-action: none; }
+  body.editing.tool-text .page canvas.ink { cursor: text; }
+  body.editing .page canvas.ink { cursor: crosshair; }
+  .page textarea.txt { position: absolute; z-index: 5; min-width: 120px; min-height: 1.6em; background: rgba(255,255,255,.85);
+    border: 1px dashed #2563eb; padding: 2px 4px; resize: both; font-family: Helvetica, Arial, sans-serif; line-height: 1.2; outline: none; }
+
+  #bar { position: fixed; left: 0; right: 0; top: 0; z-index: 20; display: flex; align-items: center; gap: 8px;
+    padding: calc(var(--top) + 8px) 10px 8px; background: rgba(28,31,30,.96); border-bottom: 1px solid var(--border);
+    transition: transform .18s ease, opacity .18s ease; }
+  #bar.off { transform: translateY(-110%); opacity: 0; pointer-events: none; }
+  #title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+  #bar button { flex: none; }
+
+  #editbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: rgba(28,31,30,.97); border-top: 1px solid var(--border);
+    padding: 8px 10px calc(var(--bottom) + 8px); display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .row.right { justify-content: flex-end; }
+  .sep { width: 1px; align-self: stretch; background: var(--border); margin: 0 4px; }
+  .sw { width: 34px; height: 34px; min-height: 0; padding: 0; border-radius: 50%; border: 2px solid var(--border); }
+  .sw.on { outline: 3px solid var(--accent); outline-offset: 1px; }
+  .size { min-width: 44px; padding: 8px 6px; }
+  .grow { flex: 1; }
+
+  .sheet { position: fixed; z-index: 30; right: 10px; top: calc(var(--top) + 58px); width: min(320px, calc(100vw - 20px));
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    max-height: calc(100vh - 90px); overflow: auto; }
+  .sheet h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .sheet .list { display: flex; flex-direction: column; gap: 6px; }
+  .sheet .item { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; }
+  .sheet .meta { color: var(--muted); font-size: 12px; }
+  #backdrop { position: fixed; inset: 0; z-index: 25; background: transparent; }
+
+  #state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    text-align: center; padding: 24px; z-index: 5; }
+  #state .err { color: #f87171; font-weight: 600; }
+  #toast { position: fixed; left: 50%; bottom: calc(var(--bottom) + 190px); transform: translateX(-50%); z-index: 40; background: #111;
+    border: 1px solid var(--border); padding: 10px 16px; border-radius: 10px; max-width: 90vw; text-align: center; }
+</style>
+</head>
+<body>
+<div id="state"><div id="stateText">Lade Note…</div></div>
+<div id="scroller"><div id="pages"></div></div>
+
+<div id="bar" class="off">
+  <button id="btnBack" aria-label="Zurück">←</button>
+  <div id="title"></div>
+  <button id="btnZoom" aria-label="Zoom">🔍 <span id="zoomLabel">Standard</span></button>
+  <button id="btnHistory" class="hidden" aria-label="Versionen">🕘</button>
+  <button id="btnEdit" class="hidden" aria-label="Bearbeiten">✏️</button>
+</div>
+
+<div id="editbar" class="hidden">
+  <div class="row">
+    <button id="toolPen" data-tool="pen" class="on">✏️ Stift</button>
+    <button id="toolHi" data-tool="highlighter">🖍 Marker</button>
+    <button id="toolText" data-tool="text">🅣 Text</button>
+    <button id="toolErase" data-tool="eraser">🧽 Radierer</button>
+    <span class="sep"></span>
+    <button id="btnUndo" aria-label="Rückgängig">↶</button>
+    <button id="btnRedo" aria-label="Wiederholen">↷</button>
+    <button id="btnFinger" title="Mit dem Finger zeichnen (sonst scrollt der Finger und nur Stift/Maus zeichnen)">☝ Finger</button>
+  </div>
+  <div class="row">
+    <span id="colors" class="row"></span>
+    <span class="sep"></span>
+    <button class="size" data-size="0">S</button>
+    <button class="size on" data-size="1">M</button>
+    <button class="size" data-size="2">L</button>
+    <span class="grow"></span>
+    <button id="btnCancel" class="danger">Abbrechen</button>
+    <button id="btnSave" class="primary">Speichern</button>
+  </div>
+</div>
+
+<div id="backdrop" class="hidden"></div>
+<div id="zoomSheet" class="sheet hidden">
+  <h3>Zoom</h3>
+  <div class="list" id="zoomList"></div>
+  <div style="margin-top:10px"><button id="zoomBack" style="width:100%">← Zurück</button></div>
+</div>
+<div id="historySheet" class="sheet hidden">
+  <h3>Frühere Versionen</h3>
+  <div class="list" id="historyList"></div>
+  <div style="margin-top:10px"><button id="historyBack" style="width:100%">← Zurück</button></div>
+</div>
+<div id="toast" class="hidden"></div>
+
+<script src="/noten-viewer.js"></script>
+</body>
+</html>
