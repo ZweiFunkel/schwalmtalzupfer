@@ -208,14 +208,15 @@ export default function Navbar() {
   useEffect(() => {
     if (!searchOpen || searchQuery.trim().length < 2) { setSearchResults([]); setSearchBusy(false); return }
     const controller = new AbortController()
+    // Sofort alte Treffer ausblenden, nicht erst nach der Tipp-Pause
+    setSearchBusy(true); setSearchResults([])
     const timer = window.setTimeout(async () => {
-      setSearchBusy(true)
       try {
         const response = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(searchQuery.trim())}`, { credentials: 'include', cache: 'no-store', signal: controller.signal })
         if (response.ok) setSearchResults((await response.json()) as QuickSearchResult[])
       } catch { /* Suche bleibt leer, wenn Backend kurz nicht erreichbar ist. */ }
       finally { if (!controller.signal.aborted) setSearchBusy(false) }
-    }, 250)
+    }, 200)
     return () => { window.clearTimeout(timer); controller.abort() }
   }, [searchOpen, searchQuery, user])
 

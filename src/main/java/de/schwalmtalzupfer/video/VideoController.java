@@ -35,6 +35,25 @@ public class VideoController {
         return videoRepository.findAllByOrderByPositionAscTitleAsc();
     }
 
+    private final java.util.Set<String> playlistRefreshing = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /**
+     * Fuer die Suche: liefert sofort den Cache (auch veraltet) und laedt fehlende/abgelaufene Playlists im
+     * Hintergrund nach, damit eine Suche nie auf YouTube warten muss.
+     */
+    @SuppressWarnings("unchecked")
+    public List<PlaylistItem> cachedPlaylistItems(String playlistId) {
+        Object[] cached = playlistCache.get(playlistId);
+        boolean stale = cached == null || Instant.now().toEpochMilli() - (long) cached[0] >= CACHE_TTL_MS;
+        if (stale && playlistRefreshing.add(playlistId)) {
+            Thread.ofVirtual().start(() -> {
+                try { getPlaylistItems(playlistId); } catch (RuntimeException ignored) { }
+                finally { playlistRefreshing.remove(playlistId); }
+            });
+        }
+        return cached == null ? List.of() : (List<PlaylistItem>) cached[1];
+    }
+
     /** Playlist-Videos von YouTube abrufen (mit 1h Cache) */
     @GetMapping("/playlist/{playlistId}")
     @PreAuthorize("hasAnyRole('GUEST', 'MEMBER', 'BOARD', 'ADMIN')")

@@ -56,7 +56,7 @@ public class SearchController {
             for (Video video : videos.getAll()) {
                 if ("PLAYLIST".equals(video.getType())) {
                     add(results, query, video.getTitle(), Objects.toString(video.getSubcategory(), ""), "/intern/videos", "Videos");
-                    List<PlaylistItem> items = videos.getPlaylistItems(video.getYoutubeId()).getBody();
+                    List<PlaylistItem> items = videos.cachedPlaylistItems(video.getYoutubeId());
                     if (items != null) for (PlaylistItem item : items) add(results, query, item.getTitle(), video.getTitle(), "/intern/videos?video=" + encode(item.getVideoId()), "Video");
                 } else add(results, query, video.getTitle(), Objects.toString(video.getSubcategory(), "") + " " + Objects.toString(video.getYear(), ""), "/intern/videos?video=" + encode(video.getYoutubeId()), "Video");
             }
