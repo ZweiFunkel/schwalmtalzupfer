@@ -206,7 +206,7 @@ export default function Navbar() {
   }, [navDone])
 
   useEffect(() => {
-    if (!searchOpen || searchQuery.trim().length < 2) { setSearchResults([]); setSearchBusy(false); return }
+    if (!searchOpen || searchQuery.trim().length < 3) { setSearchResults([]); setSearchBusy(false); return }
     const controller = new AbortController()
     // Sofort alte Treffer ausblenden, nicht erst nach der Tipp-Pause
     setSearchBusy(true); setSearchResults([])
@@ -216,7 +216,7 @@ export default function Navbar() {
         if (response.ok) setSearchResults((await response.json()) as QuickSearchResult[])
       } catch { /* Suche bleibt leer, wenn Backend kurz nicht erreichbar ist. */ }
       finally { if (!controller.signal.aborted) setSearchBusy(false) }
-    }, 200)
+    }, 450)
     return () => { window.clearTimeout(timer); controller.abort() }
   }, [searchOpen, searchQuery, user])
 
@@ -290,10 +290,10 @@ export default function Navbar() {
             <button type="button" onClick={() => { setSearchOpen(o => !o); if (searchOpen) setSearchQuery('') }} aria-label={language === 'en' ? 'Open search' : 'Suche öffnen'} title={language === 'en' ? 'Search' : 'Suche'} className="flex h-9 w-10 shrink-0 items-center justify-center text-gray-500 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="m20 20-4-4" /></svg>
             </button>
-            {searchOpen && searchQuery.trim().length >= 2 && <div className="absolute right-0 top-full mt-2 max-h-80 w-80 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+            {searchOpen && searchQuery.trim().length >= 3 && <div className="absolute right-0 top-full mt-2 max-h-80 w-80 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-2xl dark:border-white/10 dark:bg-slate-900">
               {searchBusy && <p className="px-3 py-3 text-sm text-gray-500"><T value="Suche läuft…" /></p>}
               {!searchBusy && searchResults.length === 0 && <p className="px-3 py-3 text-sm text-gray-500"><T value="Keine passenden Inhalte gefunden." /></p>}
-              {!searchBusy && searchResults.map((result, index) => <Link key={`${result.href}-${index}`} href={result.href} onClick={() => { setSearchOpen(false); setSearchQuery('') }} className="block rounded-lg px-3 py-2 hover:bg-green-500/10">
+              {!searchBusy && searchResults.slice(0, 15).map((result, index) => <Link key={`${result.href}-${index}`} href={result.href} onClick={() => { setSearchOpen(false); setSearchQuery('') }} className="block rounded-lg px-3 py-2 hover:bg-green-500/10">
                 <span className="block text-xs text-gray-500"><T value={result.kind} /></span>
                 <span className="block truncate text-sm font-semibold text-gray-800 dark:text-gray-100">{result.title}</span>
                 {result.excerpt && <span className="block truncate text-xs text-gray-500 dark:text-gray-400">{result.excerpt}</span>}
@@ -376,8 +376,8 @@ export default function Navbar() {
                   <svg aria-hidden="true" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
                   <input id="mobile-search" type="search" maxLength={150} value={searchQuery} onChange={e => { setSearchOpen(true); setSearchQuery(e.target.value) }} placeholder={language === 'en' ? 'Search ...' : 'Suchen ...'} className="min-w-0 w-full bg-transparent py-3 text-base outline-none" />
                 </div>
-                {searchQuery.trim().length >= 2 && <div aria-live="polite" aria-busy={searchBusy} className="mt-2 space-y-1 rounded-xl bg-gray-50 p-2 dark:bg-slate-900">
-                  {searchBusy ? <p className="p-3"><T value="Suche läuft…" /></p> : searchResults.length === 0 ? <p className="p-3"><T value="Keine passenden Inhalte gefunden." /></p> : searchResults.map((result, index) => <Link key={`${result.href}-${index}`} href={result.href} onClick={() => { setMenuOpen(false); setSearchOpen(false); setSearchQuery('') }} className="block rounded-lg p-3 hover:bg-green-500/10">
+                {searchQuery.trim().length >= 3 && <div aria-live="polite" aria-busy={searchBusy} className="mt-2 space-y-1 rounded-xl bg-gray-50 p-2 dark:bg-slate-900">
+                  {searchBusy ? <p className="p-3"><T value="Suche läuft…" /></p> : searchResults.length === 0 ? <p className="p-3"><T value="Keine passenden Inhalte gefunden." /></p> : searchResults.slice(0, 15).map((result, index) => <Link key={`${result.href}-${index}`} href={result.href} onClick={() => { setMenuOpen(false); setSearchOpen(false); setSearchQuery('') }} className="block rounded-lg p-3 hover:bg-green-500/10">
                     <span className="block text-xs text-gray-500"><T value={result.kind} /></span>
                     <span className="block break-words font-semibold"><T value={result.title} /></span>
                     <span className="block line-clamp-2 break-words text-xs text-gray-500"><T value={result.excerpt} /></span>
