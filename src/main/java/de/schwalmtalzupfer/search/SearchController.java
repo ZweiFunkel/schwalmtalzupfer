@@ -50,6 +50,17 @@ public class SearchController {
                     body.append(' ').append(visibleText(s.getContent(), false));
                     englishBody.append(' ').append(localizedText(s.getContent(), false, translations.forContent(s.getContent())));
                 });
+            String pagePath = slug.equals("home") ? "/" : "/" + slug;
+            for (var section : page.getSections()) {
+                if (section.getType() != SectionType.SPONSOR_GRID || section.getContent() == null) continue;
+                if (section.getContent().get("sponsors") instanceof Collection<?> sponsors) {
+                    for (Object sponsor : sponsors) {
+                        if (sponsor instanceof Map<?, ?> m && m.get("name") instanceof String name && !name.isBlank()) {
+                            add(results, query, name, visibleText(m, false), pagePath + "#sponsor-" + name.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-+|-+$", ""), "Sponsor");
+                        }
+                    }
+                }
+            }
             add(results, query, page.getTitle(), body.toString(), slug.equals("home") ? "/" : "/" + slug, "Seite", englishBody.toString());
         }
         if (videoAccess) {

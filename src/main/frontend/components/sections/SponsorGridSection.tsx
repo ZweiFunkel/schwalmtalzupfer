@@ -17,6 +17,10 @@ export function mapsHref(address?: string, mapUrl?: string): string | null {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}`
 }
 
+export function sponsorAnchor(name: string): string {
+  return 'sponsor-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 function MapPin() {
   return (
     <svg className="h-3.5 w-3.5 shrink-0 text-green-500" viewBox="0 0 24 24" fill="currentColor">
@@ -184,6 +188,26 @@ export default function SponsorGridSection({ content }: { content: SponsorGridCo
   const isDarkTheme = theme === 'dark'
   const sponsorsDone = usePageLoad('sponsor-images')
 
+  // Suchtreffer führen per #sponsor-… direkt zur Karte: hinscrollen und kurz hervorheben
+  useEffect(() => {
+    const go = () => {
+      const hash = decodeURIComponent(window.location.hash.slice(1))
+      if (!hash.startsWith('sponsor-')) return
+      const cls = ['ring-2', 'ring-green-500', 'ring-offset-2', 'rounded-2xl']
+      const tryScroll = (left: number) => {
+        const el = document.getElementById(hash)
+        if (!el) { if (left > 0) setTimeout(() => tryScroll(left - 1), 200); return }
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.classList.add(...cls)
+        setTimeout(() => el.classList.remove(...cls), 2500)
+      }
+      setTimeout(() => tryScroll(10), 350)
+    }
+    go()
+    window.addEventListener('hashchange', go)
+    return () => window.removeEventListener('hashchange', go)
+  }, [])
+
   // Sponsoren alphabetisch nach Namen sortieren
   const sponsors = [...(content.sponsors ?? [])].sort((a, b) => a.name.localeCompare(b.name))
   const imageCount = sponsors.filter(s => s.imageUrl).length
@@ -237,7 +261,8 @@ export default function SponsorGridSection({ content }: { content: SponsorGridCo
           {sponsors.map((sponsor, index) => (
             <div
               key={index}
-              className="break-inside-avoid opacity-0 animate-[fadeInUp_0.4s_ease-out_forwards]"
+              id={sponsorAnchor(sponsor.name)}
+              className="break-inside-avoid scroll-mt-28 transition-shadow opacity-0 animate-[fadeInUp_0.4s_ease-out_forwards]"
               style={{ animationDelay: `${index * 60}ms` }}
             >
               <SponsorCardExpanded
