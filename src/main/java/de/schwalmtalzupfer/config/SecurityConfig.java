@@ -155,8 +155,11 @@ public class SecurityConfig {
             String role = "ROLE_" + member.getRole().name();
             // Use username if available, otherwise email
             String loginName = member.getUsername() != null ? member.getUsername() : member.getEmail();
-            return new User(loginName, member.getPasswordHash(),
-                    List.of(new SimpleGrantedAuthority(role)));
+            // Deaktivierte (ausgetretene) Mitglieder koennen sich nicht mehr anmelden
+            return User.withUsername(loginName).password(member.getPasswordHash())
+                    .authorities(List.of(new SimpleGrantedAuthority(role)))
+                    .disabled(!member.isIstAktiv())
+                    .build();
         };
     }
 

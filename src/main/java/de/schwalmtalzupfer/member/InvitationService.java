@@ -147,8 +147,15 @@ public class InvitationService {
         if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Token abgelaufen");
         }
-        if (username != null && !username.isBlank() && memberRepository.existsByUsernameIgnoreCase(username)) {
-            throw new IllegalArgumentException("Username bereits vergeben");
+        if (username != null && !username.isBlank()) {
+            // Gleiche Regeln wie beim Aendern im Profil. Vor allem kein "@": ein Username, der wie die E-Mail
+            // eines anderen Mitglieds aussieht, wuerde sonst beim Login auf dessen Konto aufgeloest.
+            if (!java.util.regex.Pattern.matches("^[a-zA-Z0-9._-]{3,50}$", username)) {
+                throw new IllegalArgumentException("Username darf nur Buchstaben, Zahlen, Punkt, Unterstrich und Bindestrich enthalten (3-50 Zeichen)");
+            }
+            if (memberRepository.existsByUsernameIgnoreCase(username)) {
+                throw new IllegalArgumentException("Username bereits vergeben");
+            }
         }
 
         Member member = Member.builder()

@@ -31,6 +31,7 @@ public class NotenController {
 
     private final S3Client s3Client;
     private final R2Service r2Service;
+    private final de.schwalmtalzupfer.config.SiteSettingsRepository settings;
 
     @Value("${app.r2.bucket}")
     private String bucket;
@@ -40,7 +41,9 @@ public class NotenController {
      * Gibt eine flache Liste zurück – ideal für Suche/Anzeige aller Noten.
      */
     @GetMapping("/list")
-    public List<Map<String, Object>> list(@RequestParam(defaultValue = "") String prefix) {
+    public List<Map<String, Object>> list(@RequestParam(name = "prefix", defaultValue = "") String prefixParam) {
+        final String prefix = effectivePrefix(prefixParam);
+        if (outsideNoten(prefix)) forbid();
         ListObjectsV2Request req = ListObjectsV2Request.builder()
                 .bucket(bucket)
                 .prefix(prefix)
@@ -62,7 +65,9 @@ public class NotenController {
      * Listet Ordner und Dateien direkt unterhalb des Präfixes (mit Delimiter).
      */
     @GetMapping("/browse")
-    public Map<String, Object> browse(@RequestParam(defaultValue = "") String prefix) {
+    public Map<String, Object> browse(@RequestParam(name = "prefix", defaultValue = "") String prefixParam) {
+        final String prefix = effectivePrefix(prefixParam);
+        if (outsideNoten(prefix)) forbid();
         ListObjectsV2Request req = ListObjectsV2Request.builder()
                 .bucket(bucket)
                 .prefix(prefix)
@@ -89,6 +94,7 @@ public class NotenController {
     @GetMapping("/preview")
     public void previewSingle(@RequestParam String key, HttpServletResponse response) throws IOException {
         if (isVersionKey(key)) { response.setStatus(404); return; }
+        if (outsideNoten(key)) { response.setStatus(403); return; }
         try {
             GetObjectRequest req = GetObjectRequest.builder().bucket(bucket).key(key).build();
             ResponseInputStream<GetObjectResponse> obj = s3Client.getObject(req);
@@ -100,6 +106,7 @@ public class NotenController {
 
             String encodedName = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
             response.setContentType(contentType);
+            response.setHeader("X-Content-Type-Options", "nosniff");
             response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "inline; filename*=UTF-8''" + encodedName);
             if (meta.contentLength() != null) response.setContentLengthLong(meta.contentLength());
 
@@ -114,6 +121,29 @@ public class NotenController {
     }
 
     /** Sicherungen alter Fassungen (siehe NotenEditController) sind nur über den Wiederherstellen-Weg erreichbar. */
+    /** Konfigurierter Noten-Ordner (mit abschliessendem "/"); leer = nicht eingeschraenkt. */
+    private String notenRoot() {
+        String v = settings.findBySettingKey("noten_prefix").map(x -> x.getSettingValue()).orElse("");
+        v = v == null ? "" : v.strip();
+        return v.isEmpty() || v.endsWith("/") ? v : v + "/";
+    }
+
+    /** Alles ausserhalb des Noten-Ordners ist fuer diese Endpunkte tabu (sonst koennte jeder Gast den ganzen Bucket lesen). */
+    private boolean outsideNoten(String keyOrPrefix) {
+        if (keyOrPrefix == null || keyOrPrefix.contains("..") || keyOrPrefix.startsWith("/")) return true;
+        String root = notenRoot();
+        return !root.isEmpty() && !keyOrPrefix.startsWith(root);
+    }
+
+    /** Leerer Prefix bedeutet "Wurzel": dann der Noten-Ordner. */
+    private String effectivePrefix(String prefix) {
+        return (prefix == null || prefix.isEmpty()) ? notenRoot() : prefix;
+    }
+
+    private static void forbid() {
+        throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+    }
+
     private static boolean isVersionKey(String key) {
         return key != null && key.startsWith(NotenEditController.VERSIONS_PREFIX);
     }
@@ -139,6 +169,7 @@ public class NotenController {
     @GetMapping("/download")
     public void downloadSingle(@RequestParam String key, HttpServletResponse response) throws IOException {
         if (isVersionKey(key)) { response.setStatus(404); return; }
+        if (outsideNoten(key)) { response.setStatus(403); return; }
         try {
             GetObjectRequest req = GetObjectRequest.builder().bucket(bucket).key(key).build();
             ResponseInputStream<GetObjectResponse> obj = s3Client.getObject(req);
@@ -169,14 +200,16 @@ public class NotenController {
     public void downloadZip(@RequestBody KeysRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/zip");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Noten.zip\"");
-        r2Service.downloadKeysAsZip(request.keys().stream().filter(k -> !isVersionKey(k)).toList(), response.getOutputStream());
+        r2Service.downloadKeysAsZip(request.keys().stream().filter(k -> !isVersionKey(k) && !outsideNoten(k)).toList(), response.getOutputStream());
     }
 
     /**
      * Lädt alle Noten unterhalb eines Präfixes als ZIP herunter.
      */
     @GetMapping("/download/all")
-    public void downloadAll(@RequestParam(defaultValue = "") String prefix, HttpServletResponse response) throws IOException {
+    public void downloadAll(@RequestParam(name = "prefix", defaultValue = "") String prefixParam, HttpServletResponse response) throws IOException {
+        final String prefix = effectivePrefix(prefixParam);
+        if (outsideNoten(prefix)) { response.setStatus(403); return; }
         List<String> keys = s3Client.listObjectsV2Paginator(
                 ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).build()
         ).contents().stream()

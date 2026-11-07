@@ -41,9 +41,10 @@ public class AppUpdateController {
     @Value("${app.r2.bucket}")
     private String bucket;
 
-    // Inline-Default, damit ein fehlender app.deploy.token in application.yml NIE den
-    // gesamten Server-Start verhindert - dieser Endpoint ist ein optionales Feature.
-    @Value("${app.deploy.token:changeme-deploy-token}")
+    // Leerer Default, damit ein fehlender app.deploy.token den Server-Start nicht verhindert. Ohne
+    // gesetzten Token ist der Publish-Endpunkt gesperrt (fail-closed): wer die APK austauschen koennte,
+    // koennte sie an alle Nutzer ausliefern.
+    @Value("${app.deploy.token:}")
     private String deployToken;
 
     @GetMapping("/download")
@@ -74,7 +75,7 @@ public class AppUpdateController {
             @RequestParam(value = "releaseNotes", defaultValue = "") String releaseNotes,
             @RequestParam("apk") MultipartFile apk
     ) throws IOException {
-        if (!constantTimeEquals(deployToken, token)) {
+        if (deployToken == null || deployToken.length() < 24 || !constantTimeEquals(deployToken, token)) {
             return ResponseEntity.status(403).build();
         }
 

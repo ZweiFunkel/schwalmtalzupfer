@@ -1,5 +1,6 @@
 package de.schwalmtalzupfer.storage;
 
+import de.schwalmtalzupfer.config.SiteSettingsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -31,6 +32,22 @@ public class R2ProxyController {
     @Value("${app.r2.bucket}")
     private String bucket;
 
+    private final SiteSettingsRepository settings;
+
+    /** Bereiche, die nie ueber den oeffentlichen Proxy ausgeliefert werden (eigene, geschuetzte Endpunkte). */
+    private boolean isProtected(String key) {
+        if (key.startsWith("_versions/") || key.startsWith("app-releases/")) return true;
+        for (String setting : new String[]{"noten_prefix", "galerie_intern_prefix"}) {
+            String prefix = settings.findBySettingKey(setting).map(v -> v.getSettingValue()).orElse("");
+            if (prefix != null && !prefix.isBlank()) {
+                String p = prefix.strip();
+                if (!p.endsWith("/")) p = p + "/";
+                if (key.startsWith(p)) return true;
+            }
+        }
+        return false;
+    }
+
     @GetMapping("/**")
     public void proxy(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String uri = request.getRequestURI();
@@ -39,6 +56,10 @@ public class R2ProxyController {
         // enthält aber das echte Zeichen, sonst werden Dateien mit Leerzeichen/Umlauten nie gefunden.
         String key = UriUtils.decode(uri.replaceFirst("^/r2/", ""), StandardCharsets.UTF_8);
         if (key.isBlank()) {
+            response.setStatus(404);
+            return;
+        }
+        if (isProtected(key)) {
             response.setStatus(404);
             return;
         }
@@ -55,6 +76,15 @@ public class R2ProxyController {
                 contentType = guessMimeType(key);
             }
             response.setContentType(contentType);
+            // Hochgeladene Dateien duerfen auf dieser Domain nie als Skript/HTML ausgefuehrt werden
+            response.setHeader("X-Content-Type-Options", "nosniff");
+            response.setHeader("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'");
+            String ct = contentType.toLowerCase();
+            boolean inlineSafe = (ct.startsWith("image/") && !ct.contains("svg")) || ct.equals("application/pdf")
+                    || ct.startsWith("audio/") || ct.startsWith("video/") || ct.startsWith("font/");
+            if (!inlineSafe && !ct.contains("svg")) {
+                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment");
+            }
             if (meta.contentLength() != null) {
                 response.setContentLengthLong(meta.contentLength());
             }
