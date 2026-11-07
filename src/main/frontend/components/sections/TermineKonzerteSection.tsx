@@ -1,4 +1,5 @@
 'use client'
+import { safeUrl } from '@/lib/safeUrl'
 import { T } from '@/lib/i18n/LanguageProvider'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -147,7 +148,7 @@ export default function TermineKonzerteSection({ content }: { content: TermineKo
                       <div className="flex flex-col gap-1.5 text-sm text-gray-500 dark:text-gray-400">
                         {t.location && t.location !== '-' && (
                           t.mapUrl
-                            ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 transition">
+                            ? <a href={safeUrl(t.mapUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 transition">
                                 📍 <T value={t.location} />
                               </a>
                             : <span className="flex items-center gap-1.5">📍 <T value={t.location} /></span>

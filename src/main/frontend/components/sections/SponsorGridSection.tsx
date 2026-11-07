@@ -1,4 +1,5 @@
 'use client'
+import { safeUrl, safeWebsiteUrl } from '@/lib/safeUrl'
 import { T, L } from '@/lib/i18n/LanguageProvider'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
@@ -11,7 +12,7 @@ import { usePageLoad } from '@/lib/AppLoadingContext'
 // aber nur wenn sie vollständig aussieht (Straße mit Hausnummer und 5-stellige PLZ), damit keine
 // halben Angaben auf einer falschen Karte landen.
 export function mapsHref(address?: string, mapUrl?: string): string | null {
-  if (mapUrl?.trim()) return mapUrl.trim()
+  if (mapUrl?.trim()) return safeUrl(mapUrl) ?? null
   const a = (address ?? '').replace(/\s+/g, ' ').trim()
   if (!/\b\d{5}\b/.test(a) || !/[A-Za-z\u00C0-\u00FF]\.?\s*\d+\s*[a-zA-Z]?\b/.test(a)) return null
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}`
@@ -30,7 +31,8 @@ function MapPin() {
 }
 
 function ExternalLink({ href }: { href: string }) {
-  const url = href.startsWith('http') ? href : `https://${href}`
+  const url = safeWebsiteUrl(href)
+  if (!url) return <span className="text-xs break-all text-gray-400">{href}</span>
   return (
     <a href={url} target="_blank" rel="noopener noreferrer"
       className="inline-flex items-center gap-1 text-green-400 hover:text-green-300 transition text-xs break-all">

@@ -1,4 +1,5 @@
 'use client'
+import { safeUrl } from '@/lib/safeUrl'
 import { T, L } from '@/lib/i18n/LanguageProvider'
 
 import React from 'react'
@@ -72,7 +73,7 @@ export default function VideoEmbedSection({ content }: { content: VideoEmbedCont
         ) : (
           <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 p-8 text-center">
             <a
-              href={content.videoUrl}
+              href={safeUrl(content.videoUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-base font-semibold text-green-600 dark:text-green-400 hover:underline"

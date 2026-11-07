@@ -1,4 +1,5 @@
 'use client'
+import { safeUrl } from '@/lib/safeUrl'
 import { T, L } from '@/lib/i18n/LanguageProvider'
 
 import React, { useEffect, useRef } from 'react'
@@ -73,7 +74,7 @@ export default function HeroSection({ content }: { content: HeroContent }) {
         {/* CTA-Button */}
         {content.ctaLabel && content.ctaHref && (
           <div className="animate-slide-up-delay-2 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <a href={content.ctaHref}
+            <a href={safeUrl(content.ctaHref)}
               className="group inline-flex items-center gap-2 rounded-2xl bg-green-500 px-10 py-4 text-lg font-semibold text-white shadow-2xl shadow-green-500/40 transition hover:bg-green-400 hover:shadow-green-400/50 hover:scale-105 active:scale-100">
               {content.ctaLabel}
               <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

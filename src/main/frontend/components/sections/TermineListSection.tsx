@@ -1,4 +1,5 @@
 'use client'
+import { safeUrl } from '@/lib/safeUrl'
 import { T } from '@/lib/i18n/LanguageProvider'
 import React, { useState, useEffect, useRef } from 'react'
 import { TermineListContent, Termin, TerminKategorie } from '@/types/page'
@@ -108,7 +109,7 @@ function TicketBlock({ tickets }: { tickets: NonNullable<Termin['tickets']> }) {
         <p className="text-xs text-gray-500 dark:text-gray-400">{tickets.info}</p>
       )}
       {tickets.link && (
-        <a href={tickets.link} target="_blank" rel="noopener noreferrer"
+        <a href={safeUrl(tickets.link)} target="_blank" rel="noopener noreferrer"
           className="mt-0.5 inline-flex items-center gap-1.5 self-start rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition"><T value={" Tickets kaufen → "} /></a>
       )}
     </div>
@@ -277,7 +278,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
                               ))}
                               {t.location && t.location !== '-' && (
                                 t.mapUrl
-                                  ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition">📍 <T value={t.location} /></a>
+                                  ? <a href={safeUrl(t.mapUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition">📍 <T value={t.location} /></a>
                                   : <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">📍 <T value={t.location} /></span>
                               )}
                               {t.note && <span className="flex items-center gap-1 text-xs text-amber-500 dark:text-amber-400/80">ℹ️ <T value={t.note} /></span>}
@@ -292,7 +293,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
                             {t.parking && t.parking.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-1.5">
                                 {t.parking.map((p, pi) => (
-                                  <a key={pi} href={p.mapUrl} target="_blank" rel="noopener noreferrer"
+                                  <a key={pi} href={safeUrl(p.mapUrl)} target="_blank" rel="noopener noreferrer"
                                     className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-white/10 px-2.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:border-green-400/50 hover:text-green-600 dark:hover:text-green-400 transition">
                                     🅿️ <T value={p.name ?? `Parkplatz ${pi + 1}`} />
                                   </a>
@@ -393,7 +394,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
                                       ))}
                                       {t.location && t.location !== '-' && (
                                         t.mapUrl
-                                          ? <a href={t.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-400/70 hover:text-blue-400 transition">📍 <T value={t.location} /></a>
+                                          ? <a href={safeUrl(t.mapUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-400/70 hover:text-blue-400 transition">📍 <T value={t.location} /></a>
                                           : <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-600">📍 <T value={t.location} /></span>
                                       )}
                                       {t.note && <span className="flex items-center gap-1 text-xs text-amber-400/60 dark:text-amber-500/50">ℹ️ <T value={t.note} /></span>}
