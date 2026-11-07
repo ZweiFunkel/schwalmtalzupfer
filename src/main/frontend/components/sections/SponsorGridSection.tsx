@@ -7,6 +7,16 @@ import Lightbox from '@/components/Lightbox'
 import { useTheme } from '@/lib/ThemeProvider'
 import { usePageLoad } from '@/lib/AppLoadingContext'
 
+// Link zur Karte: ein eingetragener Maps-Link hat Vorrang. Sonst wird die Adresse automatisch verlinkt,
+// aber nur wenn sie vollständig aussieht (Straße mit Hausnummer und 5-stellige PLZ), damit keine
+// halben Angaben auf einer falschen Karte landen.
+export function mapsHref(address?: string, mapUrl?: string): string | null {
+  if (mapUrl?.trim()) return mapUrl.trim()
+  const a = (address ?? '').replace(/\s+/g, ' ').trim()
+  if (!/\b\d{5}\b/.test(a) || !/[A-Za-z\u00C0-\u00FF]\.?\s*\d+\s*[a-zA-Z]?\b/.test(a)) return null
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}`
+}
+
 function MapPin() {
   return (
     <svg className="h-3.5 w-3.5 shrink-0 text-green-500" viewBox="0 0 24 24" fill="currentColor">
@@ -35,8 +45,8 @@ function LocationRow({ loc, isDarkTheme }: { loc: SponsorLocation; isDarkTheme: 
   return (
     <div className={`mt-2 rounded-lg px-3 py-2 text-xs ${rowBg}`}>
       {loc.name && <p className={`font-semibold mb-0.5 ${nameCl}`}>{loc.name}</p>}
-      {loc.mapUrl ? (
-        <a href={loc.mapUrl} target="_blank" rel="noopener noreferrer"
+      {mapsHref(loc.address, loc.mapUrl) ? (
+        <a href={mapsHref(loc.address, loc.mapUrl)!} target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1 hover:text-green-400 transition leading-snug">
           <MapPin />{loc.address}
         </a>
@@ -148,8 +158,8 @@ function SponsorCardExpanded({ sponsor, onImage, isDarkTheme, onLoaded }: {
         </div>
         {!hasLocations && sponsor.address && (
           <p className={`flex items-start gap-1 text-xs leading-snug border-t pt-2 mt-1 ${addrCl}`}>
-            {sponsor.mapUrl ? (
-              <a href={sponsor.mapUrl} target="_blank" rel="noopener noreferrer"
+            {mapsHref(sponsor.address, sponsor.mapUrl) ? (
+              <a href={mapsHref(sponsor.address, sponsor.mapUrl)!} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-start gap-1 hover:text-green-400 transition">
                 <MapPin />{sponsor.address}
               </a>
