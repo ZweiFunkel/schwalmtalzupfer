@@ -24,6 +24,10 @@ interface VideoEntry {
   title: string
   thumbnailUrl: string | null
   position: number
+  /** Freigabezeitpunkt (lokale Zeit, ISO); leer = sofort */
+  releaseAt?: string | null
+  /** false = Teaser: Server liefert weder Link noch Titelbild */
+  released?: boolean
 }
 
 interface PlaylistItem {
@@ -112,7 +116,32 @@ function ytUrl(v: VideoEntry): string {
   return `https://www.youtube.com/watch?v=${v.youtubeId}`
 }
 
+function releaseLabel(v: VideoEntry): string {
+  if (!v.releaseAt) return 'Die Tage'
+  const d = new Date(v.releaseAt)
+  if (Number.isNaN(d.getTime())) return 'Die Tage'
+  const date = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0
+  return hasTime ? `ab ${date}, ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr` : `ab ${date}`
+}
+
+function LockedCard({ video }: { video: VideoEntry }) {
+  return (
+    <div className="cursor-default select-none">
+      <div className="relative aspect-video overflow-hidden rounded-xl border border-dashed border-gray-300 dark:border-white/15 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-900">
+        <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-center">
+          <span className="text-3xl" aria-hidden>⏳</span>
+          <span className="text-sm font-semibold text-gray-600 dark:text-gray-300"><T value="Kommt bald" /></span>
+          <span className="text-xs text-gray-400 dark:text-gray-500"><T value={releaseLabel(video)} /></span>
+        </div>
+      </div>
+      <p className="px-0.5 pt-3 text-sm font-medium text-gray-500 dark:text-gray-400 line-clamp-2">{video.title}</p>
+    </div>
+  )
+}
+
 function thumbnailFor(v: VideoEntry): string | null {
+  if (v.released === false) return null
   return v.thumbnailUrl ?? (v.type === 'VIDEO' ? `https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg` : null)
 }
 
@@ -239,6 +268,7 @@ function CollapseArrowIcon({ collapsed, className = 'h-4 w-4' }: { collapsed: bo
 // ─── Video Card (Grid-Kachel im YouTube-Stil) ────────────────────────────────
 
 function VideoCard({ video, onOpen }: { video: VideoEntry; onOpen: (v: VideoEntry) => void }) {
+  if (video.released === false) return <LockedCard video={video} />
   const thumbnailUrl = thumbnailFor(video)
   const isPlaylist = video.type === 'PLAYLIST'
 
@@ -367,17 +397,18 @@ function DayCard({ day, entries, onSelect }: { day: string; entries: VideoEntry[
   const manualThumb = thumbnailFor(representative)
   const [items, setItems] = useState<PlaylistItem[] | null>(null)
 
+  const locked = representative.released === false
   useEffect(() => {
-    if (representative.type !== 'PLAYLIST') return
+    if (representative.type !== 'PLAYLIST' || locked) return
     let cancelled = false
     fetch(`${API_BASE}/api/intern/videos/playlist/${representative.youtubeId}`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
       .then((data: PlaylistItem[]) => { if (!cancelled) setItems(data) })
       .catch(() => { if (!cancelled) setItems([]) })
     return () => { cancelled = true }
-  }, [representative])
+  }, [representative, locked])
 
-  const thumb = manualThumb ?? items?.[0]?.thumbnail ?? null
+  const thumb = locked ? null : (manualThumb ?? items?.[0]?.thumbnail ?? null)
   const count = representative.type === 'PLAYLIST' ? items?.length : entries.length
 
   return (
@@ -399,7 +430,8 @@ function DayCard({ day, entries, onSelect }: { day: string; entries: VideoEntry[
       </div>
       <div className="px-0.5 pt-3">
         <p className="text-base font-semibold text-gray-800 dark:text-white transition group-hover:text-gray-900 dark:group-hover:text-white"><T value={day} /></p>
-        {count != null && <p className="text-xs text-gray-400 dark:text-gray-500">{count} <T value={count === 1 ? 'Video' : 'Videos'} /></p>}
+        {locked && <p className="text-xs text-amber-600 dark:text-amber-400">⏳ <T value={releaseLabel(representative)} /></p>}
+        {!locked && count != null && <p className="text-xs text-gray-400 dark:text-gray-500">{count} <T value={count === 1 ? 'Video' : 'Videos'} /></p>}
       </div>
     </button>
   )
@@ -429,7 +461,12 @@ function SplitVideos({ items, onOpen }: { items: VideoEntry[]; onOpen: (v: Video
   const singles = items.filter(v => v.type === 'VIDEO')
   return (
     <div>
-      {playlists.map(p => <InlinePlaylistItems key={p.id} playlist={p} onOpen={onOpen} />)}
+      {playlists.filter(p => p.released === false).length > 0 && (
+        <div className="mb-8 grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
+          {playlists.filter(p => p.released === false).map(p => <LockedCard key={p.id} video={p} />)}
+        </div>
+      )}
+      {playlists.filter(p => p.released !== false).map(p => <InlinePlaylistItems key={p.id} playlist={p} onOpen={onOpen} />)}
       {singles.length > 0 && (
         <>
           {playlists.length > 0 && (

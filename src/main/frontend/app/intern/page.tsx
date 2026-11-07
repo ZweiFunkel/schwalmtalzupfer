@@ -11,6 +11,68 @@ import { PageSection } from '@/types/page'
 
 const API_BASE = getApiBase()
 
+const NOTICE_DAYS = 7
+const NOTICE_STORE = 'video_notices_dismissed'
+
+interface ReleasedVideo { id: string; category: string; year: string | null; subcategory: string | null; title: string; releaseAt?: string | null; released?: boolean }
+
+/** Gruppiert frisch freigegebene Videos (z. B. alle Tage eines Winterkonzerts) zu einer Meldung. */
+function noticeFor(v: ReleasedVideo): { key: string; label: string } {
+  if (v.category === 'WINTER') return { key: `WINTER-${v.year}`, label: `Winterkonzert ${v.year ?? ''}`.trim() }
+  if (v.category === 'SOMMER') return { key: `SOMMER-${v.year}`, label: `Sommerkonzert ${v.year ?? ''}`.trim() }
+  return { key: `WEITERE-${v.subcategory ?? v.title}`, label: v.subcategory || v.title }
+}
+
+/** Einmalige Info fuer eine Woche nach der automatischen Freigabe; mit "x" dauerhaft weg (pro Browser). */
+function NewVideoNotice() {
+  const [notices, setNotices] = useState<{ key: string; label: string }[]>([])
+
+  useEffect(() => {
+    let dismissed: string[] = []
+    try { dismissed = JSON.parse(localStorage.getItem(NOTICE_STORE) || '[]') } catch { /* ignore */ }
+    fetch(`${API_BASE}/api/intern/videos`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then((videos: ReleasedVideo[]) => {
+        const now = Date.now()
+        const found = new Map<string, string>()
+        for (const v of videos) {
+          if (v.released === false || !v.releaseAt) continue
+          const at = new Date(v.releaseAt).getTime()
+          if (Number.isNaN(at) || at > now || now - at > NOTICE_DAYS * 86400000) continue
+          const n = noticeFor(v)
+          if (!dismissed.includes(n.key)) found.set(n.key, n.label)
+        }
+        setNotices([...found].map(([key, label]) => ({ key, label })))
+      })
+      .catch(() => {})
+  }, [])
+
+  const dismiss = (key: string) => {
+    setNotices(n => n.filter(x => x.key !== key))
+    try {
+      const cur: string[] = JSON.parse(localStorage.getItem(NOTICE_STORE) || '[]')
+      localStorage.setItem(NOTICE_STORE, JSON.stringify([...cur, key].slice(-50)))
+    } catch { /* ignore */ }
+  }
+
+  if (notices.length === 0) return null
+  return (
+    <div className="mb-8 space-y-3">
+      {notices.map(n => (
+        <div key={n.key} className="flex items-center gap-4 rounded-xl border border-green-500/40 bg-green-50 dark:bg-green-900/20 px-5 py-4">
+          <span className="text-2xl" aria-hidden>🎬</span>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-gray-900 dark:text-white"><T value={"Neu freigeschaltet:"} /> {n.label}</p>
+            <Link href="/intern/videos" className="text-sm font-medium text-green-700 dark:text-green-400 hover:underline"><T value={"Jetzt ansehen →"} /></Link>
+          </div>
+          <button type="button" onClick={() => dismiss(n.key)} aria-label="Schließen"
+            className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition">✕</button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function InternPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
@@ -45,6 +107,8 @@ export default function InternPage() {
         </h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400"><T value={" Herzlich willkommen im Internen Bereich der Schwalmtalzupfer. Hier findest du alles für Mitglieder. "} /></p>
       </div>
+
+      <NewVideoNotice />
 
       {/* Schnelllinks */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

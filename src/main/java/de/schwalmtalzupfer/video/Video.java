@@ -43,7 +43,7 @@ public class Video {
     private String type;
 
     /** YouTube-Video-ID oder Playlist-ID */
-    @Column(name = "youtube_id", nullable = false, length = 100)
+    @Column(name = "youtube_id", length = 100)
     private String youtubeId;
 
     @Column(nullable = false, length = 255)
@@ -55,5 +55,17 @@ public class Video {
 
     @Column(nullable = false)
     private int position;
+
+    /**
+     * Freigabezeitpunkt (Europe/Berlin). Leer = sofort sichtbar. Davor sehen Nicht-Vorstände nur Titel und
+     * Datum als Teaser; YouTube-ID und Titelbild werden gar nicht erst ausgeliefert.
+     */
+    @Column(name = "release_at")
+    private java.time.LocalDateTime releaseAt;
+
+    /** Wird beim Ausliefern berechnet, nicht gespeichert. */
+    @Transient
+    @Builder.Default
+    private boolean released = true;
 }
 

@@ -31,7 +31,7 @@ class SearchControllerTest {
     }
     @Test void memberFindsAccentedVideoWithInternalDestinationAndNoCache() {
         when(pages.findAll()).thenReturn(List.of());
-        when(videos.getAll()).thenReturn(List.of(Video.builder().type("VIDEO").title("Dä Stär").youtubeId("abc123").build()));
+        when(videos.getAll(null)).thenReturn(List.of(Video.builder().type("VIDEO").title("Dä Stär").youtubeId("abc123").build()));
         var auth = new UsernamePasswordAuthenticationToken("member", "", List.of(new SimpleGrantedAuthority("ROLE_MEMBER")));
         var response = controller.search("da star", auth);
         assertEquals(1, response.getBody().size());

@@ -7,5 +7,7 @@ import java.util.UUID;
 
 public interface VideoRepository extends JpaRepository<Video, UUID> {
     List<Video> findAllByOrderByPositionAscTitleAsc();
+
+    List<Video> findAllByYoutubeId(String youtubeId);
 }
 

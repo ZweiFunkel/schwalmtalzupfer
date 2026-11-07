@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,8 +32,34 @@ public class VideoController {
     /** Alle Videos abrufen – für alle angemeldeten Nutzer */
     @GetMapping
     @PreAuthorize("hasAnyRole('GUEST', 'MEMBER', 'BOARD', 'ADMIN')")
-    public List<Video> getAll() {
-        return videoRepository.findAllByOrderByPositionAscTitleAsc();
+    public List<Video> getAll(Authentication auth) {
+        boolean privileged = isPrivileged(auth);
+        List<Video> out = new ArrayList<>();
+        for (Video v : videoRepository.findAllByOrderByPositionAscTitleAsc()) {
+            boolean released = isReleased(v);
+            if (privileged || released) {
+                v.setReleased(released);
+                out.add(v);
+            } else {
+                // Teaser: nur Einordnung, Titel und Termin - nie YouTube-ID oder Titelbild
+                out.add(Video.builder().id(v.getId()).category(v.getCategory()).year(v.getYear()).day(v.getDay())
+                        .subcategory(v.getSubcategory()).tags(v.getTags()).type(v.getType()).title(v.getTitle())
+                        .position(v.getPosition()).releaseAt(v.getReleaseAt()).youtubeId("").released(false).build());
+            }
+        }
+        return out;
+    }
+
+    /** Freigegeben = Link hinterlegt und Freigabezeitpunkt (Berlin) erreicht oder nicht gesetzt. */
+    public static boolean isReleased(Video v) {
+        if (v.getYoutubeId() == null || v.getYoutubeId().isBlank()) return false;
+        return v.getReleaseAt() == null
+                || !v.getReleaseAt().isAfter(java.time.LocalDateTime.now(java.time.ZoneId.of("Europe/Berlin")));
+    }
+
+    private static boolean isPrivileged(Authentication auth) {
+        return auth != null && auth.isAuthenticated() && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_BOARD") || a.getAuthority().equals("ROLE_ADMIN"));
     }
 
     private final java.util.Set<String> playlistRefreshing = java.util.concurrent.ConcurrentHashMap.newKeySet();
@@ -54,10 +81,18 @@ public class VideoController {
         return cached == null ? List.of() : (List<PlaylistItem>) cached[1];
     }
 
-    /** Playlist-Videos von YouTube abrufen (mit 1h Cache) */
+    /** Playlist-Inhalte nur fuer freigegebene (bzw. als Vorstand fuer alle) Eintraege - sonst gaebe es einen Umweg am Teaser vorbei. */
     @GetMapping("/playlist/{playlistId}")
     @PreAuthorize("hasAnyRole('GUEST', 'MEMBER', 'BOARD', 'ADMIN')")
-    public ResponseEntity<List<PlaylistItem>> getPlaylistItems(@PathVariable String playlistId) {
+    public ResponseEntity<List<PlaylistItem>> playlist(@PathVariable String playlistId, Authentication auth) {
+        List<Video> owners = videoRepository.findAllByYoutubeId(playlistId);
+        boolean allowed = !owners.isEmpty() && (isPrivileged(auth) || owners.stream().anyMatch(VideoController::isReleased));
+        if (!allowed) return ResponseEntity.notFound().build();
+        return getPlaylistItems(playlistId);
+    }
+
+    /** Playlist-Videos von YouTube abrufen (mit 1h Cache) */
+    public ResponseEntity<List<PlaylistItem>> getPlaylistItems(String playlistId) {
         // Cache prüfen
         Object[] cached = playlistCache.get(playlistId);
         if (cached != null) {
@@ -163,6 +198,7 @@ public class VideoController {
     @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
     public ResponseEntity<Video> create(@RequestBody Video video) {
         video.setId(null);
+        video.setYoutubeId(video.getYoutubeId() == null ? null : video.getYoutubeId().trim());
         return ResponseEntity.ok(videoRepository.save(video));
     }
 
@@ -172,6 +208,7 @@ public class VideoController {
     public ResponseEntity<Video> update(@PathVariable UUID id, @RequestBody Video video) {
         if (!videoRepository.existsById(id)) return ResponseEntity.notFound().build();
         video.setId(id);
+        video.setYoutubeId(video.getYoutubeId() == null ? null : video.getYoutubeId().trim());
         return ResponseEntity.ok(videoRepository.save(video));
     }
 

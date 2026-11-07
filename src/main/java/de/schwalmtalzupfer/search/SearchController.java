@@ -64,7 +64,8 @@ public class SearchController {
             add(results, query, page.getTitle(), body.toString(), slug.equals("home") ? "/" : "/" + slug, "Seite", englishBody.toString());
         }
         if (videoAccess) {
-            for (Video video : videos.getAll()) {
+            for (Video video : videos.getAll(null)) {
+                if (!video.isReleased()) continue; // Teaser/unreleased nie in der Suche
                 if ("PLAYLIST".equals(video.getType())) {
                     add(results, query, video.getTitle(), Objects.toString(video.getSubcategory(), ""), "/intern/videos", "Videos");
                     List<PlaylistItem> items = videos.cachedPlaylistItems(video.getYoutubeId());

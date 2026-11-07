@@ -19,12 +19,15 @@ interface VideoEntry {
   title: string
   thumbnailUrl: string
   position: number
+  /** Freigabezeitpunkt als lokale Zeit "YYYY-MM-DDTHH:mm" (leer = sofort) */
+  releaseAt?: string | null
+  released?: boolean
 }
 
 const EMPTY_VIDEO: VideoEntry = {
   category: 'SOMMER', year: '', day: '',
   subcategory: '', tags: '', type: 'VIDEO',
-  youtubeId: '', title: '', thumbnailUrl: '', position: 0,
+  youtubeId: '', title: '', thumbnailUrl: '', position: 0, releaseAt: '',
 }
 
 /** Extrahiert Video-ID oder Playlist-ID aus einem YouTube-URL oder gibt den Wert unverändert zurück.
@@ -70,14 +73,18 @@ export default function VideosTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.youtubeId.trim() || !form.title.trim()) { setMsg('YouTube-ID und Titel sind Pflichtfelder.'); return }
+    if (!form.title.trim()) { setMsg('Titel ist ein Pflichtfeld.'); return }
     setSaving(true); setMsg('')
     const method = editId ? 'PUT' : 'POST'
     const url = editId ? `${API_BASE}/api/intern/videos/${editId}` : `${API_BASE}/api/intern/videos`
     const res = await fetch(url, {
       method, credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        youtubeId: form.youtubeId.trim() || null,
+        releaseAt: form.releaseAt ? (form.releaseAt.length === 16 ? form.releaseAt + ':00' : form.releaseAt) : null,
+      }),
     })
     setSaving(false)
     if (res.ok) { setForm(EMPTY_VIDEO); setEditId(null); load(); setMsg(editId ? '✓ Video aktualisiert.' : '✓ Video hinzugefügt.') }
@@ -87,7 +94,7 @@ export default function VideosTab() {
 
   const startEdit = (v: VideoEntry) => {
     setEditId(v.id!)
-    setForm({ ...v, year: v.year ?? '', day: v.day ?? '', subcategory: v.subcategory ?? '', tags: v.tags ?? '', thumbnailUrl: v.thumbnailUrl ?? '' })
+    setForm({ ...v, year: v.year ?? '', day: v.day ?? '', subcategory: v.subcategory ?? '', tags: v.tags ?? '', thumbnailUrl: v.thumbnailUrl ?? '', youtubeId: v.youtubeId ?? '', releaseAt: v.releaseAt ? v.releaseAt.slice(0, 16) : '' })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -184,10 +191,25 @@ export default function VideosTab() {
             )}
           </div>
 
+          {/* Freigabe */}
+          <div className="rounded-lg border border-white/10 bg-slate-800/60 p-3">
+            <label className="mb-1 block text-xs text-gray-400"><T value={"Freigabe am (optional)"} /></label>
+            <div className="flex flex-wrap items-center gap-2">
+              <input type="datetime-local" value={form.releaseAt ?? ''} onChange={e => set('releaseAt', e.target.value)}
+                className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
+              {form.releaseAt && (
+                <button type="button" onClick={() => set('releaseAt', '')} className="text-xs text-gray-400 hover:text-white"><T value={"✕ sofort sichtbar"} /></button>
+              )}
+            </div>
+            <p className="mt-1.5 text-xs text-gray-500">
+              <T value={"Bis dahin sehen Mitglieder nur Titel und „Die Tage“/das Datum – weder Link noch Titelbild werden ausgeliefert. Die Freigabe passiert automatisch zum eingestellten Zeitpunkt (Uhrzeit Deutschland), danach erscheint im internen Bereich eine Info für eine Woche."} />
+            </p>
+          </div>
+
           {/* Zeile 2: YT-URL/ID + Titel */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs text-gray-400"><T value={"YouTube-Link oder -ID *"} /></label>
+              <label className="mb-1 block text-xs text-gray-400"><T value={"YouTube-Link oder -ID (leer lassen = nur Ankündigung/Teaser)"} /></label>
               <L as="input"
                 value={form.youtubeId}
                 onChange={e => {
@@ -271,7 +293,7 @@ export default function VideosTab() {
                     {items.map(v => (
                       <div key={v.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-800/40 transition">
                         {/* Mini-Thumbnail */}
-                        {(v.thumbnailUrl || v.type === 'VIDEO') && (
+                        {(v.thumbnailUrl || (v.type === 'VIDEO' && v.youtubeId)) && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <L as="img"
                             src={v.thumbnailUrl || `https://img.youtube.com/vi/${v.youtubeId}/default.jpg`}
@@ -279,13 +301,21 @@ export default function VideosTab() {
                             className="h-10 w-16 rounded object-cover shrink-0 border border-white/10"
                           />
                         )}
-                        {v.type === 'PLAYLIST' && !v.thumbnailUrl && (
+                        {(v.type === 'PLAYLIST' || !v.youtubeId) && !v.thumbnailUrl && (
                           <div className="h-10 w-16 rounded shrink-0 bg-slate-700 flex items-center justify-center border border-white/10">
                             <span className="text-xs text-gray-500">☰</span>
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">{v.title}</p>
+                          <p className="text-sm font-medium text-white truncate">{v.title}
+                            {v.released === false && (
+                              <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
+                                {!v.youtubeId
+                                  ? '⏳ Teaser (noch kein Link)'
+                                  : v.releaseAt ? `⏳ ab ${new Date(v.releaseAt).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}` : '⏳ gesperrt'}
+                              </span>
+                            )}
+                          </p>
                           <p className="mt-0.5 text-xs text-gray-500 font-mono">
                             {v.type === 'PLAYLIST' ? '☰' : '▶'} {v.youtubeId}
                             {v.year ? ` · ${v.year}` : ''}
@@ -294,9 +324,11 @@ export default function VideosTab() {
                           </p>
                         </div>
                         <div className="flex gap-2 shrink-0">
-                          <a href={`https://www.youtube.com/${v.type === 'PLAYLIST' ? `playlist?list=${v.youtubeId}` : `watch?v=${v.youtubeId}`}`}
-                            target="_blank" rel="noopener noreferrer"
-                            className="rounded px-2 py-1 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 transition"><T value={"↗ YT"} /></a>
+                          {v.youtubeId && (
+                            <a href={`https://www.youtube.com/${v.type === 'PLAYLIST' ? `playlist?list=${v.youtubeId}` : `watch?v=${v.youtubeId}`}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="rounded px-2 py-1 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 transition"><T value={"↗ YT"} /></a>
+                          )}
                           <button onClick={() => startEdit(v)}
                             className="rounded px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 transition"><T value={"✏️ Bearbeiten"} /></button>
                           <button onClick={() => handleDelete(v.id!, v.title)}
