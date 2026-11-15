@@ -14,7 +14,7 @@
  */
 export function getApiBase(): string {
   // Serverseitig (Server Components / generateStaticParams):
-  // Node.js braucht absolute URL – BACKEND_URL landet NIE im Client-Bundle.
+  // Node.js braucht absolute URL - BACKEND_URL landet NIE im Client-Bundle.
   if (typeof window === 'undefined') {
     const serverUrl = process.env['BACKEND_URL']
     if (serverUrl && serverUrl.trim() !== '') return serverUrl.trim()

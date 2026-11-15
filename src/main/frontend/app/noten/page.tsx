@@ -515,7 +515,7 @@ export default function NotenPage() {
   const [preview, setPreview] = useState<Note | null>(null)
   const downloadLinkRef = useRef<HTMLAnchorElement>(null)
 
-  useEffect(() => { document.title = 'Notenarchiv – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Notenarchiv - Schwalmtalzupfer' }, [])
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login')

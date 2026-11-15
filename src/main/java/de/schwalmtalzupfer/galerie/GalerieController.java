@@ -95,7 +95,7 @@ public class GalerieController {
             return result;
         } catch (Exception e) {
             System.err.println("ERROR in galerie browse for prefix '" + prefix + "': " + e.getMessage());
-            // Leeres Ergebnis zurückgeben statt 500 – Frontend zeigt "Keine Inhalte" an
+            // Leeres Ergebnis zurückgeben statt 500 - Frontend zeigt "Keine Inhalte" an
             Map<String, Object> empty = new HashMap<>();
             empty.put("prefix", prefix);
             empty.put("folders", Collections.emptyList());
@@ -106,7 +106,7 @@ public class GalerieController {
 
     /**
      * Gibt alle Alben (Blatt-Ordner mit Bildern) als flache Liste zurück.
-     * Ein einzelner S3-Call für alle Keys – daraus wird die Struktur abgeleitet.
+     * Ein einzelner S3-Call für alle Keys - daraus wird die Struktur abgeleitet.
      */
     @GetMapping("/albums")
     public List<Map<String, Object>> listAllAlbums() {

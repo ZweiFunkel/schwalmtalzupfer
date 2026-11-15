@@ -119,7 +119,7 @@ export default function VideosTab() {
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
           <h3 className="font-bold text-white"><T value={editId ? '✏️ Video bearbeiten' : '+ Video / Playlist hinzufügen'} /></h3>
-          <p className="mt-0.5 text-xs text-gray-400"><T value={" Einfach den vollen YouTube-Link einfügen – ID und Typ werden automatisch erkannt. 🎉 "} /></p>
+          <p className="mt-0.5 text-xs text-gray-400"><T value={" Einfach den vollen YouTube-Link einfügen - ID und Typ werden automatisch erkannt. 🎉 "} /></p>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Zeile 1: Kategorie + Typ */}
@@ -153,7 +153,7 @@ export default function VideosTab() {
                   <label className="mb-1 block text-xs text-gray-400"><T value={"Tag"} /></label>
                   <select value={form.day} onChange={e => set('day', e.target.value)}
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none">
-                    <option value=""><T value={"– kein Tag –"} /></option>
+                    <option value=""><T value={"- kein Tag -"} /></option>
                     <option><T value={"Montag"} /></option>
                     <option><T value={"Dienstag"} /></option>
                     <option><T value={"Mittwoch"} /></option>
@@ -164,7 +164,7 @@ export default function VideosTab() {
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="mb-1 block text-xs text-gray-400"><T value={"Zeitabschnitt (optional, z.B. Morgen/Abend – nur nötig, wenn ein Tag mehrere Playlists hat)"} /></label>
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Zeitabschnitt (optional, z.B. Morgen/Abend - nur nötig, wenn ein Tag mehrere Playlists hat)"} /></label>
                   <L as="input" value={form.subcategory} onChange={e => set('subcategory', e.target.value)}
                     placeholder="Morgen"
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
@@ -200,14 +200,14 @@ export default function VideosTab() {
               {form.releaseAt ? (
                 <span className="text-xs font-semibold text-green-400">✓ Freigabe: {new Date(form.releaseAt).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })} Uhr</span>
               ) : (
-                <span className="text-xs font-semibold text-amber-400">⚠ Kein Datum gewählt – Video ist sofort sichtbar (Datum UND Uhrzeit auswählen)</span>
+                <span className="text-xs font-semibold text-amber-400">⚠ Kein Datum gewählt - Video ist sofort sichtbar (Datum UND Uhrzeit auswählen)</span>
               )}
               {form.releaseAt && (
                 <button type="button" onClick={() => set('releaseAt', '')} className="text-xs text-gray-400 hover:text-white"><T value={"✕ sofort sichtbar"} /></button>
               )}
             </div>
             <p className="mt-1.5 text-xs text-gray-500">
-              <T value={"Bis dahin sehen Mitglieder nur Titel und „Die Tage“/das Datum – weder Link noch Titelbild werden ausgeliefert. Die Freigabe passiert automatisch zum eingestellten Zeitpunkt (Uhrzeit Deutschland), danach erscheint im internen Bereich eine Info für eine Woche."} />
+              <T value={"Bis dahin sehen Mitglieder nur Titel und „Die Tage“/das Datum - weder Link noch Titelbild werden ausgeliefert. Die Freigabe passiert automatisch zum eingestellten Zeitpunkt (Uhrzeit Deutschland), danach erscheint im internen Bereich eine Info für eine Woche."} />
             </p>
           </div>
 
@@ -241,14 +241,14 @@ export default function VideosTab() {
             <div>
               <label className="mb-1 block text-xs text-gray-400"><T value={"Titel *"} /></label>
               <L as="input" value={form.title} onChange={e => set('title', e.target.value)}
-                placeholder="Sommerkonzert 2024 – Freitag Highlights"
+                placeholder="Sommerkonzert 2024 - Freitag Highlights"
                 className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
             </div>
           </div>
 
           {/* Zeile 3: Thumbnail (optional, besonders für Playlists) */}
           <ImageField
-            label={`Thumbnail-Bild (optional${form.type === 'PLAYLIST' ? ' – empfohlen für Playlists' : ''})`}
+            label={`Thumbnail-Bild (optional${form.type === 'PLAYLIST' ? ' - empfohlen für Playlists' : ''})`}
             value={form.thumbnailUrl}
             onChange={v => set('thumbnailUrl', v)}
           />
@@ -324,7 +324,7 @@ export default function VideosTab() {
                           <p className="mt-0.5 text-xs text-gray-500 font-mono">
                             {v.type === 'PLAYLIST' ? '☰' : '▶'} {v.youtubeId}
                             {v.year ? ` · ${v.year}` : ''}
-                            {v.day ? ` – ${v.day}` : ''}
+                            {v.day ? ` - ${v.day}` : ''}
                             {v.subcategory ? ` · ${v.subcategory}` : ''}
                           </p>
                         </div>

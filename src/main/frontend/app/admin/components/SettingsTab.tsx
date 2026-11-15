@@ -178,7 +178,7 @@ function DropdownItemsEditor({ items, pages, onChange }: {
             {available.map(p => (
               <button key={p.slug} onClick={() => addItem(p.slug)}
                 className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-800 px-2.5 py-1 text-xs text-gray-400 hover:border-green-500/60 hover:bg-green-900/20 hover:text-green-400 transition">
-                + <span className="font-mono">/{p.slug}</span> <span className="text-gray-500">– {p.title}</span>
+                + <span className="font-mono">/{p.slug}</span> <span className="text-gray-500">- {p.title}</span>
               </button>
             ))}
           </div>
@@ -335,8 +335,8 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                       <label className="mb-1 block text-xs text-gray-400"><T value={"Zielseite"} /></label>
                       <select value={group.target} onChange={e => updateGroup(gi, { target: e.target.value || undefined })}
                         className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-blue-500 focus:outline-none">
-                        <option value=""><T value={"— Seite auswählen —"} /></option>
-                        {pages.map(p => <option key={p.slug} value={p.slug}>/{p.slug} – {p.title}</option>)}
+                        <option value=""><T value={"- Seite auswählen -"} /></option>
+                        {pages.map(p => <option key={p.slug} value={p.slug}>/{p.slug} - {p.title}</option>)}
                       </select>
                     </div>
                   )}
@@ -368,7 +368,7 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
         <div className="flex items-center justify-between px-5 py-3 border-b border-blue-500/10">
           <div>
             <p className="text-sm font-bold text-blue-300"><T value={"🔗 Feste Links"} /></p>
-            <p className="mt-0.5 text-xs text-gray-500"><T value={"Eigenständige Links ohne Dropdown – z. B. „Intern\" nur für Mitglieder."} /></p>
+            <p className="mt-0.5 text-xs text-gray-500"><T value={"Eigenständige Links ohne Dropdown - z. B. „Intern\" nur für Mitglieder."} /></p>
           </div>
           <button onClick={addFixedLink} className="rounded-lg border border-blue-500/30 bg-blue-900/20 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-800/40 transition"><T value={" + Festen Link "} /></button>
         </div>
@@ -497,7 +497,7 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
       <div className="rounded-xl border border-red-500/20 bg-red-900/10 overflow-hidden">
         <div className="px-5 py-3 border-b border-red-500/10">
           <p className="text-sm font-bold text-red-300"><T value={"🚫 Einzelseiten ausblenden"} /></p>
-          <p className="mt-0.5 text-xs text-gray-500"><T value={"Seiten ohne Dropdown erscheinen als eigenständiger Link – hier kannst du einzelne davon verstecken."} /></p>
+          <p className="mt-0.5 text-xs text-gray-500"><T value={"Seiten ohne Dropdown erscheinen als eigenständiger Link - hier kannst du einzelne davon verstecken."} /></p>
         </div>
         <div className="p-4">
           {(() => {
@@ -514,7 +514,7 @@ function NavConfigEditor({ settings, setSettings, allPages, reloadPages }: {
                       <span className="text-white text-xs">✓</span>
                     </span>
                     <span className="font-mono text-xs w-28 truncate">/{slug}</span>
-                    <span className="flex-1 italic text-yellow-500/70 text-xs"><T value={"⚠ Seite nicht gefunden – klicken zum Entfernen"} /></span>
+                    <span className="flex-1 italic text-yellow-500/70 text-xs"><T value={"⚠ Seite nicht gefunden - klicken zum Entfernen"} /></span>
                   </button>
                 ))}
                 {visiblePages.map(p => {
@@ -675,7 +675,7 @@ export default function SettingsTab() {
               className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition whitespace-nowrap"><T value={" 📁 R2 wählen "} /></button>
           </div>
           <p className="mt-1 text-xs text-gray-500">
-            Aktuell: <span className="font-mono text-green-400"><T value={settings.noten_prefix || '(nicht gesetzt – Root)'} /></span>
+            Aktuell: <span className="font-mono text-green-400"><T value={settings.noten_prefix || '(nicht gesetzt - Root)'} /></span>
           </p>
         </div>
       </div>
@@ -699,7 +699,7 @@ export default function SettingsTab() {
               className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-slate-600 transition whitespace-nowrap"><T value={" 📁 R2 wählen "} /></button>
           </div>
           <p className="mt-1 text-xs text-gray-500">
-            Aktuell: <span className="font-mono text-green-400"><T value={settings.galerie_intern_prefix || '(nicht gesetzt – Galerie zeigt "Noch nichts hinterlegt")'} /></span>
+            Aktuell: <span className="font-mono text-green-400"><T value={settings.galerie_intern_prefix || '(nicht gesetzt - Galerie zeigt "Noch nichts hinterlegt")'} /></span>
           </p>
         </div>
       </div>

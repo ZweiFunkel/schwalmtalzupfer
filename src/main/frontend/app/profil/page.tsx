@@ -23,7 +23,7 @@ export default function ProfilPage() {
   const [pwSaving, setPwSaving] = useState(false)
   const [pwMsg, setPwMsg] = useState<{ text: string; error: boolean } | null>(null)
 
-  useEffect(() => { document.title = 'Profil – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Profil - Schwalmtalzupfer' }, [])
 
   useEffect(() => {
     if (!loading && !user) router.push('/login')
@@ -145,7 +145,7 @@ export default function ProfilPage() {
             </div>
             <div>
               <p className="text-gray-400"><T value={"Uhrzeit"} /></p>
-              <p className="text-white font-medium">{gruppe.vonUhrzeit} – {gruppe.bisUhrzeit}<T value={" Uhr"} /></p>
+              <p className="text-white font-medium">{gruppe.vonUhrzeit} - {gruppe.bisUhrzeit}<T value={" Uhr"} /></p>
             </div>
             {monatsbeitragCents != null && (
               <div>
@@ -186,7 +186,7 @@ export default function ProfilPage() {
                       )
                     })()
                   ) : (
-                    <p className="text-white font-medium">–</p>
+                    <p className="text-white font-medium">-</p>
                   )}
                   {gruppe.location.parkplatzInfo && (
                     <p className="mt-1 text-xs text-gray-500">🅿️ {gruppe.location.parkplatzInfo}</p>
@@ -215,7 +215,7 @@ export default function ProfilPage() {
           <L as="input" value={username} onChange={e => setUsername(e.target.value)}
             placeholder="z.B. max.mustermann"
             className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none" />
-          <p className="mt-1 text-xs text-gray-500"><T value={"Damit kannst du dich alternativ zur E-Mail-Adresse einloggen. 3–50 Zeichen, nur Buchstaben, Zahlen, Punkt, Unterstrich oder Bindestrich."} /></p>
+          <p className="mt-1 text-xs text-gray-500"><T value={"Damit kannst du dich alternativ zur E-Mail-Adresse einloggen. 3-50 Zeichen, nur Buchstaben, Zahlen, Punkt, Unterstrich oder Bindestrich."} /></p>
         </div>
         <div>
           <label className="mb-1 block text-sm text-gray-400"><T value={"Vorname"} /></label>

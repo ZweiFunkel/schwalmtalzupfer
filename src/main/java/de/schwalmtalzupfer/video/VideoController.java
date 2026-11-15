@@ -29,7 +29,7 @@ public class VideoController {
     private final ConcurrentHashMap<String, Object[]> playlistCache = new ConcurrentHashMap<>();
     private static final long CACHE_TTL_MS = 60 * 60 * 1000L;
 
-    /** Alle Videos abrufen – für alle angemeldeten Nutzer */
+    /** Alle Videos abrufen - für alle angemeldeten Nutzer */
     @GetMapping
     @PreAuthorize("hasAnyRole('GUEST', 'MEMBER', 'BOARD', 'ADMIN')")
     public List<Video> getAll(Authentication auth) {
@@ -111,7 +111,7 @@ public class VideoController {
         System.out.println("API Key length: " + (youtubeApiKey == null ? "null" : youtubeApiKey.length()));
 
         if (youtubeApiKey == null || youtubeApiKey.isEmpty()) {
-            System.out.println("API Key is null or empty – returning empty list");
+            System.out.println("API Key is null or empty - returning empty list");
             return ResponseEntity.ok(new ArrayList<>());
         }
 
@@ -203,7 +203,7 @@ public class VideoController {
         v.setThumbnailUrl(t);
     }
 
-    /** Neues Video anlegen – nur Vorstand/Admin */
+    /** Neues Video anlegen - nur Vorstand/Admin */
     @PostMapping
     @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
     public ResponseEntity<Video> create(@RequestBody Video video) {
@@ -214,7 +214,7 @@ public class VideoController {
         return ResponseEntity.ok(videoRepository.save(video));
     }
 
-    /** Video aktualisieren – nur Vorstand/Admin */
+    /** Video aktualisieren - nur Vorstand/Admin */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
     public ResponseEntity<Video> update(@PathVariable UUID id, @RequestBody Video video) {
@@ -226,7 +226,7 @@ public class VideoController {
         return ResponseEntity.ok(videoRepository.save(video));
     }
 
-    /** Video löschen – nur Vorstand/Admin */
+    /** Video löschen - nur Vorstand/Admin */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {

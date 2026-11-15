@@ -12,8 +12,8 @@ export interface Meldung {
   imageUrl?: string
   style?: 'info' | 'warning' | 'success'
   activeForBanner: boolean
-  validFrom?: string   // dd.MM.yyyy – Anfang des Zeitfensters (inkl.)
-  validUntil?: string  // dd.MM.yyyy – Ende des Zeitfensters (inkl.)
+  validFrom?: string   // dd.MM.yyyy - Anfang des Zeitfensters (inkl.)
+  validUntil?: string  // dd.MM.yyyy - Ende des Zeitfensters (inkl.)
 }
 
 function parseDMY(s: string): string {

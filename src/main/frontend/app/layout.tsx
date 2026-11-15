@@ -16,9 +16,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: {
     default: 'Schwalmtalzupfer',
-    template: '%s – Schwalmtalzupfer',
+    template: '%s - Schwalmtalzupfer',
   },
-  description: 'Offizielle Website des Schwalmtalzupfer e.V. – Jugendförderung & Musikschule',
+  description: 'Offizielle Website des Schwalmtalzupfer e.V. - Jugendförderung & Musikschule',
   icons: {
     icon: '/icon.svg',
     shortcut: '/icon.svg',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" suppressHydrationWarning data-developer="NOVEX Labs – novexlabs.de">
+    <html lang="de" suppressHydrationWarning data-developer="NOVEX Labs - novexlabs.de">
       <body className={`${inter.className} bg-white dark:bg-slate-950 text-gray-900 dark:text-white antialiased`}>
         {/* Prevent dark-mode flash before React hydration */}
         <Script id="theme-init" strategy="beforeInteractive">{`try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}`}</Script>

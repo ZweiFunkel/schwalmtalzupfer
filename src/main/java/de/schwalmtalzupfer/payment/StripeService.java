@@ -90,7 +90,7 @@ public class StripeService {
             return rate.getStripePriceId();
         }
         Product product = Product.create(ProductCreateParams.builder()
-                .setName("Mitgliedsbeitrag – " + rate.getPriceGroup().getName())
+                .setName("Mitgliedsbeitrag - " + rate.getPriceGroup().getName())
                 .build());
         Price price = Price.create(PriceCreateParams.builder()
                 .setProduct(product.getId())

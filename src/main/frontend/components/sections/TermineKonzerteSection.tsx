@@ -18,7 +18,7 @@ function isArchived(archivedAfter?: string): boolean {
   return new Date(+parts[2], +parts[1] - 1, +parts[0]) < new Date()
 }
 
-/** Parses dd.MM.yyyy or ranges like "dd.MM.yyyy – dd.MM.yyyy" — always uses start date */
+/** Parses dd.MM.yyyy or ranges like "dd.MM.yyyy - dd.MM.yyyy" - always uses start date */
 function parseDate(d: string): Date {
   const start = d.replace(/(–|-)[\s\S]*/g, '').trim()
   const p = start.split('.')

@@ -21,7 +21,7 @@ function slugify(text: string) {
 // Ermittelt den CMS-Slug aus dem tatsächlichen Browser-Pfad (erstes Segment).
 // Wird als primäre Quelle genutzt, damit die Komponente auch dann den
 // richtigen Slug lädt, wenn sie über die generische Lade-Shell (unbekannter,
-// zur Build-Zeit nicht existenter Slug – siehe WebConfig.java Fallback)
+// zur Build-Zeit nicht existenter Slug - siehe WebConfig.java Fallback)
 // ausgeliefert wurde, statt über die dedizierte [slug]/page.tsx-Route.
 function slugFromPathname(pathname: string | null): string {
   const trimmed = (pathname ?? '').replace(/^\/+|\/+$/g, '')

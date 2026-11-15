@@ -66,7 +66,7 @@ public class DataInitializer implements ApplicationRunner {
                         .position(1)
                         .content(Map.of(
                                 "headline", "Herzlich Willkommen",
-                                "subheadline", "Musik verbindet – Gemeinschaft bewegt.",
+                                "subheadline", "Musik verbindet - Gemeinschaft bewegt.",
                                 "ctaLabel", "Konzerte entdecken",
                                 "ctaHref", "/konzerte",
                                 "imageUrl", "/assets/hero-bg.jpg"
@@ -96,7 +96,7 @@ public class DataInitializer implements ApplicationRunner {
                                 "events", List.of(
                                         Map.of("title", "Sommerkonzert 2026", "date", "28.06.2026",
                                                 "location", "Waldnieler Marktplatz",
-                                                "description", "Open Air – kostenloser Eintritt."),
+                                                "description", "Open Air - kostenloser Eintritt."),
                                         Map.of("title", "Herbstkonzert 2026", "date", "15.10.2026",
                                                 "location", "Kulturzentrum Schwalmtal",
                                                 "description", "Herbstliche Klänge für jung und alt."),

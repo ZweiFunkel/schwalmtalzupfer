@@ -24,7 +24,7 @@ export default function BeitrittPage() {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => { document.title = 'Beitreten – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Beitreten - Schwalmtalzupfer' }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,7 +62,7 @@ export default function BeitrittPage() {
   return (
     <div className="mx-auto max-w-xl px-6 py-12">
       <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white"><T value={"Verein beitreten"} /></h1>
-      <p className="mb-8 text-gray-500 dark:text-gray-400"><T value={" Stell hier deinen Beitrittsantrag – der Vorstand meldet sich anschließend bei dir mit den Details zu Unterrichtsgruppe und Beitrag. "} /></p>
+      <p className="mb-8 text-gray-500 dark:text-gray-400"><T value={" Stell hier deinen Beitrittsantrag - der Vorstand meldet sich anschließend bei dir mit den Details zu Unterrichtsgruppe und Beitrag. "} /></p>
 
       {sent ? (
         <div className="rounded-xl border border-green-500/30 bg-green-50 dark:bg-green-900/20 p-6 text-center">

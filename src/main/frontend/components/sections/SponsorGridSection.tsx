@@ -79,7 +79,7 @@ function SponsorImage({ src, alt, isDarkTheme, onClick, onLoaded }: {
     }
   }, [onLoaded])
 
-  // Gecachte Bilder feuern kein onLoad — direkt nach Mount prüfen
+  // Gecachte Bilder feuern kein onLoad - direkt nach Mount prüfen
   useEffect(() => {
     if (imgRef.current?.complete) markLoaded()
   }, [markLoaded])

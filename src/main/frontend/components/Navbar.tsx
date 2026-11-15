@@ -52,7 +52,7 @@ function normalizeNavConfig(raw: Record<string, unknown>): NavConfig {
   if (Array.isArray(raw.dropdowns)) {
     return { dropdowns: raw.dropdowns as NavDropdownGroup[], hidden, fixedLinks }
   }
-  // Legacy-Format (ueberUns / vereinsleben) – fixedLinks werden jetzt auch weitergegeben
+  // Legacy-Format (ueberUns / vereinsleben) - fixedLinks werden jetzt auch weitergegeben
   const groups: NavDropdownGroup[] = []
   if (Array.isArray(raw.ueberUns) && (raw.ueberUns as string[]).length > 0) {
     groups.push({ label: 'Über uns', target: (raw.ueberUns as string[])[0], items: raw.ueberUns as string[] })

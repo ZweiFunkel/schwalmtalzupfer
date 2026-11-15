@@ -82,7 +82,7 @@ export default function MeldungenTab() {
       {/* Header + Add */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-gray-400"><T value={" Erstelle Info-Meldungen. Eine kann als Banner oben aktiviert werden – andere lassen sich mit abgesagten Terminen verknüpfen. "} /></p>
+          <p className="text-xs text-gray-400"><T value={" Erstelle Info-Meldungen. Eine kann als Banner oben aktiviert werden - andere lassen sich mit abgesagten Terminen verknüpfen. "} /></p>
         </div>
         <button onClick={addNew}
           className="shrink-0 rounded-lg border border-dashed border-green-500/40 bg-green-900/10 px-3 py-1.5 text-xs text-green-400 hover:bg-green-900/20 transition"><T value={" + Neue Meldung "} /></button>
@@ -139,7 +139,7 @@ export default function MeldungenTab() {
               <div className="border-t border-white/10 p-4 flex flex-col gap-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs text-gray-400"><T value={"Titel "} /><span className="text-gray-600"><T value={"(nur intern – zur Unterscheidung)"} /></span></label>
+                    <label className="mb-1 block text-xs text-gray-400"><T value={"Titel "} /><span className="text-gray-600"><T value={"(nur intern - zur Unterscheidung)"} /></span></label>
                     <L as="input" value={m.title} onChange={e => update(m.id, { title: e.target.value })}
                       placeholder="z.B. Sommerkonzert 2026 abgesagt"
                       className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
@@ -166,18 +166,18 @@ export default function MeldungenTab() {
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-gray-400"><T value={"Beitragstext "} /><span className="text-gray-600"><T value={"(optional – erscheint im Popup)"} /></span></label>
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Beitragstext "} /><span className="text-gray-600"><T value={"(optional - erscheint im Popup)"} /></span></label>
                   <L as="textarea" value={m.body} onChange={e => update(m.id, { body: e.target.value })}
                     rows={4} placeholder="Ausführliche Infos, Hintergründe, Alternativen..."
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white resize-y focus:border-green-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-gray-400"><T value={"Bild im Popup "} /><span className="text-gray-600"><T value={"(optional – erscheint über dem Text)"} /></span></label>
+                  <label className="mb-1 block text-xs text-gray-400"><T value={"Bild im Popup "} /><span className="text-gray-600"><T value={"(optional - erscheint über dem Text)"} /></span></label>
                   <ImageField label="" value={m.imageUrl ?? ''} onChange={v => update(m.id, { imageUrl: v })} />
                 </div>
                 {/* Zeitplan */}
                 <div className="rounded-lg border border-white/8 bg-slate-800/50 p-3 flex flex-col gap-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={" 🗓 Zeitplan "} /><span className="normal-case font-normal text-gray-600"><T value={"(optional – Banner erscheint automatisch im angegebenen Zeitraum)"} /></span>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={" 🗓 Zeitplan "} /><span className="normal-case font-normal text-gray-600"><T value={"(optional - Banner erscheint automatisch im angegebenen Zeitraum)"} /></span>
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>

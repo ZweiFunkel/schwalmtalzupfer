@@ -15,7 +15,7 @@ export default function KontaktPage() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => { document.title = 'Kontakt – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Kontakt - Schwalmtalzupfer' }, [])
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('betreff') === 'Gitarrenunterricht') setBetreff('Gitarrenunterricht')
@@ -59,7 +59,7 @@ export default function KontaktPage() {
   return (
     <div className="mx-auto max-w-xl px-6 py-12">
       <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white"><T value={"Kontakt"} /></h1>
-      <p className="mb-8 text-gray-500 dark:text-gray-400"><T value={" Du hast eine Frage oder möchtest uns etwas mitteilen? Schreib uns – wir melden uns so schnell wie möglich. "} /></p>
+      <p className="mb-8 text-gray-500 dark:text-gray-400"><T value={" Du hast eine Frage oder möchtest uns etwas mitteilen? Schreib uns - wir melden uns so schnell wie möglich. "} /></p>
 
       <p className="mb-6 text-sm text-gray-600 dark:text-gray-300"><T value={"Gitarrenunterricht und gemeinsames Musizieren sind für Anfänger und Fortgeschrittene, Kinder, Jugendliche und Erwachsene offen. Unsere Gruppen beginnen ab dem 2. Schuljahr. Frag uns gerne über dieses Formular oder unter "} /><a className="underline" href="mailto:info@schwalmtalzupfer.de"><T value={"info@schwalmtalzupfer.de"} /></a>.</p>
       {sent ? (

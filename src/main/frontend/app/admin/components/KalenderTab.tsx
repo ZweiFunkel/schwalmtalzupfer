@@ -116,10 +116,10 @@ function GruppeSelect({ value, onChange, gruppen }: { value: string; onChange: (
       </label>
       <select value={value} onChange={e => onChange(e.target.value)}
         className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-green-500 focus:outline-none">
-        <option value=""><T value={"– keine Gruppe –"} /></option>
+        <option value=""><T value={"- keine Gruppe -"} /></option>
         {gruppen.map(g => (
           <option key={g.id} value={g.id}>
-            {g.wochentag} {g.vonUhrzeit}–{g.bisUhrzeit}{g.location ? ` (${g.location.name})` : ''}
+            {g.wochentag} {g.vonUhrzeit}-{g.bisUhrzeit}{g.location ? ` (${g.location.name})` : ''}
           </option>
         ))}
       </select>
@@ -162,7 +162,7 @@ export default function KalenderTab() {
       if (res.ok) setTermine(await res.json())
       else setLoadError(`Laden fehlgeschlagen (${res.status})`)
     } catch {
-      setLoadError('Laden fehlgeschlagen – bitte Verbindung prüfen.')
+      setLoadError('Laden fehlgeschlagen - bitte Verbindung prüfen.')
     } finally {
       setLoadingTermine(false)
     }
@@ -185,7 +185,7 @@ export default function KalenderTab() {
     if (!id) return null
     const g = gruppen.find(g => g.id === id)
     if (!g) return null
-    return `${g.wochentag} ${g.vonUhrzeit}–${g.bisUhrzeit}${g.location ? ` (${g.location.name})` : ''}`
+    return `${g.wochentag} ${g.vonUhrzeit}-${g.bisUhrzeit}${g.location ? ` (${g.location.name})` : ''}`
   }
 
   const toBody = (d: Partial<KalenderTermin>) => ({
@@ -284,7 +284,7 @@ export default function KalenderTab() {
       if (res.ok && data.success) setSyncMsg({ ok: true, text: `✓ ${data.anzahl} Ferientermin(e) synchronisiert.` })
       else setSyncMsg({ ok: false, text: data.error ?? 'Synchronisierung fehlgeschlagen.' })
     } catch {
-      setSyncMsg({ ok: false, text: 'Synchronisierung fehlgeschlagen – bitte Verbindung prüfen.' })
+      setSyncMsg({ ok: false, text: 'Synchronisierung fehlgeschlagen - bitte Verbindung prüfen.' })
     } finally {
       setSyncing(false)
       setTimeout(() => setSyncMsg(null), 6000)
@@ -317,10 +317,10 @@ export default function KalenderTab() {
     const draft = drafts[t.id] ?? t
     const info = katInfo(t.kategorie)
     const dateLabel = t.endDatum && t.endDatum !== t.startDatum
-      ? `${isoToDe(t.startDatum)} – ${isoToDe(t.endDatum)}`
+      ? `${isoToDe(t.startDatum)} - ${isoToDe(t.endDatum)}`
       : isoToDe(t.startDatum)
     const timeLabel = t.uhrzeitVon
-      ? (t.uhrzeitBis ? `${hhmm(t.uhrzeitVon)} – ${hhmm(t.uhrzeitBis)}` : hhmm(t.uhrzeitVon))
+      ? (t.uhrzeitBis ? `${hhmm(t.uhrzeitVon)} - ${hhmm(t.uhrzeitBis)}` : hhmm(t.uhrzeitVon))
       : ''
     const isOpen = isGenerated ? isAusfallOpen : isEditing
 
@@ -432,7 +432,7 @@ export default function KalenderTab() {
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
           <h3 className="text-sm font-bold text-white"><T value={"🏖 NRW-Schulferien"} /></h3>
-          <p className="mt-0.5 text-xs text-gray-400"><T value={"Unterricht fällt während der Schulferien automatisch aus – hier manuell aktualisieren."} /></p>
+          <p className="mt-0.5 text-xs text-gray-400"><T value={"Unterricht fällt während der Schulferien automatisch aus - hier manuell aktualisieren."} /></p>
         </div>
         <div className="p-5 flex flex-wrap items-center gap-3">
           <button onClick={syncFerien} disabled={syncing}
@@ -545,7 +545,7 @@ export default function KalenderTab() {
       <div className="rounded-xl border border-white/10 bg-slate-900 overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
           <h3 className="text-sm font-bold text-white"><T value={"🚫 Unterrichts-Ausnahmen"} /></h3>
-          <p className="mt-0.5 text-xs text-gray-400"><T value={" Einzelne Tage ohne Unterricht (z.B. Karneval) – unabhängig von den Schulferien. Gilt für eine einzelne Gruppe oder – ohne Auswahl – für alle Gruppen. "} /></p>
+          <p className="mt-0.5 text-xs text-gray-400"><T value={" Einzelne Tage ohne Unterricht (z.B. Karneval) - unabhängig von den Schulferien. Gilt für eine einzelne Gruppe oder - ohne Auswahl - für alle Gruppen. "} /></p>
         </div>
         <div className="p-5 flex flex-col gap-4">
           {ausnahmeMsg && <p className="rounded-lg bg-red-900/30 border border-red-500/20 px-4 py-2 text-sm text-red-400">{ausnahmeMsg}</p>}

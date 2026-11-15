@@ -9,7 +9,7 @@ import Link from 'next/link'
 export default function LoginPage() {
   const { login } = useAuth()
   const router = useRouter()
-  useEffect(() => { document.title = 'Login – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Login - Schwalmtalzupfer' }, [])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

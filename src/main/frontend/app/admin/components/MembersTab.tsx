@@ -208,8 +208,8 @@ export default function MembersTab({ user }: { user: AuthUser }) {
                   {gruppen.map(g => (
                     <tr key={g.id} className="bg-slate-900 hover:bg-slate-800/60 transition">
                       <td className="px-4 py-2.5 text-white font-medium">{g.wochentag}</td>
-                      <td className="px-4 py-2.5 text-gray-300">{g.vonUhrzeit} – {g.bisUhrzeit}<T value={" Uhr"} /></td>
-                      <td className="px-4 py-2.5 text-gray-300">{g.location?.name ?? <span className="text-gray-600 italic">–</span>}</td>
+                      <td className="px-4 py-2.5 text-gray-300">{g.vonUhrzeit} - {g.bisUhrzeit}<T value={" Uhr"} /></td>
+                      <td className="px-4 py-2.5 text-gray-300">{g.location?.name ?? <span className="text-gray-600 italic">-</span>}</td>
                       <td className="px-4 py-2.5">
                         <select value={g.priceGroup?.id ?? ''} onChange={e => updateGruppePreisgruppe(g.id, e.target.value)}
                           className="rounded-lg border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white focus:border-green-500 focus:outline-none">
@@ -236,7 +236,7 @@ export default function MembersTab({ user }: { user: AuthUser }) {
                 <label className="mb-1 block text-xs text-gray-400"><T value={"Wochentag"} /></label>
                 <select value={newGruppe.wochentag} onChange={e => setNewGruppe(p => ({ ...p, wochentag: e.target.value }))}
                   className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none">
-                  <option value=""><T value={"– wählen –"} /></option>
+                  <option value=""><T value={"- wählen -"} /></option>
                   {['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'].map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
@@ -256,7 +256,7 @@ export default function MembersTab({ user }: { user: AuthUser }) {
                 <label className="mb-1 block text-xs text-gray-400"><T value={"Location"} /></label>
                 <select value={newGruppe.locationId} onChange={e => setNewGruppe(p => ({ ...p, locationId: e.target.value }))}
                   className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none">
-                  <option value=""><T value={"– wählen –"} /></option>
+                  <option value=""><T value={"- wählen -"} /></option>
                   {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </select>
               </div>
@@ -264,7 +264,7 @@ export default function MembersTab({ user }: { user: AuthUser }) {
                 <label className="mb-1 block text-xs text-gray-400"><T value={"Preisgruppe"} /></label>
                 <select value={newGruppe.priceGroupId} onChange={e => setNewGruppe(p => ({ ...p, priceGroupId: e.target.value }))}
                   className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none">
-                  <option value=""><T value={"– wählen –"} /></option>
+                  <option value=""><T value={"- wählen -"} /></option>
                   {priceGroups.map(pg => <option key={pg.id} value={pg.id}>{pg.name}</option>)}
                 </select>
               </div>
@@ -296,7 +296,7 @@ export default function MembersTab({ user }: { user: AuthUser }) {
                   {locations.map(l => (
                     <tr key={l.id} className="bg-slate-900 hover:bg-slate-800/60 transition">
                       <td className="px-4 py-2.5 text-white font-medium">{l.name}</td>
-                      <td className="px-4 py-2.5 text-gray-300">{l.adresse || <span className="text-gray-600 italic">–</span>}</td>
+                      <td className="px-4 py-2.5 text-gray-300">{l.adresse || <span className="text-gray-600 italic">-</span>}</td>
                       <td className="px-4 py-2.5">
                         <L as="input"
                           value={parkplatzDraft[l.id] ?? l.parkplatzInfo ?? ''}

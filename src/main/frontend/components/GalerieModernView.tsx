@@ -179,12 +179,12 @@ function PhotoThumb({ img, apiPath, eager, onLoaded, onClick }: {
       className="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500"
       aria-label="Foto öffnen"
     >
-      {/* Skeleton — verschwindet wenn Bild geladen */}
+      {/* Skeleton - verschwindet wenn Bild geladen */}
       {!loaded && (
         <div className="absolute inset-0 animate-pulse bg-gray-200 dark:bg-slate-700" />
       )}
 
-      {/* Bild — wird eingeblendet sobald geladen */}
+      {/* Bild - wird eingeblendet sobald geladen */}
       {src && (
         // eslint-disable-next-line @next/next/no-img-element
         <L as="img"
@@ -250,7 +250,7 @@ function PhotoGrid({ images, apiPath }: { images: BrowseImage[]; apiPath: string
         </div>
       )}
 
-      {/* Echtes Grid — eingeblendet sobald above-fold Bilder bereit sind */}
+      {/* Echtes Grid - eingeblendet sobald above-fold Bilder bereit sind */}
       <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 transition-opacity duration-500 ${
         gridVisible ? 'opacity-100' : 'opacity-0 absolute pointer-events-none'
       }`}>
@@ -326,7 +326,7 @@ export default function GalerieModernView({
     const title = isRoot ? 'Galerie' : buildTitle(
       currentPrefix.replace(/\/$/, '').split('/').filter(Boolean)
     )
-    document.title = `${title} – Schwalmtalzupfer`
+    document.title = `${title} - Schwalmtalzupfer`
   }, [currentPrefix, isRoot])
 
   useEffect(() => {

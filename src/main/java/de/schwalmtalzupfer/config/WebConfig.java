@@ -132,7 +132,7 @@ public class WebConfig implements WebMvcConfigurer {
                         if (!resource.exists() || !resource.isReadable()) {
                             return false;
                         }
-                        // isFile() ist in JAR-Deployments immer false – stattdessen Stream testen.
+                        // isFile() ist in JAR-Deployments immer false - stattdessen Stream testen.
                         // Verzeichnisse (z.B. "galerie/") werfen beim Lesen eine IOException.
                         try (var ignored = resource.getInputStream()) {
                             return true;

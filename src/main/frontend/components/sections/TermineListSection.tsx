@@ -53,7 +53,7 @@ function isArchived(archivedAfter?: string): boolean {
 }
 
 export function terminAnchor(date: string, title: string): string {
-  const slug = (date.split(/[.\s–-]/)[0] + '-' + date.match(/(\d{4})/)?.[1] + '-' + title)
+  const slug = (date.split(/[.\s--]/)[0] + '-' + date.match(/(\d{4})/)?.[1] + '-' + title)
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
   return slug
 }
@@ -202,7 +202,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
             const monthLabel = group.month === -1 ? 'Weitere' : MONTH_NAMES[group.month]
             return (
             <div key={group.yearMonth}>
-              {/* Year separator — only shown when year changes and differs from current */}
+              {/* Year separator - only shown when year changes and differs from current */}
               {showYearBanner && (
                 <div className="mb-8 -mx-1 flex items-center gap-4">
                   <div className="flex items-center gap-2 rounded-xl border border-green-500/25 bg-green-500/8 px-4 py-2">
@@ -311,7 +311,7 @@ export default function TermineListSection({ content }: { content: TermineListCo
           )})}
         </div>
 
-        {/* Past termine — always below upcoming, never interleaved */}
+        {/* Past termine - always below upcoming, never interleaved */}
         {past.length > 0 && (
           <div className="mt-10">
             <button

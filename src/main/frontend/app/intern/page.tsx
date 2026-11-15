@@ -98,7 +98,7 @@ export default function InternPage() {
   const router = useRouter()
   const [cmsSections, setCmsSections] = useState<PageSection[]>([])
 
-  useEffect(() => { document.title = 'Intern – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Intern - Schwalmtalzupfer' }, [])
 
   useEffect(() => {
     if (!loading && !user) router.push('/login')
@@ -179,7 +179,7 @@ export default function InternPage() {
           </div>
           <div>
             <p className="font-semibold text-gray-900 dark:text-white"><T value={"Merch"} /></p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed"><T value={" Vereinskleidung & Fanartikel – mit Bestellformular. "} /></p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed"><T value={" Vereinskleidung & Fanartikel - mit Bestellformular. "} /></p>
           </div>
           <div className="mt-auto flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-500 group-hover:text-green-500 dark:group-hover:text-green-400 transition">
             <span><T value={"Zum Merch"} /></span>
@@ -198,7 +198,7 @@ export default function InternPage() {
           </div>
           <div>
             <p className="font-semibold text-gray-900 dark:text-white"><T value={"Interne Galerie"} /></p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed"><T value={" Fotos nur für Mitglieder – nicht öffentlich einsehbar. "} /></p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed"><T value={" Fotos nur für Mitglieder - nicht öffentlich einsehbar. "} /></p>
           </div>
           <div className="mt-auto flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-500 group-hover:text-green-500 dark:group-hover:text-green-400 transition">
             <span><T value={"Zur Galerie"} /></span>

@@ -52,13 +52,13 @@ interface YouTubePlayerProps {
  * Wrapper um die YouTube-IFrame-Player-API.
  *
  * Nutzt bewusst die native YouTube-Bedienoberfläche (controls: 1) statt eines
- * selbstgebauten Scrubbers – dadurch bekommen Nutzer:innen automatisch
+ * selbstgebauten Scrubbers - dadurch bekommen Nutzer:innen automatisch
  * Tastatursteuerung, Untertitel, Qualitätswahl und Vollbild "geschenkt".
  *
  * Der Mehrwert dieser Komponente gegenüber einem rohen <iframe>: Über die
  * onError-Events der JS-API lässt sich erkennen, wenn ein Video vom
  * Rechteinhaber für die Einbettung gesperrt wurde (Codes 101/150). Ein rohes
- * <iframe src="..."> feuert dafür NICHT das DOM-onerror-Event – YouTube
+ * <iframe src="..."> feuert dafür NICHT das DOM-onerror-Event - YouTube
  * rendert stattdessen nur eine hässliche Fehlermeldung innerhalb des Frames.
  * Hier fangen wir diesen Fall ab und zeigen stattdessen einen eigenen,
  * themenfähigen Hinweis mit Link zu YouTube.
@@ -161,7 +161,7 @@ export default function YouTubePlayer({
         try {
           playerRef.current.destroy()
         } catch {
-          // Player war bereits zerstört/nicht initialisiert – ignorieren
+          // Player war bereits zerstört/nicht initialisiert - ignorieren
         }
       }
       playerRef.current = null
@@ -228,7 +228,7 @@ export default function YouTubePlayer({
             {title && <p className="text-sm font-semibold text-gray-800 dark:text-gray-100"><T value={title} /></p>}
             <p className="text-xs text-gray-500 dark:text-gray-400">
               <T value={isEmbedDisabledCode(error.code)
-                ? 'Video nicht verfügbar – der Rechteinhaber hat die Einbettung dieses Videos außerhalb von YouTube gesperrt.'
+                ? 'Video nicht verfügbar - der Rechteinhaber hat die Einbettung dieses Videos außerhalb von YouTube gesperrt.'
                 : error.message} />
             </p>
             <a

@@ -63,7 +63,7 @@ public class AuthController {
                         Map<String, Object> naechste = new LinkedHashMap<>();
                         naechste.put("gueltigAb", next.getGueltigAb().toString());
                         naechste.put("gruppeLabel", next.getGitarrengruppe() != null
-                                ? next.getGitarrengruppe().getWochentag() + " " + next.getGitarrengruppe().getVonUhrzeit() + "–" + next.getGitarrengruppe().getBisUhrzeit()
+                                ? next.getGitarrengruppe().getWochentag() + " " + next.getGitarrengruppe().getVonUhrzeit() + "-" + next.getGitarrengruppe().getBisUhrzeit()
                                 : "Keine Gruppe");
                         naechste.put("monatsbeitragCents", next.getMonatsbeitragCents());
                         dto.put("naechsteAenderung", naechste);

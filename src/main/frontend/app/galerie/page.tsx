@@ -13,7 +13,7 @@ export default function GaleriePage() {
   const [sections, setSections] = useState<PageData['sections']>([])
   const pageDone = usePageLoad('galerie-page')
 
-  useEffect(() => { document.title = 'Galerie – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Galerie - Schwalmtalzupfer' }, [])
 
   useEffect(() => {
     fetch(`${API_BASE}/api/pages/galerie`)

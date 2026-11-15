@@ -485,7 +485,7 @@ function PersonGridForm({ content, onChange }: { content: Record<string, unknown
 
 // ─── Next Concert Form ────────────────────────────────────────────────────────
 function NextConcertForm({ content, onChange }: { content: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
-  // reuse EventCardForm logic – same structure
+  // reuse EventCardForm logic - same structure
   const events: EventItem[] = (content.events as EventItem[]) ?? []
   const update = (i: number, key: string, val: string) =>
     onChange({ ...content, events: events.map((ev, idx) => idx === i ? { ...ev, [key]: val } : ev) })
@@ -599,7 +599,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
     const parts = date.split(/\s*[–-]\s*/)
     return { dateFrom: parts[0]?.trim() ?? '', dateTo: parts[1]?.trim() || '' }
   }
-  const joinDate = (from: string, to: string) => to.trim() ? `${from} – ${to}` : from
+  const joinDate = (from: string, to: string) => to.trim() ? `${from} - ${to}` : from
 
   const isTerminPast = (t: TerminItem) => {
     const { dateFrom, dateTo } = splitDate(t.date)
@@ -641,7 +641,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
     const updated = termine.map(t => t._key === key ? { ...t, ...patch } : t)
     onChange({ ...content, termine: sortedTermine(updated) })
   }
-  // updateNoSort: patches without re-sorting — used for date inputs while typing
+  // updateNoSort: patches without re-sorting - used for date inputs while typing
   // to prevent the card from jumping/scrolling on each keystroke
   const updateNoSort = (key: string, patch: Partial<TerminItem>) => {
     const updated = termine.map(t => t._key === key ? { ...t, ...patch } : t)
@@ -710,7 +710,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
           <div className="border-t border-white/8 p-3 flex flex-col gap-3">
             <Field label="Bezeichnung" value={t.title} onChange={v => update(key, { title: v })} />
 
-            {/* Von / Bis — sort triggers on blur */}
+            {/* Von / Bis - sort triggers on blur */}
             <div className="rounded-lg border border-white/8 bg-slate-800/50 p-3 flex flex-col gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500"><T value={"📅 Datum"} /></p>
               <div className="grid grid-cols-2 gap-2">
@@ -738,7 +738,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
               <label className="mb-1 block text-xs text-gray-400"><T value={" 🕐 Uhrzeit(en) "} /><span className="ml-1 text-gray-600"><T value={"(mehrere Zeilen für mehrere Tage/Zeiten)"} /></span>
               </label>
               <L as="textarea" value={t.time ?? ''} onChange={e => update(key, { time: e.target.value })} rows={2}
-                placeholder={'19:00\noder:\nFr: 17:00\nSa: 10:00 – 17:00\nSo: 11:00'}
+                placeholder={'19:00\noder:\nFr: 17:00\nSa: 10:00 - 17:00\nSo: 11:00'}
                 className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none resize-y" />
             </div>
 
@@ -799,7 +799,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
             </label>
             {/* Archivierung */}
             <div className="rounded-lg border border-white/5 bg-slate-800/40 p-3 flex flex-col gap-1.5">
-              <label className="mb-0.5 block text-xs text-gray-400 font-medium"><T value={" Nicht mehr anzeigen ab "} /><span className="ml-1 font-normal text-gray-600"><T value={"(optional – versteckt in Konzert- & Next-Ansicht, bleibt im Kalender)"} /></span>
+              <label className="mb-0.5 block text-xs text-gray-400 font-medium"><T value={" Nicht mehr anzeigen ab "} /><span className="ml-1 font-normal text-gray-600"><T value={"(optional - versteckt in Konzert- & Next-Ansicht, bleibt im Kalender)"} /></span>
               </label>
               <div className="flex flex-wrap items-center gap-2">
                 <L as="input" type="text" value={t.archivedAfter ?? ''} onChange={e => update(key, { archivedAfter: e.target.value })}
@@ -832,7 +832,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
                       <label className="mb-1 block text-xs text-gray-400"><T value={"Verknüpfte Meldung "} /><span className="text-gray-600"><T value={"(öffnet Popup bei „Weitere Infos\")"} /></span></label>
                       <select value={t.meldungId ?? ''} onChange={e => update(key, { meldungId: e.target.value || undefined })}
                         className="w-full rounded-lg border border-red-500/20 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-red-400 focus:outline-none">
-                        <option value=""><T value={"— keine Meldung —"} /></option>
+                        <option value=""><T value={"- keine Meldung -"} /></option>
                         {meldungen.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
                       </select>
                     </div>
@@ -865,7 +865,7 @@ function TermineListForm({ content, onChange }: { content: Record<string, unknow
         <div className="mt-2">
           <button onClick={() => setShowArchive(v => !v)}
             className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-slate-900/50 px-4 py-2.5 text-left text-xs text-gray-500 hover:text-gray-300 transition">
-            <span className={`transition-transform ${showArchive ? 'rotate-90' : ''}`}>▸</span><T value={" Archiv – "} />{archiveTermine.length}<T value={" vergangene"} />{archiveTermine.length === 1 ? 'r' : ''}<T value={" Termin"} />{archiveTermine.length === 1 ? '' : 'e'}
+            <span className={`transition-transform ${showArchive ? 'rotate-90' : ''}`}>▸</span><T value={" Archiv - "} />{archiveTermine.length}<T value={" vergangene"} />{archiveTermine.length === 1 ? 'r' : ''}<T value={" Termin"} />{archiveTermine.length === 1 ? '' : 'e'}
           </button>
           {showArchive && (
             <div className="mt-2 flex flex-col gap-2">
@@ -908,7 +908,7 @@ function ActivityGridForm({ content, onChange }: { content: Record<string, unkno
             <div className="w-20"><Field label="Icon (Emoji)" value={it.icon ?? ''} onChange={v => update(i, { icon: v })} placeholder="🏕️" /></div>
             <div className="flex-1"><Field label="Titel" value={it.title} onChange={v => update(i, { title: v })} /></div>
           </div>
-          <Field label="Zielgruppe (optional)" value={it.targetGroup ?? ''} onChange={v => update(i, { targetGroup: v })} placeholder="z.B. Kinder 8–12 Jahre" />
+          <Field label="Zielgruppe (optional)" value={it.targetGroup ?? ''} onChange={v => update(i, { targetGroup: v })} placeholder="z.B. Kinder 8-12 Jahre" />
           <div>
             <label className="mb-1 block text-xs text-gray-400"><T value={"Beschreibungstext"} /></label>
             <textarea value={it.text} onChange={e => update(i, { text: e.target.value })} rows={3}
@@ -1115,7 +1115,7 @@ function SponsorGridForm({ content, onChange }: { content: Record<string, unknow
               </button>
               <span className="text-xs font-bold text-gray-300"><T value={"Sponsor "} />{i + 1}: <T value={s.name || 'Unbenannter Sponsor'} /></span>
               {s._newId && newSponsorIds.has(s._newId) && (
-                <span className="text-xs text-green-400 bg-green-950/40 px-1.5 py-0.5 rounded"><T value={"Neu – noch nicht sortiert"} /></span>
+                <span className="text-xs text-green-400 bg-green-950/40 px-1.5 py-0.5 rounded"><T value={"Neu - noch nicht sortiert"} /></span>
               )}
             </div>
             <div className="flex gap-1">
@@ -1720,7 +1720,7 @@ export default function AdminPage() {
     return 'pages'
   })
 
-  // Dark mode is enforced by admin/layout.tsx — no useEffect needed here
+  // Dark mode is enforced by admin/layout.tsx - no useEffect needed here
   // For BOARD users, default to members tab (set after user loads)
   const [boardTabInit, setBoardTabInit] = useState(false)
   const [docsOpen, setDocsOpen] = useState(false)
@@ -1735,7 +1735,7 @@ export default function AdminPage() {
     if (typeof window !== 'undefined') localStorage.setItem('admin_tab', t)
   }
 
-  useEffect(() => { document.title = 'Admin – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Admin - Schwalmtalzupfer' }, [])
 
   useEffect(() => { if (!loading && (!user || (!isBoard(user) && !isChef(user)))) router.push('/') }, [user, loading, router])
 
@@ -1780,7 +1780,7 @@ export default function AdminPage() {
 
   const [pageToDelete, setPageToDelete] = useState<string | null>(null)
   const deletePage = async (slug: string | undefined) => {
-    if (!slug) { setPageActionError('Seite hat keinen Slug – Löschen nicht möglich.'); return }
+    if (!slug) { setPageActionError('Seite hat keinen Slug - Löschen nicht möglich.'); return }
     setPageActionError(null)
     const res = await fetch(`${API_BASE}/api/pages/${slug}`, { method: 'DELETE', credentials: 'include' })
     if (!res.ok) { setPageActionError(`Löschen fehlgeschlagen (${res.status})`); showToast('Löschen fehlgeschlagen.', 'error'); return }
@@ -2061,7 +2061,7 @@ export default function AdminPage() {
                             </button>
                           </td>
                           <td className="px-4 py-3 hidden sm:table-cell">
-                            {p.slug ? <PageVisibilityToggle slug={p.slug} /> : <span className="text-gray-600">–</span>}
+                            {p.slug ? <PageVisibilityToggle slug={p.slug} /> : <span className="text-gray-600">-</span>}
                           </td>
                           <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{p.sections?.length ?? 0}</td>
                           <td className="px-4 py-3">

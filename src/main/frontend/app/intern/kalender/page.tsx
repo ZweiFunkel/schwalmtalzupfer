@@ -136,9 +136,9 @@ function EventDetailModal({ event, onClose }: { event: KalenderTermin; onClose: 
             </svg>
             <span>
               {event.endDatum && event.endDatum !== event.startDatum
-                ? `${parseIso(event.startDatum).toLocaleDateString('de-DE')} – ${parseIso(event.endDatum).toLocaleDateString('de-DE')}`
+                ? `${parseIso(event.startDatum).toLocaleDateString('de-DE')} - ${parseIso(event.endDatum).toLocaleDateString('de-DE')}`
                 : parseIso(event.startDatum).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-              <T value={event.uhrzeitVon && `, ${formatTime(event.uhrzeitVon)}${event.uhrzeitBis ? ` – ${formatTime(event.uhrzeitBis)}` : ''} Uhr`} />
+              <T value={event.uhrzeitVon && `, ${formatTime(event.uhrzeitVon)}${event.uhrzeitBis ? ` - ${formatTime(event.uhrzeitBis)}` : ''} Uhr`} />
             </span>
           </div>
           {event.ort && (
@@ -360,7 +360,7 @@ export default function KalenderPage() {
   const [selectedEvent, setSelectedEvent] = useState<KalenderTermin | null>(null)
   const today = useMemo(() => new Date(), [])
 
-  useEffect(() => { document.title = 'Kalender – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Kalender - Schwalmtalzupfer' }, [])
   useEffect(() => { if (!loading && !user) router.push('/login') }, [user, loading, router])
 
   // Sichtbaren Zeitraum je nach Ansicht berechnen (inkl. Rand-Wochentage im Monatsraster)
@@ -399,7 +399,7 @@ export default function KalenderPage() {
     if (view === 'woche') {
       const ws = startOfWeek(cursor)
       const we = addDays(ws, 6)
-      return `${pad2(ws.getDate())}.${pad2(ws.getMonth() + 1)}. – ${pad2(we.getDate())}.${pad2(we.getMonth() + 1)}.${we.getFullYear()}`
+      return `${pad2(ws.getDate())}.${pad2(ws.getMonth() + 1)}. - ${pad2(we.getDate())}.${pad2(we.getMonth() + 1)}.${we.getFullYear()}`
     }
     return `${WOCHENTAGE_LANG[(cursor.getDay() + 6) % 7]}, ${cursor.getDate()}. ${MONATE[cursor.getMonth()]} ${cursor.getFullYear()}`
   }, [view, cursor])

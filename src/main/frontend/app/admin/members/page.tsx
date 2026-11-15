@@ -37,7 +37,7 @@ export default function AdminMembersPage() {
   const [showArchive, setShowArchive] = useState(false)
 
   // Redirect if not admin/board
-  useEffect(() => { document.title = 'Mitglieder – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Mitglieder - Schwalmtalzupfer' }, [])
   useEffect(() => {
     if (!loading && (!user || (user.role !== 'ROLE_ADMIN' && user.role !== 'ROLE_CHEF'))) {
       router.push('/')
@@ -133,10 +133,10 @@ export default function AdminMembersPage() {
             {filtered.map(m => (
               <tr key={m.id} className="border-b border-white/5 hover:bg-slate-800/50 transition">
                 <td className="px-4 py-3 text-white font-medium">
-                  {[m.vorname, m.nachname].filter(Boolean).join(' ') || '–'}
+                  {[m.vorname, m.nachname].filter(Boolean).join(' ') || '-'}
                 </td>
-                <td className="px-4 py-3 text-gray-300">{m.username || '–'}</td>
-                <td className="px-4 py-3 text-gray-300">{m.email || '–'}</td>
+                <td className="px-4 py-3 text-gray-300">{m.username || '-'}</td>
+                <td className="px-4 py-3 text-gray-300">{m.email || '-'}</td>
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-gray-300">
                     {roleLabel[m.role] ?? m.role}
@@ -144,8 +144,8 @@ export default function AdminMembersPage() {
                 </td>
                 <td className="px-4 py-3 text-gray-300">
                   {m.gruppe
-                    ? `${m.gruppe.wochentag} ${m.gruppe.vonUhrzeit}–${m.gruppe.bisUhrzeit}`
-                    : <span className="text-gray-600">–</span>}
+                    ? `${m.gruppe.wochentag} ${m.gruppe.vonUhrzeit}-${m.gruppe.bisUhrzeit}`
+                    : <span className="text-gray-600">-</span>}
                 </td>
                 <td className="px-4 py-3">
                   {m.istAktiv

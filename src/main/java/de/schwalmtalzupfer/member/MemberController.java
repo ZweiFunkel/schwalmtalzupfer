@@ -180,7 +180,7 @@ public class MemberController {
     /** Menschenlesbares Label statt der internen UUID, für die Änderungshistorie. */
     private String gruppeLabel(Gitarrengruppe g) {
         if (g == null) return "keine";
-        return g.getWochentag() + " " + g.getVonUhrzeit() + "–" + g.getBisUhrzeit();
+        return g.getWochentag() + " " + g.getVonUhrzeit() + "-" + g.getBisUhrzeit();
     }
 
     public record UpdateGruppeRequest(String gruppeId, Integer monatsbeitragCents, String gueltigAb, String notiz) {}
@@ -196,7 +196,7 @@ public class MemberController {
                 map.put("gueltigAb", h.getGueltigAb().toString());
                 map.put("gruppeId", h.getGitarrengruppe() != null ? h.getGitarrengruppe().getId().toString() : null);
                 map.put("gruppeLabel", h.getGitarrengruppe() != null
-                        ? h.getGitarrengruppe().getWochentag() + " " + h.getGitarrengruppe().getVonUhrzeit() + "–" + h.getGitarrengruppe().getBisUhrzeit()
+                        ? h.getGitarrengruppe().getWochentag() + " " + h.getGitarrengruppe().getVonUhrzeit() + "-" + h.getGitarrengruppe().getBisUhrzeit()
                         : "Keine Gruppe");
                 map.put("monatsbeitragCents", h.getMonatsbeitragCents());
                 map.put("notiz", h.getNotiz());
@@ -350,7 +350,7 @@ public class MemberController {
             naechste.put("gueltigAb", next.getGueltigAb().toString());
             naechste.put("gruppeId", next.getGitarrengruppe() != null ? next.getGitarrengruppe().getId().toString() : null);
             naechste.put("gruppeLabel", next.getGitarrengruppe() != null
-                    ? next.getGitarrengruppe().getWochentag() + " " + next.getGitarrengruppe().getVonUhrzeit() + "–" + next.getGitarrengruppe().getBisUhrzeit()
+                    ? next.getGitarrengruppe().getWochentag() + " " + next.getGitarrengruppe().getVonUhrzeit() + "-" + next.getGitarrengruppe().getBisUhrzeit()
                     : "Keine Gruppe");
             naechste.put("monatsbeitragCents", next.getMonatsbeitragCents());
             dto.put("naechsteAenderung", naechste);

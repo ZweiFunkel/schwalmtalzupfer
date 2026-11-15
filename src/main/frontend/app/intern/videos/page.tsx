@@ -166,7 +166,7 @@ function selectionLabel(sel: Selection | null): string {
   if (sel.cat === 'WEITERE') return sel.sub
   const base = sel.cat === 'SOMMER' ? 'Sommerkonzert' : 'Winterkonzert'
   let label = `${base} ${sel.year}`
-  if (sel.day) label += ` – ${sel.day}`
+  if (sel.day) label += ` - ${sel.day}`
   if (sel.slot) label += ` (${sel.slot})`
   return label
 }
@@ -439,7 +439,7 @@ function DayCard({ day, entries, onSelect }: { day: string; entries: VideoEntry[
         <p className="text-base font-semibold text-gray-800 dark:text-white transition group-hover:text-gray-900 dark:group-hover:text-white"><T value={day} /></p>
         {locked && <p className="text-xs text-amber-600 dark:text-amber-400">⏳ <T value={releaseLabel(representative)} /></p>}
         {entries.filter(e => e !== representative && e.released === false).map(e => (
-          <p key={e.id} className="text-xs text-amber-600 dark:text-amber-400">⏳ <T value={e.title} /> – <T value={releaseLabel(e)} /></p>
+          <p key={e.id} className="text-xs text-amber-600 dark:text-amber-400">⏳ <T value={e.title} /> - <T value={releaseLabel(e)} /></p>
         ))}
         {entries.some(e => isFresh(e)) && <p className="text-xs font-semibold text-green-600 dark:text-green-400">🆕 <T value={"Neu"} /></p>}
         {!locked && count != null && <p className="text-xs text-gray-400 dark:text-gray-500">{count} <T value={count === 1 ? 'Video' : 'Videos'} /></p>}
@@ -683,7 +683,7 @@ function WatchArea({
 
   const isPlaylist = activeVideo.type === 'PLAYLIST'
   // Fallback: Wenn die Playlist-API keine Items liefert (z.B. fehlender YouTube-API-Key),
-  // direkt die YouTube-Playlist als Embed laden – hier ist keine onError-Erkennung möglich.
+  // direkt die YouTube-Playlist als Embed laden - hier ist keine onError-Erkennung möglich.
   const useIframeFallback = isPlaylist && !playlistLoading && playlistItems.length === 0
   const currentPlaylistItem = playlistItems.find(i => i.videoId === currentVideoId)
   const currentTitle = currentPlaylistItem?.title ?? activeVideo.title
@@ -1019,7 +1019,7 @@ function KonzertContent({ videos, cat, year, day, slot, onOpen, onSelectDay, onS
   }
 
   const shown = dayVideos.filter(v => (slot ? v.subcategory === slot : true))
-  const label = `${cat === 'SOMMER' ? 'Sommerkonzert' : 'Winterkonzert'} ${year}${day ? ` – ${day}` : ''}${slot ? ` (${slot})` : ''}`
+  const label = `${cat === 'SOMMER' ? 'Sommerkonzert' : 'Winterkonzert'} ${year}${day ? ` - ${day}` : ''}${slot ? ` (${slot})` : ''}`
   if (shown.length === 0) return <EmptyVideos label={label} />
   return <SplitVideos items={shown} onOpen={(v, startVideoId) => onOpen(v, shown, startVideoId)} />
 }
@@ -1266,7 +1266,7 @@ function VideosPageInner() {
     }
   }
 
-  useEffect(() => { document.title = 'Videos – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Videos - Schwalmtalzupfer' }, [])
 
   // Einklappzustand der Archiv-Seitenleiste merken (wie bei YouTube).
   useEffect(() => {

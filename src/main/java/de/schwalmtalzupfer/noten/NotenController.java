@@ -38,7 +38,7 @@ public class NotenController {
 
     /**
      * Listet alle Noten-Dateien unterhalb des angegebenen Präfixes (rekursiv, kein Delimiter).
-     * Gibt eine flache Liste zurück – ideal für Suche/Anzeige aller Noten.
+     * Gibt eine flache Liste zurück - ideal für Suche/Anzeige aller Noten.
      */
     @GetMapping("/list")
     public List<Map<String, Object>> list(@RequestParam(name = "prefix", defaultValue = "") String prefixParam) {

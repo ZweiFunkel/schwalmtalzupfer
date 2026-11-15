@@ -51,7 +51,7 @@ function useAutoVideoEntries(): (InternChangelogEntry & { _t: number })[] {
               content: `Wird am ${fmt(d)} um ${pad(d.getHours())}:${pad(d.getMinutes())} Uhr freigeschaltet.`, link: '/intern/videos' })
           } else if (t <= now && now - t <= AUTO_DAYS * 86400000) {
             out.push({ _t: t, date: fmt(d), type: 'new', title: v.title,
-              content: 'Neues Video wurde hinzugefügt!', link: v.youtubeId ? `/intern/videos?v=${v.youtubeId}` : '/intern/videos' })
+              content: 'Neues Video wurde hinzugefügt!', link: v.youtubeId ? `/intern/videos?video=${v.youtubeId}` : '/intern/videos' })
           }
         }
         setAuto(out)

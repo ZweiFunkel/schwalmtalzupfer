@@ -141,7 +141,7 @@ export default function AnnouncementBanner() {
         if (settings.meldungen) {
           try {
             const list: Meldung[] = JSON.parse(settings.meldungen)
-            // Scheduled Meldungen haben Vorrang – nimm die mit dem spätesten validFrom
+            // Scheduled Meldungen haben Vorrang - nimm die mit dem spätesten validFrom
             const scheduled = list
               .filter(m => isMeldungScheduledNow(m) && !getDismissed().includes(m.id))
               .sort((a, b) => {

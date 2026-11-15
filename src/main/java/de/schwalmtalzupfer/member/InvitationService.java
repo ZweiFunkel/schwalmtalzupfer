@@ -69,7 +69,7 @@ public class InvitationService {
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
             helper.setFrom(fromAddress);
             helper.setTo(email);
-            helper.setSubject("Einladung – Schwalmtaler Zupfer");
+            helper.setSubject("Einladung - Schwalmtaler Zupfer");
             helper.setText("Hallo,\n\ndu wurdest eingeladen, dem Schwalmtaler Zupfer beizutreten (Rolle: " + rolle.name() + ").\n"
                     + "Bitte registriere dich unter folgendem Link (gültig für " + tokenValidityHours + " Stunden):\n\n"
                     + baseUrl + "/register?token=" + token + "\n\nViele Grüße", false);
@@ -113,7 +113,7 @@ public class InvitationService {
             helper.setText("Hallo,\n\nschön, dass du beim Schwalmtaler Zupfer mitmachen möchtest! Der Vorstand hat deinen "
                     + "Beitrittsantrag angenommen und dich folgender Unterrichtsgruppe zugewiesen:\n\n"
                     + "Wochentag: " + gruppe.getWochentag() + "\n"
-                    + "Uhrzeit: " + gruppe.getVonUhrzeit() + " – " + gruppe.getBisUhrzeit() + " Uhr\n"
+                    + "Uhrzeit: " + gruppe.getVonUhrzeit() + " - " + gruppe.getBisUhrzeit() + " Uhr\n"
                     + (gruppe.getLocation() != null ? "Ort: " + gruppe.getLocation().getName() + "\n" : "")
                     + "Beitrag: " + preis + "\n\n"
                     + "Um deine Mitgliedschaft abzuschließen, registriere dich und hinterlege eine Zahlungsart unter folgendem Link "

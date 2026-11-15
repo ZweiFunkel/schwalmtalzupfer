@@ -86,7 +86,7 @@ function RegisterForm() {
   const [customerId, setCustomerId] = useState('')
 
   useEffect(() => {
-    document.title = 'Registrierung – Schwalmtalzupfer'
+    document.title = 'Registrierung - Schwalmtalzupfer'
     fetch(`${API_BASE}/api/invitation/details?token=${encodeURIComponent(token)}`)
       .then(async res => {
         if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error ?? 'Einladung nicht gefunden') }
@@ -172,7 +172,7 @@ function RegisterForm() {
       {details?.gitarrengruppe && (
         <div className="rounded-lg border border-green-500/30 bg-green-900/10 px-4 py-3 text-sm text-gray-300">
           <p className="font-semibold text-white mb-1"><T value={"Deine Unterrichtsgruppe"} /></p>
-          <p>{details.gitarrengruppe.wochentag}, {details.gitarrengruppe.vonUhrzeit}–{details.gitarrengruppe.bisUhrzeit}<T value={" Uhr"} /></p>
+          <p>{details.gitarrengruppe.wochentag}, {details.gitarrengruppe.vonUhrzeit}-{details.gitarrengruppe.bisUhrzeit}<T value={" Uhr"} /></p>
           {details.gitarrengruppe.location && <p>{details.gitarrengruppe.location}</p>}
           {details.amountCents !== undefined && <p className="mt-1 font-semibold text-green-400">{formatEuro(details.amountCents)} / Monat</p>}
         </div>
@@ -226,7 +226,7 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
-  useEffect(() => { document.title = 'Registrierung – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Registrierung - Schwalmtalzupfer' }, [])
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-8 shadow-2xl">

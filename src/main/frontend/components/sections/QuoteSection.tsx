@@ -24,7 +24,7 @@ export default function QuoteSection({ content }: { content: QuoteContent }) {
 
             {(author || role) && (
               <footer className="mt-6 text-base text-gray-500 dark:text-gray-400">
-                {author && <span className="font-bold text-gray-700 dark:text-gray-200">— {author}</span>}
+                {author && <span className="font-bold text-gray-700 dark:text-gray-200">- {author}</span>}
                 {author && role && <span>, </span>}
                 {role && <span className="text-sm text-gray-400 dark:text-gray-500">{role}</span>}
               </footer>

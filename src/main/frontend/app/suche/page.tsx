@@ -49,7 +49,7 @@ export default function SearchPage() {
   }
   return <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
     <h1 className="mb-3 text-3xl font-bold"><T value={"Website durchsuchen"} /></h1>
-    <p className="mb-6 text-gray-600 dark:text-gray-400"><T value={"Seiten und Inhalte finden"} /><T value={user ? ' – einschließlich deiner zugänglichen Videos.' : '. Melde dich an, um auch interne Inhalte zu durchsuchen.'} /></p>
+    <p className="mb-6 text-gray-600 dark:text-gray-400"><T value={"Seiten und Inhalte finden"} /><T value={user ? ' - einschließlich deiner zugänglichen Videos.' : '. Melde dich an, um auch interne Inhalte zu durchsuchen.'} /></p>
     <form onSubmit={search} role="search" className="flex flex-col gap-3 sm:flex-row">
       <label htmlFor="site-search" className="sr-only"><T value={"Suchbegriff"} /></label>
       <L as="input" id="site-search" value={query} onChange={e => setQuery(e.target.value)} required minLength={2} maxLength={150} type="search" placeholder="Zum Beispiel Gitarre oder Dä Stär" className="min-w-0 flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-white/20 dark:bg-slate-900 dark:text-white" />

@@ -129,9 +129,9 @@ export default function AntraegeTab() {
                           if (e.target.value) patchAntrag(a.id, { gitarrengruppeId: e.target.value })
                         }}
                         className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none">
-                        <option value=""><T value={"– wählen –"} /></option>
+                        <option value=""><T value={"- wählen -"} /></option>
                         {gruppen.map(g => (
-                          <option key={g.id} value={g.id}>{g.wochentag} {g.vonUhrzeit}–{g.bisUhrzeit}</option>
+                          <option key={g.id} value={g.id}>{g.wochentag} {g.vonUhrzeit}-{g.bisUhrzeit}</option>
                         ))}
                       </select>
                     </div>

@@ -10,7 +10,7 @@
 
 ### Datumsformat
 - Immer `dd.MM.yyyy` (deutsch)
-- Bereiche: `dd.MM.yyyy – dd.MM.yyyy` (En-Dash U+2013, kein normaler Bindestrich)
+- Bereiche: `dd.MM.yyyy - dd.MM.yyyy` (normaler Bindestrich, KEIN En-/Em-Dash (User-Wunsch: nirgends KI-Gedankenstriche))
 - Parsing immer Range-Suffix zuerst strippen: `d.replace(/(–|-)[\s\S]*/g, '').trim()`
 
 ### Dark Mode (Admin)

@@ -405,7 +405,7 @@
       if (!res.ok) throw new Error(data.error || ('Fehler ' + res.status));
       marks = []; redo = [];
       setEditing(false);
-      toast('Gespeichert – vorige Version wurde gesichert.');
+      toast('Gespeichert - vorige Version wurde gesichert.');
       await reloadDocument();
       toParent({ type: 'saved' });
     } catch (e) {

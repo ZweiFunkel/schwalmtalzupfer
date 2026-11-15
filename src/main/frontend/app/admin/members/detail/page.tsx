@@ -80,7 +80,7 @@ function MemberDetailContent() {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
 
-  useEffect(() => { document.title = 'Mitglied – Schwalmtalzupfer' }, [])
+  useEffect(() => { document.title = 'Mitglied - Schwalmtalzupfer' }, [])
   useEffect(() => {
     if (!loading && (!user || (user.role !== 'ROLE_ADMIN' && user.role !== 'ROLE_CHEF'))) {
       router.push('/')
@@ -175,8 +175,8 @@ function MemberDetailContent() {
 
       {/* Basisdaten */}
       <div className="mb-6 rounded-xl border border-white/10 bg-slate-900 p-6 grid grid-cols-2 gap-4 text-sm">
-        <div><p className="text-gray-400"><T value={"E-Mail"} /></p><p className="text-white">{member.email || '–'}</p></div>
-        <div><p className="text-gray-400"><T value={"Username"} /></p><p className="text-white">{member.username || '–'}</p></div>
+        <div><p className="text-gray-400"><T value={"E-Mail"} /></p><p className="text-white">{member.email || '-'}</p></div>
+        <div><p className="text-gray-400"><T value={"Username"} /></p><p className="text-white">{member.username || '-'}</p></div>
         <div>
           <p className="text-gray-400"><T value={"Rolle"} /></p>
           <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-gray-300">{roleLabel[member.role] ?? member.role}</span>
@@ -214,11 +214,11 @@ function MemberDetailContent() {
         <h2 className="mb-3 text-lg font-semibold text-white"><T value={"Gitarrenunterricht - aktuell"} /></h2>
         {member.gruppe ? (
           <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-            <div><p className="text-gray-400"><T value={"Wochentag / Zeit"} /></p><p className="text-white">{member.gruppe.wochentag}, {member.gruppe.vonUhrzeit}–{member.gruppe.bisUhrzeit}<T value={" Uhr"} /></p></div>
+            <div><p className="text-gray-400"><T value={"Wochentag / Zeit"} /></p><p className="text-white">{member.gruppe.wochentag}, {member.gruppe.vonUhrzeit}-{member.gruppe.bisUhrzeit}<T value={" Uhr"} /></p></div>
             <div>
               <p className="text-gray-400"><T value={"Monatsbeitrag"} /></p>
               <p className="text-white">
-                {member.monatsbeitragCents != null ? euro(member.monatsbeitragCents) : '–'}
+                {member.monatsbeitragCents != null ? euro(member.monatsbeitragCents) : '-'}
                 {member.monatsbeitragCents != null && !member.individuellerPreis && <span className="ml-1 text-xs text-gray-500"><T value={"(Preisgruppen-Satz)"} /></span>}
                 {member.individuellerPreis && <span className="ml-1 text-xs text-gray-500"><T value={"(individuell)"} /></span>}
               </p>
@@ -238,7 +238,7 @@ function MemberDetailContent() {
                     >
                       <T value={member.gruppe.location.adresse.startsWith('http') ? 'In Maps öffnen' : member.gruppe.location.adresse} />
                     </a>
-                  ) : <p className="text-white">–</p>}
+                  ) : <p className="text-white">-</p>}
                   {member.gruppe.location.parkplatzInfo && (
                     <p className="mt-1 text-xs text-gray-500">🅿️ {member.gruppe.location.parkplatzInfo}</p>
                   )}
@@ -266,10 +266,10 @@ function MemberDetailContent() {
               onChange={e => setSelectedGruppe(e.target.value)}
               className="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-white focus:border-green-500 focus:outline-none"
             >
-              <option value=""><T value={"– Keine Gruppe –"} /></option>
+              <option value=""><T value={"- Keine Gruppe -"} /></option>
               {gruppen.map(g => (
                 <option key={g.id} value={g.id}>
-                  {g.wochentag} {g.vonUhrzeit}–{g.bisUhrzeit} {g.location ? `(${g.location.name})` : ''}
+                  {g.wochentag} {g.vonUhrzeit}-{g.bisUhrzeit} {g.location ? `(${g.location.name})` : ''}
                 </option>
               ))}
             </select>
@@ -325,8 +325,8 @@ function MemberDetailContent() {
                   <tr key={h.id} className={h.zukuenftig ? 'bg-yellow-900/10 text-yellow-200' : 'bg-slate-900 text-gray-300'}>
                     <td className="px-4 py-2">{h.gueltigAb}{h.zukuenftig && <span className="ml-1.5 text-[10px] uppercase tracking-wide"><T value={"geplant"} /></span>}</td>
                     <td className="px-4 py-2">{h.gruppeLabel}</td>
-                    <td className="px-4 py-2">{h.monatsbeitragCents != null ? euro(h.monatsbeitragCents) : '–'}</td>
-                    <td className="px-4 py-2 text-gray-500">{h.notiz || '–'}</td>
+                    <td className="px-4 py-2">{h.monatsbeitragCents != null ? euro(h.monatsbeitragCents) : '-'}</td>
+                    <td className="px-4 py-2 text-gray-500">{h.notiz || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -380,8 +380,8 @@ function MemberDetailContent() {
                 {history.map(h => (
                   <tr key={h.id} className="border-b border-white/5 text-gray-300">
                     <td className="py-2 pr-4 font-medium text-white">{h.aenderungsTyp}</td>
-                    <td className="py-2 pr-4">{h.alterWert ?? '–'}</td>
-                    <td className="py-2 pr-4">{h.neuerWert ?? '–'}</td>
+                    <td className="py-2 pr-4">{h.alterWert ?? '-'}</td>
+                    <td className="py-2 pr-4">{h.neuerWert ?? '-'}</td>
                     <td className="py-2 text-gray-500">{new Date(h.timestamp).toLocaleString('de-DE')}</td>
                   </tr>
                 ))}
