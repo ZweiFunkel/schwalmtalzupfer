@@ -9,7 +9,7 @@ import java.util.UUID;
 @Table(name = "video")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(onConstructor_ = @com.fasterxml.jackson.annotation.JsonCreator)
 @AllArgsConstructor
 @Builder
 public class Video {
@@ -66,6 +66,7 @@ public class Video {
     /** Wird beim Ausliefern berechnet, nicht gespeichert. */
     @Transient
     @Builder.Default
+    @com.fasterxml.jackson.annotation.JsonSetter(nulls = com.fasterxml.jackson.annotation.Nulls.SKIP)
     private boolean released = true;
 }
 

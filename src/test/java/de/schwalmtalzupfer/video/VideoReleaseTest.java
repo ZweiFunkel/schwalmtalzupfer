@@ -83,4 +83,12 @@ class VideoReleaseTest {
         assertThat(controller.playlist("PLsecret1234567", as("ROLE_MEMBER")).getStatusCode().value()).isEqualTo(404);
         assertThat(controller.playlist("PLunknown000000", as("ROLE_BOARD")).getStatusCode().value()).isEqualTo(404);
     }
+
+    @Test
+    void releasedFlagFromClientIsIgnoredEvenWhenNull() throws Exception {
+        var mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+        Video v = mapper.readValue("{\"title\":\"Vlog\",\"category\":\"WINTER\",\"type\":\"VIDEO\",\"released\":null,\"position\":0}", Video.class);
+        assertThat(v.getTitle()).isEqualTo("Vlog");
+        assertThat(v.isReleased()).isTrue();
+    }
 }
