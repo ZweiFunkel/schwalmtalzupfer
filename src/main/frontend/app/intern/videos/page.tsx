@@ -125,6 +125,13 @@ function releaseLabel(v: VideoEntry): string {
   return hasTime ? `ab ${date}, ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr` : `ab ${date}`
 }
 
+/** Seit weniger als 7 Tagen freigegeben (automatische Freigabe per Termin). */
+function isFresh(v: VideoEntry): boolean {
+  if (v.released === false || !v.releaseAt) return false
+  const at = new Date(v.releaseAt).getTime()
+  return !Number.isNaN(at) && at <= Date.now() && Date.now() - at < 7 * 86400000
+}
+
 function LockedCard({ video }: { video: VideoEntry }) {
   return (
     <div className="cursor-default select-none">
@@ -431,6 +438,10 @@ function DayCard({ day, entries, onSelect }: { day: string; entries: VideoEntry[
       <div className="px-0.5 pt-3">
         <p className="text-base font-semibold text-gray-800 dark:text-white transition group-hover:text-gray-900 dark:group-hover:text-white"><T value={day} /></p>
         {locked && <p className="text-xs text-amber-600 dark:text-amber-400">⏳ <T value={releaseLabel(representative)} /></p>}
+        {entries.filter(e => e !== representative && e.released === false).map(e => (
+          <p key={e.id} className="text-xs text-amber-600 dark:text-amber-400">⏳ <T value={e.title} /> – <T value={releaseLabel(e)} /></p>
+        ))}
+        {entries.some(e => isFresh(e)) && <p className="text-xs font-semibold text-green-600 dark:text-green-400">🆕 <T value={"Neu"} /></p>}
         {!locked && count != null && <p className="text-xs text-gray-400 dark:text-gray-500">{count} <T value={count === 1 ? 'Video' : 'Videos'} /></p>}
       </div>
     </button>
@@ -981,7 +992,17 @@ function KonzertContent({ videos, cat, year, day, slot, onOpen, onSelectDay, onS
   // Mehrere Tage und noch keiner ausgewählt: erst Tage-Übersicht zeigen,
   // statt alle Tage direkt zu einer Liste zusammenzufassen.
   if (!day && days.length > 1) {
-    return <DayPickerGrid videos={yearVideos} keys={days} groupBy={v => v.day} onSelect={onSelectDay} />
+    const noDay = yearVideos.filter(v => !v.day)
+    return (
+      <>
+        <DayPickerGrid videos={yearVideos} keys={days} groupBy={v => v.day} onSelect={onSelectDay} />
+        {noDay.length > 0 && (
+          <div className="mt-10">
+            <SplitVideos items={noDay} onOpen={(v, startVideoId) => onOpen(v, noDay, startVideoId)} />
+          </div>
+        )}
+      </>
+    )
   }
 
   const dayVideos = yearVideos.filter(v => (day ? v.day === day : true))

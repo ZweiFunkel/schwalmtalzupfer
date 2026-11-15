@@ -25,7 +25,7 @@ function noticeFor(v: ReleasedVideo): { key: string; label: string } {
 
 /** Einmalige Info fuer eine Woche nach der automatischen Freigabe; mit "x" dauerhaft weg (pro Browser). */
 function NewVideoNotice() {
-  const [notices, setNotices] = useState<{ key: string; label: string }[]>([])
+  const [notices, setNotices] = useState<{ key: string; label: string; soon?: string }[]>([])
 
   useEffect(() => {
     let dismissed: string[] = []
@@ -34,15 +34,26 @@ function NewVideoNotice() {
       .then(r => r.ok ? r.json() : [])
       .then((videos: ReleasedVideo[]) => {
         const now = Date.now()
-        const found = new Map<string, string>()
+        const found = new Map<string, { label: string; soon?: string }>()
         for (const v of videos) {
-          if (v.released === false || !v.releaseAt) continue
+          if (!v.releaseAt) continue
           const at = new Date(v.releaseAt).getTime()
-          if (Number.isNaN(at) || at > now || now - at > NOTICE_DAYS * 86400000) continue
+          if (Number.isNaN(at)) continue
+          if (v.released === false) {
+            // Vorab-Info: kommt demnaechst (wird bei Freigabe durch "Neu freigeschaltet" ersetzt)
+            if (at <= now) continue
+            const key = `soon:${v.id}`
+            if (dismissed.includes(key)) continue
+            const d = new Date(v.releaseAt)
+            const when = `${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`
+            found.set(key, { label: v.title, soon: when })
+            continue
+          }
+          if (at > now || now - at > NOTICE_DAYS * 86400000) continue
           const n = noticeFor(v)
-          if (!dismissed.includes(n.key)) found.set(n.key, n.label)
+          if (!dismissed.includes(n.key)) found.set(n.key, { label: n.label })
         }
-        setNotices([...found].map(([key, label]) => ({ key, label })))
+        setNotices([...found].map(([key, x]) => ({ key, ...x })))
       })
       .catch(() => {})
   }, [])
@@ -62,8 +73,17 @@ function NewVideoNotice() {
         <div key={n.key} className="flex items-center gap-4 rounded-xl border border-green-500/40 bg-green-50 dark:bg-green-900/20 px-5 py-4">
           <span className="text-2xl" aria-hidden>🎬</span>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-gray-900 dark:text-white"><T value={"Neu freigeschaltet:"} /> {n.label}</p>
-            <Link href="/intern/videos" className="text-sm font-medium text-green-700 dark:text-green-400 hover:underline"><T value={"Jetzt ansehen →"} /></Link>
+            {n.soon ? (
+              <>
+                <p className="font-semibold text-gray-900 dark:text-white"><T value={"Demnächst:"} /> {n.label}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400"><T value={"Wird freigeschaltet am"} /> {n.soon}</p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-gray-900 dark:text-white"><T value={"Neu freigeschaltet:"} /> {n.label}</p>
+                <Link href="/intern/videos" className="text-sm font-medium text-green-700 dark:text-green-400 hover:underline"><T value={"Jetzt ansehen →"} /></Link>
+              </>
+            )}
           </div>
           <button type="button" onClick={() => dismiss(n.key)} aria-label="Schließen"
             className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition">✕</button>
