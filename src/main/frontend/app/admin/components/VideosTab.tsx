@@ -197,6 +197,11 @@ export default function VideosTab() {
             <div className="flex flex-wrap items-center gap-2">
               <input type="datetime-local" value={form.releaseAt ?? ''} onChange={e => set('releaseAt', e.target.value)}
                 className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-green-500 focus:outline-none" />
+              {form.releaseAt ? (
+                <span className="text-xs font-semibold text-green-400">✓ Freigabe: {new Date(form.releaseAt).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })} Uhr</span>
+              ) : (
+                <span className="text-xs font-semibold text-amber-400">⚠ Kein Datum gewählt – Video ist sofort sichtbar (Datum UND Uhrzeit auswählen)</span>
+              )}
               {form.releaseAt && (
                 <button type="button" onClick={() => set('releaseAt', '')} className="text-xs text-gray-400 hover:text-white"><T value={"✕ sofort sichtbar"} /></button>
               )}

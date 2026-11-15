@@ -100,4 +100,18 @@ class VideoReleaseTest {
         VideoController.fillThumbnail(v);
         assertThat(v.getThumbnailUrl()).isEqualTo("https://img.youtube.com/vi/abc/hqdefault.jpg");
     }
+
+    @Test
+    void postKeepsReleaseAtAndThumbnail() throws Exception {
+        when(repo.save(org.mockito.ArgumentMatchers.any(Video.class))).thenAnswer(i -> i.getArgument(0));
+        var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(controller).build();
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/intern/videos")
+                .contentType("application/json")
+                .content("{\"category\":\"WINTER\",\"year\":\"2025\",\"day\":\"\",\"subcategory\":\"\",\"tags\":\"\",\"type\":\"VIDEO\",\"youtubeId\":\"abc\",\"title\":\"Vlog\",\"thumbnailUrl\":\"\",\"position\":0,\"releaseAt\":\"2026-11-15T20:00:00\"}"))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+        var cap = org.mockito.ArgumentCaptor.forClass(Video.class);
+        org.mockito.Mockito.verify(repo).save(cap.capture());
+        assertThat(cap.getValue().getReleaseAt()).isEqualTo(java.time.LocalDateTime.of(2026, 11, 15, 20, 0));
+        assertThat(cap.getValue().getThumbnailUrl()).isEqualTo("https://img.youtube.com/vi/abc/hqdefault.jpg");
+    }
 }
