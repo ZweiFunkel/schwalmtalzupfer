@@ -1,7 +1,10 @@
+'use client'
+
 import { T } from '@/lib/i18n/LanguageProvider'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { getApiBase } from '@/lib/api'
 import Link from 'next/link'
-import { InternChangelogContent, InternChangelogEntryType } from '@/types/page'
+import { InternChangelogContent, InternChangelogEntry, InternChangelogEntryType } from '@/types/page'
 
 interface TypeCfg {
   label: string
@@ -17,8 +20,53 @@ const TYPE_CONFIG: Record<InternChangelogEntryType, TypeCfg> = {
   info:   { label: 'Info',   dot: 'bg-blue-500',  badge: 'bg-blue-100 border-blue-400/50 dark:bg-blue-900/40 dark:border-blue-500/30', badgeText: 'text-blue-700 dark:text-blue-400' },
 }
 
+interface AutoVideo { id: string; title: string; type: string; youtubeId?: string | null; releaseAt?: string | null; createdAt?: string | null; released?: boolean }
+
+const AUTO_DAYS = 14
+const pad = (n: number) => String(n).padStart(2, '0')
+const fmt = (d: Date) => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`
+function parseDe(s: string): number {
+  const m = /^(d{2}).(d{2}).(d{4})/.exec(s.trim())
+  return m ? new Date(+m[3], +m[2] - 1, +m[1]).getTime() : 0
+}
+
+/** Neue/kommende Videos erscheinen automatisch in "Was ist neu?" (keine Handarbeit). */
+function useAutoVideoEntries(): (InternChangelogEntry & { _t: number })[] {
+  const [auto, setAuto] = useState<(InternChangelogEntry & { _t: number })[]>([])
+  useEffect(() => {
+    fetch(`${getApiBase()}/api/intern/videos`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then((videos: AutoVideo[]) => {
+        const now = Date.now()
+        const out: (InternChangelogEntry & { _t: number })[] = []
+        for (const v of videos) {
+          const stamp = v.releaseAt || v.createdAt
+          if (!stamp) continue
+          const d = new Date(stamp)
+          const t = d.getTime()
+          if (Number.isNaN(t)) continue
+          if (v.released === false) {
+            if (!v.releaseAt || t <= now) continue
+            out.push({ _t: t, date: fmt(d), type: 'info', title: `Demnächst: ${v.title}`,
+              content: `Wird am ${fmt(d)} um ${pad(d.getHours())}:${pad(d.getMinutes())} Uhr freigeschaltet.`, link: '/intern/videos' })
+          } else if (t <= now && now - t <= AUTO_DAYS * 86400000) {
+            out.push({ _t: t, date: fmt(d), type: 'new', title: v.title,
+              content: 'Neues Video wurde hinzugefügt!', link: v.youtubeId ? `/intern/videos?v=${v.youtubeId}` : '/intern/videos' })
+          }
+        }
+        setAuto(out)
+      })
+      .catch(() => {})
+  }, [])
+  return auto
+}
+
 export default function InternChangelogSection({ content }: { content: InternChangelogContent }) {
-  const entries = content.entries ?? []
+  const auto = useAutoVideoEntries()
+  const entries: InternChangelogEntry[] = [
+    ...auto.map(({ _t, ...e }) => ({ ...e, _t })),
+    ...(content.entries ?? []).map(e => ({ ...e, _t: parseDe(e.date) })),
+  ].sort((a, b) => (b as { _t: number })._t - (a as { _t: number })._t)
 
   return (
     <section className="py-10 px-6">

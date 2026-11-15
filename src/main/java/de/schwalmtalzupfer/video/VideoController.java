@@ -208,6 +208,7 @@ public class VideoController {
     @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
     public ResponseEntity<Video> create(@RequestBody Video video) {
         video.setId(null);
+        org.slf4j.LoggerFactory.getLogger(VideoController.class).info("Video create: title={} releaseAt={}", video.getTitle(), video.getReleaseAt());
         video.setYoutubeId(video.getYoutubeId() == null ? null : video.getYoutubeId().trim());
         fillThumbnail(video);
         return ResponseEntity.ok(videoRepository.save(video));
@@ -219,6 +220,7 @@ public class VideoController {
     public ResponseEntity<Video> update(@PathVariable UUID id, @RequestBody Video video) {
         if (!videoRepository.existsById(id)) return ResponseEntity.notFound().build();
         video.setId(id);
+        org.slf4j.LoggerFactory.getLogger(VideoController.class).info("Video update: title={} releaseAt={}", video.getTitle(), video.getReleaseAt());
         video.setYoutubeId(video.getYoutubeId() == null ? null : video.getYoutubeId().trim());
         fillThumbnail(video);
         return ResponseEntity.ok(videoRepository.save(video));

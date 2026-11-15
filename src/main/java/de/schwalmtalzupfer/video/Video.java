@@ -63,6 +63,15 @@ public class Video {
     @Column(name = "release_at")
     private java.time.LocalDateTime releaseAt;
 
+    /** Anlegezeitpunkt (Europe/Berlin); null bei Altdaten. Speist "Was ist neu?" automatisch. */
+    @Column(name = "created_at", updatable = false)
+    private java.time.LocalDateTime createdAt;
+
+    @jakarta.persistence.PrePersist
+    void onCreate() {
+        if (createdAt == null) createdAt = java.time.LocalDateTime.now(java.time.ZoneId.of("Europe/Berlin"));
+    }
+
     /** Wird beim Ausliefern berechnet, nicht gespeichert. */
     @Transient
     @Builder.Default
