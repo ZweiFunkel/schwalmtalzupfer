@@ -193,12 +193,23 @@ public class VideoController {
         }
     }
 
+    /** Leeres Titelbild -> null; bei Einzelvideos das YouTube-Standardbild eintragen. */
+    static void fillThumbnail(Video v) {
+        String t = v.getThumbnailUrl();
+        if (t != null && t.isBlank()) t = null;
+        if (t == null && "VIDEO".equals(v.getType()) && v.getYoutubeId() != null && !v.getYoutubeId().isBlank()) {
+            t = "https://img.youtube.com/vi/" + v.getYoutubeId() + "/hqdefault.jpg";
+        }
+        v.setThumbnailUrl(t);
+    }
+
     /** Neues Video anlegen – nur Vorstand/Admin */
     @PostMapping
     @PreAuthorize("hasAnyRole('BOARD', 'ADMIN')")
     public ResponseEntity<Video> create(@RequestBody Video video) {
         video.setId(null);
         video.setYoutubeId(video.getYoutubeId() == null ? null : video.getYoutubeId().trim());
+        fillThumbnail(video);
         return ResponseEntity.ok(videoRepository.save(video));
     }
 
@@ -209,6 +220,7 @@ public class VideoController {
         if (!videoRepository.existsById(id)) return ResponseEntity.notFound().build();
         video.setId(id);
         video.setYoutubeId(video.getYoutubeId() == null ? null : video.getYoutubeId().trim());
+        fillThumbnail(video);
         return ResponseEntity.ok(videoRepository.save(video));
     }
 

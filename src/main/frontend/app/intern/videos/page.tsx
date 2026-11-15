@@ -149,7 +149,7 @@ function LockedCard({ video }: { video: VideoEntry }) {
 
 function thumbnailFor(v: VideoEntry): string | null {
   if (v.released === false) return null
-  return v.thumbnailUrl ?? (v.type === 'VIDEO' ? `https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg` : null)
+  return v.thumbnailUrl || (v.type === 'VIDEO' ? `https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg` : null)
 }
 
 function parseTags(tags: string | null): string[] {
@@ -688,8 +688,8 @@ function WatchArea({
   const currentPlaylistItem = playlistItems.find(i => i.videoId === currentVideoId)
   const currentTitle = currentPlaylistItem?.title ?? activeVideo.title
   const currentThumb = currentPlaylistItem?.thumbnail
-    ?? activeVideo.thumbnailUrl
-    ?? (currentVideoId ? `https://img.youtube.com/vi/${currentVideoId}/hqdefault.jpg` : null)
+    || activeVideo.thumbnailUrl
+    || (currentVideoId ? `https://img.youtube.com/vi/${currentVideoId}/hqdefault.jpg` : null)
 
   function handleEnded() {
     if (!isPlaylist) return

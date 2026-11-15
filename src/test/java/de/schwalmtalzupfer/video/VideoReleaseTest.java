@@ -91,4 +91,13 @@ class VideoReleaseTest {
         assertThat(v.getTitle()).isEqualTo("Vlog");
         assertThat(v.isReleased()).isTrue();
     }
+
+    @Test
+    void releaseAtIsReadFromClientJson() throws Exception {
+        var mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+        Video v = mapper.readValue("{\"title\":\"Vlog\",\"category\":\"WINTER\",\"type\":\"VIDEO\",\"youtubeId\":\"abc\",\"releaseAt\":\"2026-11-15T20:00:00\",\"position\":0}", Video.class);
+        assertThat(v.getReleaseAt()).isEqualTo(java.time.LocalDateTime.of(2026, 11, 15, 20, 0));
+        VideoController.fillThumbnail(v);
+        assertThat(v.getThumbnailUrl()).isEqualTo("https://img.youtube.com/vi/abc/hqdefault.jpg");
+    }
 }
